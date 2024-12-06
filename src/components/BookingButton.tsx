@@ -1,6 +1,6 @@
-import './globals.css'
-import Header from './components/Header'
-import Footer from './components/Footer'
+import '../app/globals.css'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export const metadata = {
   title: "Stage de récupération de points à Saint-Maur",
@@ -8,8 +8,8 @@ export const metadata = {
   openGraph: {
     title: "Stage de récupération de points à Saint-Maur",
     description: "Réservez votre stage de récupération de points du permis à Saint-Maur, facilement et rapidement.",
-    url: "https://www.smblbp.fr",
-    siteName: "Centre de Récupération de Points Permis",
+    url: "https://www.votre-site-saint-maur.fr",
+    siteName: "Stage Points Saint-Maur",
     images: [
       {
         url: "/images/saint-maur-center.jpg",
@@ -23,11 +23,15 @@ export const metadata = {
   }
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }) {
   return (
     <html lang="fr">
-      <body>
-        {children}
+      <body className="bg-gray-100 text-gray-800">
+        <Header />
+        <main className="max-w-3xl mx-auto px-4 py-8">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   )
