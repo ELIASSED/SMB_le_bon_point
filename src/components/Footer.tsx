@@ -1,4 +1,5 @@
 // components/Footer.js
+import Image from "next/image"
 
 export default function Footer() {
   return (
@@ -22,7 +23,7 @@ export default function Footer() {
           <h4 className="text-xl font-semibold mb-4">Suivez-nous</h4>
           <div className="flex space-x-8">
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <img src="" alt="Facebook" className="w-6 h-6 hover:opacity-75" />
+              <Image src="" alt="Facebook" className="w-6 h-6 hover:opacity-75" />
             </a>
             
           </div>
