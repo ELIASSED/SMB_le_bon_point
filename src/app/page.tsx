@@ -1,34 +1,34 @@
 import Image from 'next/image'
 import BookingButton from '../components/BookingButton'
+import Hero from '../components/Hero'
+import ExperiencedTrainers from '@/components/ExperiencedTrainers'
+import PointRecovery from '@/components/PointRecovery'
+import PrefectureApproval from '@/components/PrefectureApproval'
+import SecureBooking from '@/components/SecureBooking'
 
 export default function HomePage() {
-  return (
+  return (<>
+  <Hero />
     <div>
-      <h1 className="text-3xl font-bold mb-4">Stage de récupération de points à Saint-Maur</h1><br/>
       <div className="mb-6">
 
-<Image 
-  src="/images/center.png" 
-  alt="Centre de récupération de points à Saint-Maur" 
-  width={800}
-  height={400}
-  className="rounded shadow"
-/>
+
 </div>
       <p className="mb-4">
-        Bienvenue sur notre page dédiée au centre de récupération de points de Saint-Maur. 
-        Nous proposons des stages agréés par la préfecture, destinés aux conducteurs souhaitant 
-        récupérer des points sur leur permis de conduire.
+      Découvrez notre Centre de Récupération de Points Permis à St Maur des Fosses, à deux pas du RER A Saint-Maur le Parc.
+‍
+Avec un parking, plus de 200m2 d'espace, salle de repos, coins repas, et zones de détente, nous rendons la récupération de points aussi facile que confortable.
+‍
+Optez pour la tranquillité sur la route avec nous.
       </p>
      
 
       <h2 className="text-2xl font-semibold mb-2">Pourquoi choisir notre centre à Saint-Maur ?</h2>
-      <ul className="list-disc list-inside mb-4">
-        <li>Stages agréés par la préfecture</li>
-        <li>Formateurs expérimentés et pédagogues</li>
-        <li>Possibilité de récupérer jusqu’à 4 points</li>
-        <li>Réservation et paiement en ligne sécurisés</li>
-      </ul>
+
+          <PrefectureApproval /><br/>
+          <ExperiencedTrainers /><br/>
+          <PointRecovery /><br/>
+          <SecureBooking /><br/>
 
       <p className="mb-6">
         Notre centre est situé au cœur de Saint-Maur, facilement accessible en transport en commun 
@@ -46,6 +46,7 @@ export default function HomePage() {
         À l’issue du stage, une attestation vous sera remise, permettant la récupération de points 
         sur votre permis (sous réserve d’éligibilité).
       </p>
-    </div>
+    </div></>
+    
   )
 }

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+
 
 export const metadata = {
   title: "Contactez-nous - Stage de récupération de points à Saint-Maur",
@@ -39,12 +39,8 @@ export default function ContactPage() {
 
         <div>
           <h2 className="text-2xl font-semibold">Besoin d'aide ou d'une question ?</h2>
-          <p>
-            Appelez-nous au{" "}
-            <a href="tel:0619774782" className="text-primary underline">
-              06 19 77 47 82
-            </a>
-          </p>
+<p>C&#39;est un test d&#39;appel.</p>
+       
         </div>
       </div>
 
@@ -55,7 +51,7 @@ export default function ContactPage() {
           width="100%"
           height="100%"
           style={{ border: 0 }}
-          allowFullScreen=""
+          allowFullScreen={true}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
           title="Carte du Centre SMB à Saint-Maur"
