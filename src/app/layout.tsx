@@ -1,33 +1,23 @@
+// src/app/layout.tsx
 import './globals.css'
-import Header from './components/Header'
-import Footer from './components/Footer'
+import { ReactNode } from 'react'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export const metadata = {
-  title: "Stage de récupération de points à Saint-Maur",
-  description: "Trouvez et réservez votre stage de récupération de points de permis à Saint-Maur. Sessions agréées, paiement sécurisé, places limitées.",
-  openGraph: {
-    title: "Stage de récupération de points à Saint-Maur",
-    description: "Réservez votre stage de récupération de points du permis à Saint-Maur, facilement et rapidement.",
-    url: "https://www.smblbp.fr",
-    siteName: "Centre de Récupération de Points Permis",
-    images: [
-      {
-        url: "/images/saint-maur-center.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Centre de formation Saint-Maur",
-      },
-    ],
-    locale: "fr_FR",
-    type: "website",
-  }
+  title: 'Sécurité Routière',
+  description: 'Site inspiré de l’identité visuelle de la Sécurité Routière.'
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
       <body>
-        {children}
+        <Header />
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   )

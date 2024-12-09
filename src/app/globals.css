@@ -1,36 +1,75 @@
-/* app/globals.css */
+/* src/app/globals.css */
+
+/* Import des polices Google */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@400;700&display=swap');
+
+/* Import de Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Styles globaux inspirés de Le Bon Point */
-
+/* Styles personnalisés */
 @layer base {
   html, body {
+    font-family: 'Inter', sans-serif;
+    background-color: theme('colors.light');
+    color: theme('colors.dark');
+    line-height: 1.6;
     scroll-behavior: smooth;
   }
 
   a {
-    @apply text-primary underline;
+    @apply text-primary ;
   }
 
   a:hover {
-    color: #cca900; /* Vous pouvez également utiliser @apply si vous avez une classe définie */
+    @apply text-secondary;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-text;
+    @apply font-serif text-primary;
   }
 
   p {
-    @apply mb-4 leading-relaxed;
+    @apply mb-4;
   }
 
   .btn-primary {
-    @apply bg-primary text-text font-semibold px-4 py-2 rounded;
+    @apply bg-primary text-white font-semibold py-2 px-4 rounded shadow hover:bg-secondary transition duration-300;
   }
 
-  .btn-primary:hover {
-    background-color: #cca900; /* Vous pouvez également utiliser @apply si vous avez une classe définie */
+  .btn-secondary {
+    @apply bg-secondary text-white font-semibold py-2 px-4 rounded shadow hover:bg-primary transition duration-300;
+  }
+
+  /* Personnalisation de react-calendar */
+  .react-calendar {
+    @apply bg-white rounded-lg shadow-lg p-4;
+  }
+
+  .react-calendar__tile {
+    @apply text-dark hover:bg-primary hover:text-white;
+  }
+
+  .react-calendar__tile--now {
+    @apply bg-accent text-white;
+  }
+
+  .react-calendar__tile--active {
+    @apply bg-success text-white;
+  }
+
+  /* Boutons */
+  .btn {
+    @apply inline-block font-semibold text-center rounded transition duration-300;
+  }
+
+  .btn:hover {
+    @apply opacity-90;
+  }
+
+  /* Animations pour les Cartes */
+  .card:hover {
+    @apply transform scale-105 shadow-xl;
   }
 }

@@ -1,6 +1,3 @@
-/* app/contact/page.js */
-
-import Image from 'next/image';
 import Link from 'next/link';
 
 export const metadata = {
@@ -34,24 +31,27 @@ export default function ContactPage() {
       <div className="space-y-4">
         <div>
           <h2 className="text-2xl font-semibold">Où nous retrouver</h2>
-          <p>35 Av. Foch, Saint-Maur-des-Fossés</p>
-          <p>Entrée : 2 Av de Curti, Saint-Maur-des-Fossés</p>
-          <p>A 5 minutes à pied de la gare du Parc de Saint-Maur</p>
-          <Link href="https://www.google.com/maps/place/35+Av.+Foch,+Saint-Maur-des-Fossés" target="_blank" className="text-primary underline">
-            Voir sur Google Maps
-          </Link>
+          <p>35 Av. Foch, 94100 Saint-Maur-des-Fossés</p>
+          <p>Entrée : 2 Av. de Curti, 94100 Saint-Maur-des-Fossés</p>
+          <p>À 5 minutes à pied de la gare du Parc de Saint-Maur</p>
+       
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold">Besoin d'aide ou une question ?</h2>
-          <p>Appelez-nous au <a href="tel:0619774782" className="text-primary underline">06 19 77 47 82</a></p>
+          <h2 className="text-2xl font-semibold">Besoin d'aide ou d'une question ?</h2>
+          <p>
+            Appelez-nous au{" "}
+            <a href="tel:0619774782" className="text-primary underline">
+              06 19 77 47 82
+            </a>
+          </p>
         </div>
       </div>
 
       {/* Carte Google Maps */}
       <div className="w-full h-96">
         <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.999999999999!2d2.444!3d48.853!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e0b4c99b123%3A0x1234567890abcdef!2s35%20Av.%20Foch%2C%2019400%20Saint-Maur-des-Foss%C3%A9s!5e0!3m2!1sfr!2sfr!4v1680000000000!5m2!1sfr!2sfr"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.469151394134!2d2.495465315675272!3d48.80686387928407!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e60eea5ad9b5c7%3A0x5baf9b8b16dca682!2s35%20Av.%20Foch%2C%2094100%20Saint-Maur-des-Foss%C3%A9s!5e0!3m2!1sfr!2sfr!4v1700000000000!5m2!1sfr!2sfr"
           width="100%"
           height="100%"
           style={{ border: 0 }}
