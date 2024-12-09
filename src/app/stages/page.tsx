@@ -1,9 +1,18 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
+
+type Stage = {
+
+  date: string; // format YYYY-MM-DD
+  title: string;
+
+  color: string;
+};
 
 // Fonction pour obtenir le nom du mois
-function getMonthName(monthIndex) {
+function getMonthName(monthIndex: number): string {
   const monthNames = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -12,25 +21,27 @@ function getMonthName(monthIndex) {
 }
 
 export default function CalendarClient() {
-  // Etat pour l'année et le mois affichés
-  const [year, setYear] = useState(2024);
-  const [month, setMonth] = useState(11); // Décembre (0-based: 11 = décembre)
-  
-  // Etats pour le formulaire
-  const [showForm, setShowForm] = useState(false);
-  const [selectedDayStages, setSelectedDayStages] = useState([]);
+  // État pour l'année et le mois affichés
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [month, setMonth] = useState<number>(new Date().getMonth());
+
+  // États pour le formulaire d'inscription
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [selectedDayStages, setSelectedDayStages] = useState<Stage[]>([]);
 
   // Données de stages fictives
-  const stages = [
+  const stages: Stage[] = [
     { date: '2024-12-05', title: 'Stage Permis A', color: 'bg-blue-200' },
     { date: '2024-12-10', title: 'Stage Permis B', color: 'bg-green-200' },
     { date: '2024-12-15', title: 'Stage Permis Moto', color: 'bg-yellow-200' },
     { date: '2024-12-20', title: 'Stage Points Urgent', color: 'bg-red-200' },
-    { date: '2024-12-28', title: 'Stage Récup Points', color: 'bg-purple-200' },
+    { date: '2024-12-28', title: 'Stage Récup Points', color: 'bg-purple-200' },    { date: '2024-12-29', title: 'Stage Récup Points', color: 'bg-purple-200' },
+
     { date: '2025-01-10', title: 'Stage Permis B', color: 'bg-green-200' },
     { date: '2025-01-15', title: 'Stage Permis Moto', color: 'bg-yellow-200' },
     { date: '2025-01-20', title: 'Stage Points Urgent', color: 'bg-red-200' },
-    { date: '2025-01-28', title: 'Stage Récup Points', color: 'bg-purple-200' },
+    { date: '2025-01-28', title: 'Stage Récup Points', color: 'bg-purple-200' },    { date: '2025-01-29', title: 'Stage Récup Points', color: 'bg-purple-200' },
+
   ];
 
   // Calcul du calendrier pour l'année et le mois en cours
@@ -44,7 +55,7 @@ export default function CalendarClient() {
   // Convertir le dimanche=0, lundi=1 en lundi=0 ... dimanche=6
   startDay = startDay === 0 ? 6 : startDay - 1;
 
-  const calendarCells = [];
+  const calendarCells: (number | null)[] = [];
   for (let i = 0; i < startDay; i++) {
     calendarCells.push(null);
   }
@@ -52,20 +63,19 @@ export default function CalendarClient() {
     calendarCells.push(d);
   }
 
-  const weeks = [];
+  const weeks: (number | null)[][] = [];
   for (let i = 0; i < calendarCells.length; i += 7) {
     weeks.push(calendarCells.slice(i, i + 7));
   }
 
   // Fonction pour récupérer les stages d'un jour
-  const getStagesForDay = (day) => {
-    if (!day) return [];
+  const getStagesForDay = (day: number | null): Stage[] => {
+    if (day === null) return [];
     // On formate la date en YYYY-MM-DD
     const currentMonth = (month + 1).toString().padStart(2, '0');
-    const dayStr = `${year}-${currentMonth}-${day.toString().padStart(2, '0')}`;
-    return stages.filter((st) => st.date.endsWith(dayStr.slice(5)));
-    // Note : On "triche" ici car on compare seulement sur le mois-jour.
-    // Dans un vrai cas, ajustez la logique pour correspondre au mois/année dynamique.
+    const dayStr = day.toString().padStart(2, '0');
+    const dateString = `${year}-${currentMonth}-${dayStr}`;
+    return stages.filter((st) => st.date === dateString);
   };
 
   // Gestion du changement de mois
@@ -76,8 +86,8 @@ export default function CalendarClient() {
       newMonth = 11; // Décembre
       newYear = year - 1;
     }
-    setYear(newYear);
     setMonth(newMonth);
+    setYear(newYear);
   };
 
   const goToNextMonth = () => {
@@ -87,20 +97,21 @@ export default function CalendarClient() {
       newMonth = 0; // Janvier
       newYear = year + 1;
     }
-    setYear(newYear);
     setMonth(newMonth);
+    setYear(newYear);
   };
 
-  // Fonction appelée lorsqu'on clique sur un jour avec des events
-  const handleDayClick = (dayStages) => {
-    if (dayStages && dayStages.length > 0) {
+  // Fonction appelée lorsqu'on clique sur un jour avec des stages
+  const handleDayClick = (dayStages: Stage[]) => {
+    if (dayStages.length > 0) {
       setSelectedDayStages(dayStages);
       setShowForm(true);
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative p-4">
+      {/* En-tête du calendrier */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-bold">
           {getMonthName(month)} {year}
@@ -121,11 +132,13 @@ export default function CalendarClient() {
         </div>
       </div>
 
+      {/* Description */}
       <p className="mb-6 text-gray-600">
         Consultez les stages disponibles. Cliquez sur une date pour plus d'informations.
         (Exemple fictif, aucune donnée réelle.)
       </p>
 
+      {/* Jours de la semaine */}
       <div className="grid grid-cols-7 gap-2 border-b pb-2">
         {daysOfWeek.map((day) => (
           <div key={day} className="text-center font-semibold text-gray-700">
@@ -134,6 +147,7 @@ export default function CalendarClient() {
         ))}
       </div>
 
+      {/* Calendrier */}
       <div className="mt-2 space-y-2">
         {weeks.map((week, wIndex) => (
           <div key={wIndex} className="grid grid-cols-7 gap-2">
@@ -170,6 +184,7 @@ export default function CalendarClient() {
         ))}
       </div>
 
+      {/* Formulaire d'inscription */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative">

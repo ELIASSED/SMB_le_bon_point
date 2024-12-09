@@ -1,17 +1,20 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 export default function BookingButton() {
+  const router = useRouter();
+
   const handleClick = () => {
-    // Logique à implémenter plus tard : rediriger vers une page de réservation
-    alert('Page de réservation à venir.');
+    // Redirige vers la page des stages
+    router.push("/stages");
   };
 
   return (
-    <button 
-      onClick={handleClick} 
+    <button
+      onClick={handleClick}
       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       id="reservation"
-
     >
       Réserver un stage
     </button>
