@@ -1,7 +1,9 @@
 export default function Footer() {
     return (
-      <footer className="bg-white mt-8 p-4 text-center text-sm text-gray-600">
-        © {new Date().getFullYear()} Centre de récupération de points Saint-Maur. Tous droits réservés.
+        <footer className="bg-gray-100 text-black text-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-center">
+          © {new Date().getFullYear()} - Sécurité Routière - Tous droits réservés.
+        </div>
       </footer>
     )
   }
