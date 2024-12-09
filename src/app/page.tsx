@@ -6,6 +6,9 @@ import PointRecovery from '@/components/PointRecovery'
 import PrefectureApproval from '@/components/PrefectureApproval'
 import SecureBooking from '@/components/SecureBooking'
 
+
+
+
 export default function HomePage() {
   return (<>
   <Hero />
