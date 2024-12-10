@@ -1,3 +1,5 @@
+"use client"
+
 import Image from 'next/image'
 import BookingButton from '../components/BookingButton'
 import Hero from '../components/Hero'
@@ -5,7 +7,7 @@ import ExperiencedTrainers from '@/components/ExperiencedTrainers'
 import PointRecovery from '@/components/PointRecovery'
 import PrefectureApproval from '@/components/PrefectureApproval'
 import SecureBooking from '@/components/SecureBooking'
-
+import FAQ from '@/components/FAQ'
 
 
 
@@ -18,7 +20,7 @@ export default function HomePage() {
 
 </div>
       <p className="mb-4">
-      Découvrez notre Centre de Récupération de Points Permis à St Maur des Fosses, à deux pas du RER A Saint-Maur le Parc.
+      Découvrez notre Centre de Récupération de Points Permis à St Maur des Fossés, à deux pas du RER A Saint-Maur le Parc.
 ‍
 Avec un parking, plus de 200m2 d'espace, salle de repos, coins repas, et zones de détente, nous rendons la récupération de points aussi facile que confortable.
 ‍
@@ -26,7 +28,7 @@ Optez pour la tranquillité sur la route avec nous.
       </p>
      
 
-      <h2 className="text-2xl font-semibold mb-2">Pourquoi choisir notre centre à Saint-Maur ?</h2>
+      <h2 className="text-2xl font-semibold mb-2">Pourquoi choisir notre centre à Saint-Maur-des-Fossés ?</h2>
 
           <PrefectureApproval /><br/>
           <ExperiencedTrainers /><br/>
@@ -49,7 +51,9 @@ Optez pour la tranquillité sur la route avec nous.
         À l’issue du stage, une attestation vous sera remise, permettant la récupération de points 
         sur votre permis (sous réserve d’éligibilité).
       </p>
-    </div></>
+    </div>
+    <FAQ/>
+    </>
     
   )
 }
