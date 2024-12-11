@@ -12,14 +12,14 @@ export default function Hero() {
             <h1 className="text-4xl font-bold text-gray-800 mb-4">
               Récupérez Vos Points à Saint-Maur-des-Fossés
             </h1>
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-lg text-gray-800 mb-6">
               Participez à nos stages agréés et reprenez confiance au volant.
             </p>
             <BookingButton />
           </div>
           <div className="lg:w-1/2 relative">
             <Image
-              src="/images/volant2.png" // Assure-toi que cette image existe dans le dossier public/images
+              src="/images/volant.png"
               alt="Stage de récupération de points"
               width={600}
               height={400}
