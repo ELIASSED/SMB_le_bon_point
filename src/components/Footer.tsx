@@ -20,13 +20,7 @@ export default function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="text-xl font-semibold mb-4">Suivez-nous</h4>
-          <div className="flex space-x-8">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <Image src="" alt="Facebook" className="w-6 h-6 hover:opacity-75" />
-            </a>
-            
-          </div>
+        
         </div>
       </div>
       <div className="mt-8 text-center text-sm">

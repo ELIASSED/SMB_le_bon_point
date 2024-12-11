@@ -1,4 +1,4 @@
-
+import Link from 'next/link';
 
 export const metadata = {
   title: "Contactez-nous - Stage de récupération de points à Saint-Maur",
@@ -39,8 +39,13 @@ export default function ContactPage() {
 
         <div>
           <h2 className="text-2xl font-semibold">Besoin d'aide ou d'une question ?</h2>
-<p>C&#39;est un test d&#39;appel.</p>
-       
+
+          <p>
+            Appelez-nous au
+            <a href="tel:0619774782" className="text-primary underline">
+              06 19 77 47 82
+            </a>
+          </p>
         </div>
       </div>
 
