@@ -142,6 +142,7 @@ export default function CalendarClient() {
           />
           <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center">
             <h2 className="text-3xl text-white font-bold">Récupération de Points - Saint-Maur-des-Fossses</h2>
+       
           </div>
         </div>
 

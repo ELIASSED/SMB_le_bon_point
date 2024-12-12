@@ -7,7 +7,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-gray-800 text-white">
+    <header className="bg-gray-800 text-white">   
+    
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
         {/* Logo et titre */}
         <div className="flex items-center space-x-3">
