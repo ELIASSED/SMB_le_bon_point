@@ -130,8 +130,8 @@ export default function CalendarClient() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto p-4">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <main className="flex-1 container mx-auto p-8">
         <div className="relative w-full h-64 mb-8">
           <Image 
             src="/images/center.png" 
@@ -141,38 +141,37 @@ export default function CalendarClient() {
             className="rounded-lg"
           />
           <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-            <h2 className="text-3xl text-white font-bold">Récupération de Points - Saint-Maur-des-Fossses</h2>
-       
+            <h2 className="text-3xl text-white font-bold">Récupération de Points - Saint-Maur-des-Fossés</h2>
           </div>
         </div>
 
         <section className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Dates des stages disponibles</h3>
+          <h3 className="text-xl font-semibold mb-4 text-black">Dates des stages disponibles</h3>
 
           <div className="flex flex-col gap-4">
             {stages.map((stage) => (
               <div 
                 key={stage.id} 
-                className="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow flex items-center"
+                className="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow flex flex-col md:flex-row items-center md:items-start"
               >
-                <div className="flex-none w-1/4 text-center">
-                <p className="text-lg font-bold text-dark">
-                    {`Places restantes`}
-                  </p> <p className="text-lg font-bold text-green-600">
-                    {` ${stage.remainingSlots}`}
-                  </p>
+                <div className="flex-none w-full md:w-1/4 text-center mb-4 md:mb-0">
+                  <p className="text-lg font-bold text-black">Places restantes</p> 
+                  <p className="text-xl font-bold text-green-600">{stage.remainingSlots}</p>
                 </div>
-                <div className="flex-1 text-center">
-                  <p className="text-lg font-bold text-secondary">
-                    {`${new Date(stage.startDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} au ${new Date(stage.endDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+                <div className="flex-1 text-center md:text-left">
+                  <p className="text-lg font-bold text-yellow-600">
+                    {`Du ${new Date(stage.startDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} au ${new Date(stage.endDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
                   </p>
                   <p className="text-sm text-gray-600">
                     Horaires : {stage.schedule.morning} - {stage.schedule.afternoon}
                   </p>
+                  <p className="text-sm text-gray-700">{stage.address}, {stage.city}, {stage.postalCode}</p>
+                  <p className="text-sm text-gray-700">{`Équipements : ${stage.amenities.join(', ')}`}</p>
+                  <p className="text-sm text-gray-700">{`Accessibilité : ${stage.accessInfo}`}</p>
                 </div>
-                <div className="flex-none w-1/4 text-center">
+                <div className="flex-none w-full md:w-1/4 text-center">
                   <p className="text-lg font-bold text-green-600 mb-2">{stage.price}</p>
-                  <BookingButton />
+                  <BookingButton className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded" />
                 </div>
               </div>
             ))}

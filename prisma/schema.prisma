@@ -19,5 +19,7 @@ model Inscription {
   stage          String
   nationalite    String
   dateNaissance  DateTime
+  pieceDId       String  
+  permis         String
   createdAt      DateTime @default(now())
 }
