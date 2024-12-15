@@ -1,52 +1,57 @@
-'use client';
+"use client";
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-gray-800 text-white">   
-    
+    <header className="bg-[#246ed4] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
         {/* Logo et titre */}
         <div className="flex items-center space-x-3">
-          {/* Logo principal */}
-          <Link href="/">
-            <Image
-              src="/logo.png"
-              alt="Logo Sécurité Routière"
-              className="bg-transparent h-10 w-auto"
-              width={100} 
-              height={50}
-            />
-          </Link>
           {/* Logo SMB */}
           <Link href="/">
             <Image
               src="/smblogo.png"
               alt="Logo SMB"
-              className="h-12 w-auto bg-white"
-              width={100} 
+              className="h-12 w-auto"
+              width={100}
               height={50}
             />
           </Link>
-          {/* Texte principal */}
-          <Link href="/" className="text-xl font-bold leading-tight">
-            SECURITE ROUTIERE <br /> CENTRE DE RECUPERATION DE POINTS
+          {/* Logo principal */}
+          <Link href="/">
+            <Image
+              src="/gov-logo.png"
+              alt="Logo Gouvernement"
+              className="h-10 w-auto"
+              width={100}
+              height={50}
+            />
+            <h6 className="text-xs text-white mt-1">Agrément R2209400050</h6>
           </Link>
+
+          {/* Texte principal */}
+          <div className="text-left">
+            <Link href="/" className="text-lg font-bold leading-tight">
+              <span className="block">LE BON POINT</span>
+              <span className="block text-sm">CENTRE DE RÉCUPÉRATION DE POINTS</span>
+            </Link>
+          </div>
         </div>
 
         {/* Navigation Desktop */}
-        <nav className="hidden md:flex space-x-4 text-base font-medium">
-          <Link href="/" className="hover:text-gray-400">
+        <nav className="hidden md:flex space-x-8 text-base font-medium">
+          <Link href="/" className="hover:text-gray-200">
             Accueil
           </Link>
-          <Link href="/stages" className="hover:text-gray-400">
+          <Link href="/stages" className="hover:text-gray-200">
             Stages
           </Link>
-          <Link href="/contact" className="hover:text-gray-400">
+          <Link href="/contact" className="hover:text-gray-200">
             Contact
           </Link>
         </nav>
@@ -83,26 +88,26 @@ export default function Header() {
 
       {/* Menu Mobile */}
       {menuOpen && (
-        <div className="md:hidden bg-secondary border-t border-gray-700">
+        <div className="md:hidden bg-blue-700 border-t border-blue-600">
           <nav className="flex flex-col space-y-2 py-4">
             <Link
               href="/"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-gray-700"
+              className="px-4 py-2 text-white hover:bg-blue-600"
             >
               Accueil
             </Link>
             <Link
               href="/stages"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-gray-700"
+              className="px-4 py-2 text-white hover:bg-blue-600"
             >
               Stages
             </Link>
             <Link
               href="/contact"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-gray-700"
+              className="px-4 py-2 text-white hover:bg-blue-600"
             >
               Contact
             </Link>

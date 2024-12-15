@@ -10,13 +10,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#FFA500',    // Orange vif pour les éléments principaux
-        secondary: '#FF6347',  // Tomate pour les éléments secondaires
-        accent: '#FFD700',     // Or pour les accents
-        dark: '#333333',       // Texte principal
-        light: '#F5F5F5',      // Fond léger
-        success: '#28a745',    // Vert pour succès
-        error: '#dc3545',      // Rouge pour erreurs
+        primary: '#0D3B66',   // Bleu profond, évoquant la confiance et le professionnalisme
+        secondary: '#FAA916', // Jaune-orangé vif, attire l’attention sur les éléments clés
+        accent: '#F4D35E',    // Doré doux, pour souligner subtilement les appels à l’action
+        dark: '#1C1C1C',      // Gris très foncé, pour le texte principal et les titres
+        light: '#F7F9FA',     // Blanc cassé, donne une impression de propreté et de modernité
+        success: '#2BC16A',   // Vert franc et dynamique, pour valider les actions positives
+        error: '#E63946',     // Rouge légèrement adouci, clair et directement compréhensible
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

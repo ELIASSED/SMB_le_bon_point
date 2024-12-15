@@ -35,8 +35,8 @@ export default function InscriptionPage() {
     stage: '',
     nationalite: '',
     dateNaissance: '',
-    pieceIdentite: null as File | null,
-    permis: null as File | null,
+    pieceDId: '',
+    permis: '',
   });
 
   const [errors, setErrors] = useState({

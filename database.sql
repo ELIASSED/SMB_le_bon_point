@@ -7,6 +7,7 @@ CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     civil_state VARCHAR(10) NOT NULL,
     name VARCHAR(100) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(15),
     password_hash VARCHAR(255) NOT NULL,
@@ -15,12 +16,11 @@ CREATE TABLE Users (
     driving_license_base64 LONGTEXT,  -- Nouveau champ pour stocker le permis de conduire encodé en Base64
     role ENUM('admin', 'user') DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 
 -- Table pour les stages
 CREATE TABLE Stages (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     remaining_slots INT DEFAULT 20,
     start_date DATE NOT NULL,

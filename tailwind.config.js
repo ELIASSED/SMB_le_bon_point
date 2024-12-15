@@ -10,17 +10,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#FFA500',    // Orange vif pour les éléments principaux
-        secondary: '#FF6347',  // Tomate pour les éléments secondaires
-        accent: '#FFD700',     // Or pour les accents
-        dark: '#333333',       // Texte principal
-        light: '#F5F5F5',      // Fond léger
-        success: '#28a745',    // Vert pour succès
-        error: '#dc3545',      // Rouge pour erreurs
+        primary: '#ffcf40',   // Jaune vif pour les éléments principaux et les appels à l'action
+        secondary: '#000000', // Noir pour le texte principal et les titres
+        accent: '#F5F5F5',    // Gris clair pour les arrière-plans secondaires et les bordures
+        dark: '#000000',      // Noir pour le texte principal
+        light: '#f5ebe4',     // Blanc pour les fonds
+        success: '#28a745',   // Vert pour indiquer le succès
+        error: '#dc3545',     // Rouge pour signaler les erreurs
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        serif: ['Merriweather', 'serif'],
+        sans: ['Marianne', 'sans-serif'],  // Police officielle utilisée par le gouvernement français
+        serif: ['Georgia', 'serif'],       // Police de secours pour les textes en serif
       },
       fontSize: {
         'xs': '.75rem',
