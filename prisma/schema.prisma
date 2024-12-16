@@ -1,10 +1,42 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL") // Configurez votre URL dans .env
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  firstName String
+  lastName  String
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Ajoutez ce champ pour la relation inverse
+  payments  Payment[]
+}
+
+
+
+
+model Session {
+  id                   Int       @id @default(autoincrement())
+  numeroStagePrefecture String
+  description          String?
+  startDate            DateTime
+  endDate              DateTime
+  location             String
+  capacity             Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relation avec le formateur
+  instructorId Int?
+  instructor   Instructor? @relation(fields: [instructorId], references: [id])
 }
 
 model Inscription {
@@ -19,7 +51,30 @@ model Inscription {
   stage          String
   nationalite    String
   dateNaissance  DateTime
-  pieceDId       String  
+  idCard         String
   permis         String
   createdAt      DateTime @default(now())
+}
+
+
+
+model Instructor {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  firstName String
+  lastName  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  sessions Session[]
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Float
+  method    String
+  paidAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
