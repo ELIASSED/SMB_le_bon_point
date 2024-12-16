@@ -37,7 +37,7 @@ export default function ContactPage(){
         <div>
           <h2 className="text-2xl font-semibold text-black">Besoin d'aide ou d'une question ?</h2>
           <p>
-            Appelez-nous au
+            Appelez-nous au {" "}
             <a href="tel:0619774782" className="text-yellow-600 underline">06 19 77 47 82</a>
           </p>
         </div>

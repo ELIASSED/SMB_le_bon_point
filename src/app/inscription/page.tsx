@@ -1,71 +1,45 @@
-'use client'
+'use client';
 import React, { useState } from 'react';
 
-type Stage = {
-  id: number;
-  name: string;
-};
+const civilities = ['Monsieur', 'Madame'];
 
-const stages: Stage[] = [
-  { id: 1, name: 'Stage 1 - 22-23 Décembre 2024' },
-  { id: 2, name: 'Stage 2 - 29-30 Décembre 2024' },
-  { id: 3, name: 'Stage 3 - 5-6 Janvier 2025' },
-  { id: 4, name: 'Stage 4 - 15-16 Janvier 2025' },
-  { id: 5, name: 'Stage 5 - 25-26 Janvier 2025' },
-];
+interface FormData {
+  civilite: string;
+  nom: string;
+  prenom: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  dateNaissance: string;
+  email: string;
+  confirmationEmail: string;
+  telephone: string;
+  stageId: number | null;
+}
 
-const nationalities = [
-  'Française',
-  'Belge',
-  'Allemande',
-  'Espagnole',
-  'Italienne',
-  'Autre',
-];
+interface Errors {
+  [key: string]: string;
+}
 
 export default function InscriptionPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    civilite: '',
     nom: '',
     prenom: '',
     adresse: '',
     codePostal: '',
     ville: '',
-    telephone: '',
-    email: '',
-    stage: '',
-    nationalite: '',
     dateNaissance: '',
-    pieceDId: '',
-    permis: '',
+    email: '',
+    confirmationEmail: '',
+    telephone: '',
+    stageId: null,
   });
 
-  const [errors, setErrors] = useState({
-    nom: '',
-    prenom: '',
-    adresse: '',
-    codePostal: '',
-    ville: '',
-    telephone: '',
-    email: '',
-    stage: '',
-    nationalite: '',
-    dateNaissance: '',
-    pieceIdentite: '',
-    permis: '',
-  });
-
+  const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
     if (files && files.length > 0) {
@@ -75,104 +49,100 @@ export default function InscriptionPage() {
       }));
     }
   };
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: name === 'stageId' ? parseInt(value, 10) : value,
+    }));
+  };
 
   const validate = () => {
-    let valid = true;
-    const newErrors = { ...errors };
+    const newErrors: Errors = {};
+    const requiredFields = [
+      'civilite',
+      'nom',
+      'prenom',
+      'adresse',
+      'codePostal',
+      'ville',
+      'dateNaissance',
+      'email',
+      'confirmationEmail',
+      'telephone',
+      'stageId',
+    ];
 
-    // Existing validations...
-    Object.keys(formData).forEach(key => {
-      if (key !== 'pieceIdentite' && key !== 'permis') {
-        const value = formData[key as keyof typeof formData];
-        if (!value) {
-          newErrors[key as keyof typeof errors] = `Le ${key} est requis.`;
-          valid = false;
-        }
+    requiredFields.forEach((field) => {
+      if (!formData[field as keyof FormData]) {
+        newErrors[field] = `Le champ ${field} est requis.`;
       }
     });
 
-    // Validate email
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'L\'email n\'est pas valide.';
-      valid = false;
-    }
-
-    // Validate file uploads
-    if (!formData.pieceIdentite) {
-      newErrors.pieceIdentite = 'La pièce d\'identité est requise.';
-      valid = false;
-    }
-
-    if (!formData.permis) {
-      newErrors.permis = 'Le permis est requis.';
-      valid = false;
+    // Validation des emails
+    if (formData.email && formData.confirmationEmail) {
+      if (formData.email !== formData.confirmationEmail) {
+        newErrors.confirmationEmail = 'Les emails ne correspondent pas.';
+      }
     }
 
     setErrors(newErrors);
-    return valid;
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!validate()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setMessage(null);
 
-    if (validate()) {
-      try {
-        const formDataToSend = new FormData();
-        
-        // Append all text fields
-        Object.keys(formData).forEach(key => {
-          if (key !== 'pieceIdentite' && key !== 'permis') {
-            formDataToSend.append(key, formData[key as keyof typeof formData] as string);
-          }
+    try {
+      // Préparation des données
+      const payload = { ...formData };
+
+      const res = await fetch('/api/inscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error || 'Une erreur est survenue.' });
+      } else {
+        setMessage({ type: 'success', text: 'Inscription créée avec succès !' });
+        setFormData({
+          civilite: '',
+          nom: '',
+          prenom: '',
+          adresse: '',
+          codePostal: '',
+          ville: '',
+          dateNaissance: '',
+          email: '',
+          confirmationEmail: '',
+          telephone: '',
+          stageId: null,
         });
-
-        // Append files
-        if (formData.pieceIdentite) {
-          formDataToSend.append('pieceIdentite', formData.pieceIdentite);
-        }
-        if (formData.permis) {
-          formDataToSend.append('permis', formData.permis);
-        }
-
-        const response = await fetch('/api/inscription', {
-          method: 'POST',
-          body: formDataToSend,
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          setMessage({ type: 'success', text: 'Inscription enregistrée avec succès !' });
-          // Reset form
-          setFormData({
-            nom: '',
-            prenom: '',
-            adresse: '',
-            codePostal: '',
-            ville: '',
-            telephone: '',
-            email: '',
-            stage: '',
-            nationalite: '',
-            dateNaissance: '',
-            pieceIdentite: null,
-            permis: null,
-          });
-        } else {
-          setMessage({ type: 'error', text: 'Erreur : ' + result.error });
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'enregistrement', error);
-        setMessage({ type: 'error', text: 'Une erreur inattendue s\'est produite.' });
       }
-    } else {
-      setMessage({ type: 'error', text: 'Veuillez corriger les erreurs dans le formulaire.' });
+    } catch (err) {
+      console.error('Erreur lors de l\'envoi du formulaire:', err);
+      setMessage({ type: 'error', text: 'Une erreur est survenue lors de l\'envoi du formulaire.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-4xl"> {/* max-w-4xl pour plus de largeur */}
         <h2 className="text-2xl font-bold mb-6 text-center">Inscription au Stage</h2>
         {message && (
           <div
@@ -182,178 +152,163 @@ export default function InscriptionPage() {
           >
             {message.text}
           </div>
-        )} <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
-            Nom
-          </label>
-          <input
-            type="text"
-            id="nom"
-            name="nom"
-            value={formData.nom}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.nom && <p className="text-red-500 text-xs mt-1">{errors.nom}</p>}
-        </div>
-        <div>
-          <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">
-            Prénom
-          </label>
-          <input
-            type="text"
-            id="prenom"
-            name="prenom"
-            value={formData.prenom}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.prenom && <p className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
-        </div>
-        <div>
-          <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
-            Adresse
-          </label>
-          <input
-            type="text"
-            id="adresse"
-            name="adresse"
-            value={formData.adresse}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
-        </div>
-        <div>
-          <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">
-            Code Postal
-          </label>
-          <input
-            type="text"
-            id="codePostal"
-            name="codePostal"
-            value={formData.codePostal}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.codePostal && <p className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
-        </div>
-        <div>
-          <label htmlFor="ville" className="block text-sm font-medium text-gray-700">
-            Ville
-          </label>
-          <input
-            type="text"
-            id="ville"
-            name="ville"
-            value={formData.ville}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.ville && <p className="text-red-500 text-xs mt-1">{errors.ville}</p>}
-        </div>
-        <div>
-          <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">
-            Téléphone
-          </label>
-          <input
-            type="tel"
-            id="telephone"
-            name="telephone"
-            value={formData.telephone}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-        </div>
-        <div>
-          <label htmlFor="stage" className="block text-sm font-medium text-gray-700">
-            Sélectionnez un stage
-          </label>
-          <select
-            id="stage"
-            name="stage"
-            value={formData.stage}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">-- Sélectionnez un stage --</option>
-            {stages.map((stage) => (
-              <option key={stage.id} value={stage.name}>
-                {stage.name}
-              </option>
-            ))}
-          </select>
-          {errors.stage && <p className="text-red-500 text-xs mt-1">{errors.stage}</p>}
-        </div>
-        <div>
-          <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">
-            Nationalité
-          </label>
-          <select
-            id="nationalite"
-            name="nationalite"
-            value={formData.nationalite}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">-- Sélectionnez votre nationalité --</option>
-            {nationalities.map((nat, index) => (
-              <option key={index} value={nat}>
-                {nat}
-              </option>
-            ))}
-          </select>
-          {errors.nationalite && <p className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
-        </div>
-        <div>
-          <label htmlFor="dateNaissance" className="block text-sm font-medium text-gray-700">
-            Date de naissance
-          </label>
-          <input
-            type="date"
-            id="dateNaissance"
-            name="dateNaissance"
-            value={formData.dateNaissance}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          {errors.dateNaissance && <p className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
-        </div>       <div>
+        )}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Civilité */}
+          <div className="col-span-1">
+            <label htmlFor="civilite" className="block text-sm font-medium text-gray-700">Civilité</label>
+            <select
+              id="civilite"
+              name="civilite"
+              value={formData.civilite}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            >
+              <option value="">-- Sélectionnez une civilité --</option>
+              {civilities.map((civ, index) => (
+                <option key={index} value={civ}>{civ}</option>
+              ))}
+            </select>
+            {errors.civilite && <p className="text-red-500 text-xs mt-1">{errors.civilite}</p>}
+          </div>
+  
+          {/* Nom */}
+          <div>
+            <label htmlFor="nom" className="block text-sm font-medium text-gray-700">Nom</label>
+            <input
+              type="text"
+              id="nom"
+              name="nom"
+              value={formData.nom}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.nom && <p className="text-red-500 text-xs mt-1">{errors.nom}</p>}
+          </div>
+  
+          {/* Prénom */}
+          <div>
+            <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prénom</label>
+            <input
+              type="text"
+              id="prenom"
+              name="prenom"
+              value={formData.prenom}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.prenom && <p className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
+          </div>
+  
+          {/* Adresse */}
+          <div>
+            <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">Adresse</label>
+            <input
+              type="text"
+              id="adresse"
+              name="adresse"
+              value={formData.adresse}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
+          </div>
+  
+          {/* Code Postal */}
+          <div>
+            <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">Code Postal</label>
+            <input
+              type="text"
+              id="codePostal"
+              name="codePostal"
+              value={formData.codePostal}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.codePostal && <p className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
+          </div>
+  
+          {/* Ville */}
+          <div>
+            <label htmlFor="ville" className="block text-sm font-medium text-gray-700">Ville</label>
+            <input
+              type="text"
+              id="ville"
+              name="ville"
+              value={formData.ville}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.ville && <p className="text-red-500 text-xs mt-1">{errors.ville}</p>}
+          </div>
+  
+          {/* Date de Naissance */}
+          <div>
+            <label htmlFor="dateNaissance" className="block text-sm font-medium text-gray-700">Date de naissance</label>
+            <input
+              type="date"
+              id="dateNaissance"
+              name="dateNaissance"
+              value={formData.dateNaissance}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.dateNaissance && <p className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
+          </div>
+  
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Adresse email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+          </div>
+  
+          {/* Confirmation Email */}
+          <div>
+            <label htmlFor="confirmationEmail" className="block text-sm font-medium text-gray-700">Confirmation email</label>
+            <input
+              type="email"
+              id="confirmationEmail"
+              name="confirmationEmail"
+              value={formData.confirmationEmail}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.confirmationEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
+          </div>
+  
+          {/* Téléphone */}
+          <div>
+            <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">Téléphone</label>
+            <input
+              type="tel"
+              id="telephone"
+              name="telephone"
+              value={formData.telephone}
+              onChange={handleChange}
+              className="mt-1 block w-full border rounded-md p-2"
+            />
+            {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
+          </div>
+  
+          {/* Pièce d'identité */}
+    <div>
             <label htmlFor="pieceIdentite" className="block text-sm font-medium text-gray-700">
               Pièce d'identité
             </label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
-                <div className="flex text-sm text-gray-600">
+                <div className="flex text-sm text-gray-600 justify-center">
                   <label
                     htmlFor="pieceIdentite"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none"
                   >
                     <span>Télécharger un fichier</span>
                     <input
@@ -366,9 +321,7 @@ export default function InscriptionPage() {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500">
-                  PNG, JPG, PDF jusqu'à 10Mo
-                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, PDF jusqu'à 10Mo</p>
                 {formData.pieceIdentite && (
                   <p className="text-sm text-gray-500">
                     {formData.pieceIdentite.name}
@@ -381,16 +334,17 @@ export default function InscriptionPage() {
             </div>
           </div>
 
+          {/* Permis */}
           <div>
             <label htmlFor="permis" className="block text-sm font-medium text-gray-700">
               Permis
             </label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
-                <div className="flex text-sm text-gray-600">
+                <div className="flex text-sm text-gray-600 justify-center">
                   <label
                     htmlFor="permis"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none"
                   >
                     <span>Télécharger un fichier</span>
                     <input
@@ -403,9 +357,7 @@ export default function InscriptionPage() {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500">
-                  PNG, JPG, PDF jusqu'à 10Mo
-                </p>
+                <p className="text-xs text-gray-500">PNG, JPG, PDF jusqu'à 10Mo</p>
                 {formData.permis && (
                   <p className="text-sm text-gray-500">
                     {formData.permis.name}
@@ -417,17 +369,22 @@ export default function InscriptionPage() {
               </div>
             </div>
           </div>
-        <div>
-          <button
-            type="submit"
-            className="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            S'inscrire
-          </button>
-        </div>
-    
+  
+          {/* Bouton */}
+          <div className="col-span-2">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                isSubmitting ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-500 hover:bg-indigo-600'
+              }`}
+            >
+              {isSubmitting ? 'En cours...' : 'S\'inscrire'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
+  
 }

@@ -13,7 +13,11 @@ export default function BookingButton() {
   return (
     <button
       onClick={handleClick}
-      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      className={`
+        bg-blue-600 text-white px-6 py-3 
+        rounded-full transition-transform duration-300 ease-in-out 
+        hover:scale-110
+      `}
       id="reservation"
     >
       Réserver un stage
