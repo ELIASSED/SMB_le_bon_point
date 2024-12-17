@@ -94,26 +94,40 @@ export default function InscriptionPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+  
     if (!validate()) {
+      console.log(errors);
       return;
     }
-
+  
     setIsSubmitting(true);
     setMessage(null);
-
+  
     try {
-      // Préparation des données
-      const payload = { ...formData };
-
+      const payload = new FormData();
+  
+      // Ajout des données textuelles
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && !(value instanceof File)) {
+          payload.append(key, value as string);
+        }
+      });
+  
+      // Ajout des fichiers (si présents)
+      if (formData.pieceIdentite) {
+        payload.append('pieceIdentite', formData.pieceIdentite);
+      }
+      if (formData.permis) {
+        payload.append('permis', formData.permis);
+      }
+  
       const res = await fetch('/api/inscription', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: payload, // Envoi direct du FormData
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
         setMessage({ type: 'error', text: data.error || 'Une erreur est survenue.' });
       } else {
@@ -130,6 +144,8 @@ export default function InscriptionPage() {
           confirmationEmail: '',
           telephone: '',
           stageId: null,
+          pieceIdentite: undefined,
+          permis: undefined,
         });
       }
     } catch (err) {
@@ -139,6 +155,7 @@ export default function InscriptionPage() {
       setIsSubmitting(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">

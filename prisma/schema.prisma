@@ -39,8 +39,14 @@ model Session {
   instructor   Instructor? @relation(fields: [instructorId], references: [id])
 }
 
+enum Civilite {
+  Monsieur
+  Madame
+}
+
 model Inscription {
   id             Int      @id @default(autoincrement())
+  civilite       Civilite // Nouveau champ ajouté
   nom            String
   prenom         String
   adresse        String
@@ -55,7 +61,6 @@ model Inscription {
   permis         String
   createdAt      DateTime @default(now())
 }
-
 
 
 model Instructor {

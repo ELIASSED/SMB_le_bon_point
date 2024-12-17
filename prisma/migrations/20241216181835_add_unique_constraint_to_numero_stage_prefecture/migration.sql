@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Civilite" AS ENUM ('Monsieur', 'Madame');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -28,6 +31,27 @@ CREATE TABLE "Session" (
 );
 
 -- CreateTable
+CREATE TABLE "Inscription" (
+    "id" SERIAL NOT NULL,
+    "civilite" "Civilite" NOT NULL,
+    "nom" TEXT NOT NULL,
+    "prenom" TEXT NOT NULL,
+    "adresse" TEXT NOT NULL,
+    "codePostal" TEXT NOT NULL,
+    "ville" TEXT NOT NULL,
+    "telephone" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "stage" TEXT NOT NULL,
+    "nationalite" TEXT NOT NULL,
+    "dateNaissance" TIMESTAMP(3) NOT NULL,
+    "idCard" TEXT NOT NULL,
+    "permis" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Inscription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Instructor" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
@@ -52,6 +76,9 @@ CREATE TABLE "Payment" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_numeroStagePrefecture_key" ON "Session"("numeroStagePrefecture");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Instructor_email_key" ON "Instructor"("email");
