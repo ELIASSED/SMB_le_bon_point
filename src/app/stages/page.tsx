@@ -237,7 +237,7 @@ export default function Carousel() {
               {stages.map((stage) => (
                 <div
                   key={stage.id}
-                  className="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow"
+                  className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow"
                 >
                   <p className="text-lg font-bold text-yellow-600">
                     Stage du {new Date(stage.startDate).toLocaleDateString('fr-FR')} au {new Date(stage.endDate).toLocaleDateString('fr-FR')}

@@ -10,6 +10,7 @@ import PointRecovery from '@/components/PointRecovery';
 import PrefectureApproval from '@/components/PrefectureApproval';
 import SecureBooking from '@/components/SecureBooking';
 import FAQ from '@/components/FAQ';
+import ExternalLinkButton from '@/components/ExternalLinkButton';
 
 export default function HomePage() {
   return (
@@ -56,6 +57,7 @@ export default function HomePage() {
           À l’issue du stage, une attestation vous sera remise, permettant la récupération de points sur votre permis (sous réserve d’éligibilité).
         </p>
       </div>
+      <ExternalLinkButton />
       <FAQ />
     </>
   );
