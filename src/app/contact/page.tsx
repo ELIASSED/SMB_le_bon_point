@@ -23,7 +23,7 @@ export const metadata = {
 
 export default function ContactPage(){
   return (
-    <div className="space-y-8 px-4 py-8 bg-gray-50">
+    <div className="space-y-8 px-4 py-8">
       <h1 className="text-3xl font-bold text-black">Contactez le Centre SMB</h1>
 
       <div className="space-y-4">

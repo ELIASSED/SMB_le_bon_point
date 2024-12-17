@@ -10,7 +10,7 @@ export default function Hero() {
     setIsSliding(true);
     setTimeout(() => {
       router.push('/stages');
-    }, 700);
+    }, 600);
   };
 
   return (
