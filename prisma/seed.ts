@@ -28,8 +28,8 @@ async function main() {
         description: "Stage de récupération de points",
         startDate: new Date("2024-12-22"),
         endDate: new Date("2024-12-23"),
-        location: "Paris",
-        capacity: 20,
+        location: "saint maur",
+        capacity: 2,
         instructorId: 1, // Assurez-vous que cet ID existe
       },
       {
@@ -37,10 +37,27 @@ async function main() {
         description: "Stage de sensibilisation",
         startDate: new Date("2024-12-29"),
         endDate: new Date("2024-12-30"),
-        location: "Lyon",
+        location: "saint maur",
         capacity: 15,
         instructorId: 2, // Assurez-vous que cet ID existe
+      },{
+        numeroStagePrefecture: "Stage 3 - 05-06 Janvier 2025",
+        description: "Stage de récupération de points",
+        startDate: new Date("2025-01-05"),
+        endDate: new Date("2025-01-06"),
+        location: "saint maur",
+        capacity: 11,
+        instructorId: 1, // Assurez-vous que cet ID existe
       },
+      {
+        numeroStagePrefecture: "Stage 4 - 15-16 Janvier 2025",
+        description: "Stage de sensibilisation",
+        startDate: new Date("2025-01-15"),
+        endDate: new Date("2025-01-16"),
+        location: "saint maur",
+        capacity: 20,
+        instructorId: 2, // Assurez-vous que cet ID existe
+      }
     ],
   });
   console.log("Sessions ajoutées avec succès.");
@@ -49,6 +66,7 @@ async function main() {
   await prisma.inscription.createMany({
     data: [
       {
+        civilite:"Monsieur",
         nom: "Dupont",
         prenom: "Jean",
         adresse: "123 Rue de Paris",
@@ -63,6 +81,7 @@ async function main() {
         permis: "base64EncodedPermis1",
       },
       {
+        civilite:"Madame",
         nom: "Durand",
         prenom: "Marie",
         adresse: "456 Rue de Lyon",
