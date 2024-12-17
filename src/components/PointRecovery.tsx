@@ -21,7 +21,7 @@ export default function PointRecovery() {
         
         {/* Contenu */}
         <div>
-          <h3 className="text-xl font-semibold text-gray-800">Possibilité de récupérer jusqu’à 4 points</h3>
+          <h3 className="text-xl font-semibold text-gray-800">Récupérer 4 points en 48 H</h3>
           <p className="mt-2 text-gray-600">
             Grâce à nos stages, vous pouvez récupérer jusqu’à 4 points sur votre permis de conduire, améliorant ainsi votre profil de conducteur.
           </p>

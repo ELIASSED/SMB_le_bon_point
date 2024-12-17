@@ -67,11 +67,10 @@ export default function Footer() {
                   href="mailto:contact@smblebonpoint.com"
                   className="hover:underline"
                 >
-                  contact@smblebonpoint.com
-                </a>
+smblebonpoint@gmail.com                </a>
               </li>
               <li>
-                <span>+33 1 23 45 67 89</span>
+                <span>+33 6 19 77 47 82</span>
               </li>
             </ul>
           </div>

@@ -47,7 +47,7 @@ export default function HomePage() {
           <strong>Adresse :</strong> 35 Avenue Foch, 94100 Saint-Maur
         </p>
         <p className="mb-2 text-gray-700">
-          <strong>Tarif :</strong> 230 € (incluant les frais de dossier)
+          <strong>Accès :</strong> 2 Av. de Curti, 94100 Saint-Maur-des-Fossés
         </p>
         <p className="mb-2 text-gray-700">
           <strong>Durée du stage :</strong> 2 jours (14 heures de formation)
