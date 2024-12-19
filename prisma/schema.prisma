@@ -7,71 +7,117 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
+model Relance {
+  id        Int      @id @default(autoincrement())
+  email     String
   firstName String
   lastName  String
-  phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  phone     String
+  userId    Int
+  sessionId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Ajoutez ce champ pour la relation inverse
-  payments  Payment[]
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  session   Session  @relation(fields: [sessionId], references: [id])
+
+  @@unique([userId, sessionId])
 }
-
-
-
 
 model Session {
-  id                   Int       @id @default(autoincrement())
-  numeroStagePrefecture String
-  description          String?
-  startDate            DateTime
-  endDate              DateTime
-  location             String
-  capacity             Int
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id              Int          @id @default(autoincrement())
+  numeroStageAnts String
+  price           Float        @default(200.0)
+  description     String
+  startDate       DateTime
+  endDate         DateTime
+  location        String
+  capacity        Int          @default(20)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  instructorId    Int
+  psychologueId   Int
 
-  // Relation avec le formateur
-  instructorId Int?
-  instructor   Instructor? @relation(fields: [instructorId], references: [id])
+  // Relations
+  instructor      Instructor   @relation(fields: [instructorId], references: [id])
+  psychologue     Psychologue  @relation(fields: [psychologueId], references: [id])
+  users           SessionUsers[]
+  relances        Relance[]
 }
 
-enum Civilite {
-  Monsieur
-  Madame
+model User {
+  id                  Int          @id @default(autoincrement())
+  civilite            String
+  nom                 String
+  prenom              String
+  prenom1             String?      // Nullable
+  prenom2             String?      // Nullable
+  adresse             String
+  codePostal          String
+  ville               String
+  telephone           String
+  email               String       @unique
+  nationalite         String
+  dateNaissance       DateTime
+  codePostalNaissance String
+  createdAt           DateTime     @default(now())
+
+  // Relations
+  sessionUsers        SessionUsers[]
+  payments            Payment[]
+  relances            Relance[]
+
+  // Champs pour le suivi des relances
+  relanceCount        Int          @default(0)
+  lastRelanceAt       DateTime?
+
+  // Champs pour les scans d'images confidentielles
+  imageScan1          String?      // URL S3 ou chemin local
+  imageScan2          String?      // URL S3 ou chemin local
 }
 
-model Inscription {
-  id             Int      @id @default(autoincrement())
-  civilite       Civilite // Nouveau champ ajouté
-  nom            String
-  prenom         String
-  adresse        String
-  codePostal     String
-  ville          String
-  telephone      String
-  email          String
-  stage          String
-  nationalite    String
-  dateNaissance  DateTime
-  idCard         String
-  permis         String
-  createdAt      DateTime @default(now())
-}
+model SessionUsers {
+  id                  Int          @id @default(autoincrement())
+  sessionId           Int
+  userId              Int
+  numeroPermis        String
+  dateDelivrancePermis DateTime
+  prefecture          String
+  etatPermis          String
+  casStage            String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
+  // Relations
+  session             Session      @relation(fields: [sessionId], references: [id])
+  user                User         @relation(fields: [userId], references: [id])
+
+  @@unique([sessionId, userId]) // Un utilisateur ne peut s'inscrire qu'une fois à une session
+}
 
 model Instructor {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   firstName String
   lastName  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  sessions Session[]
+  // Relations
+  sessions  Session[]
+}
+
+model Psychologue {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  firstName String
+  lastName  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  sessions  Session[]
 }
 
 model Payment {
@@ -81,5 +127,6 @@ model Payment {
   method    String
   paidAt    DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
 }

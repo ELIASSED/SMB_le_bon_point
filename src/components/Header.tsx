@@ -25,7 +25,7 @@ export default function Header() {
           {/* Logo principal */}
           <Link href="/">
             <Image
-              src="/gov-logo.png"
+              src="/logo.png"
               alt="Logo Gouvernement"
               className="h-10 w-auto"
               width={100}
