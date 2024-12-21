@@ -25,7 +25,7 @@ export default function Hero() {
               </h1>
               <p className="text-lg">
                 Participez à nos stages agréés et reprenez confiance au volant.
-              </p>
+                </p>
               <button
   type="button"
   onClick={handleRedirect}

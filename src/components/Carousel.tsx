@@ -13,22 +13,20 @@ interface Stage {
 }
 
 export default function Carousel() {
-  const [currentStep, setCurrentStep] = useState(0); // Étape actuelle
-  const [stages, setStages] = useState<Stage[]>([]); // Liste des stages
-  const [loading, setLoading] = useState(true); // Indicateur de chargement
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Stage sélectionné
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Données personnelles
-  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Données du permis
+  const [currentStep, setCurrentStep] = useState(0); // Current step in the form carousel
+  const [stages, setStages] = useState<Stage[]>([]); // List of stages
+  const [loading, setLoading] = useState(true); // Loading indicator for fetching stages
+  const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Selected stage
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Personal info data
+  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
 
-  // Charger les stages depuis l'API
+  // Fetch stages from the API
   useEffect(() => {
     const fetchStages = async () => {
       try {
-        const res = await fetch("/api/stage");
-        if (!res.ok) {
-          throw new Error("Erreur lors de la récupération des stages");
-        }
-        const data = await res.json();
+        const response = await fetch("/api/stage");
+        if (!response.ok) throw new Error("Erreur lors de la récupération des stages");
+        const data = await response.json();
         setStages(data);
       } catch (error) {
         console.error("Erreur:", error);
@@ -36,36 +34,37 @@ export default function Carousel() {
         setLoading(false);
       }
     };
+
     fetchStages();
   }, []);
 
-  // Gérer la sélection d'un stage
+  // Handle stage selection
   const handleStageSelection = (stage: Stage) => {
     setSelectedStage(stage);
-    setCurrentStep(1); // Passer à l'étape des informations personnelles
+    setCurrentStep(1); // Move to personal info step
   };
 
-  // Gérer la soumission des informations personnelles
+  // Handle personal info form submission
   const handlePersonalInfoSubmit = (data: PersonalInfo) => {
-    setPersonalInfo(data);
-    setCurrentStep(2); // Passer à l'étape des informations du permis
+    const { confirmationEmail, ...cleanData } = data; // Remove confirmationEmail
+    setPersonalInfo(cleanData);
+    setCurrentStep(2); // Move to driving license info step
   };
 
-  // Gérer la soumission des informations du permis
+  // Handle driving license form submission
   const handleDrivingLicenseSubmit = async (data: DrivingLicenseInfo) => {
     setDrivingLicenseInfo(data);
 
-    // Combiner toutes les données
     if (!selectedStage || !personalInfo) return;
 
     const fullData = {
-      ...personalInfo,
-      ...data,
       stageId: selectedStage.id,
+      userData: personalInfo,
+      drivingLicenseData: data,
     };
 
     try {
-      const res = await fetch("/api/register", {
+      const response = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,22 +72,31 @@ export default function Carousel() {
         body: JSON.stringify(fullData),
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error("Erreur lors de l'inscription");
       }
 
-      alert("Inscription réussie !");
-      setCurrentStep(0);
-      setSelectedStage(null);
-      setPersonalInfo(null);
-      setDrivingLicenseInfo(null);
-    } catch (err) {
-      console.error("Erreur:", err);
+      const result = await response.json();
+      alert(result.message);
+
+      // Reset the state after successful registration
+      resetForm();
+      window.location.reload();
+    } catch (error) {
+      console.error("Erreur:", error);
       alert("Une erreur est survenue lors de l'inscription.");
     }
   };
 
-  // Afficher les informations du stage sélectionné
+  // Reset the form and selections
+  const resetForm = () => {
+    setCurrentStep(0);
+    setSelectedStage(null);
+    setPersonalInfo(null);
+    setDrivingLicenseInfo(null);
+  };
+
+  // Render selected stage info
   const renderSelectedStageInfo = () =>
     selectedStage && (
       <div className="mb-6 p-4 border rounded bg-gray-50">
@@ -111,7 +119,7 @@ export default function Carousel() {
 
   const steps = [
     {
-      title: "",
+      title: "Sélectionnez un stage",
       content: (
         <div className="flex flex-col items-center bg-gray-50 p-8 rounded-lg shadow-md">
           <div className="relative w-full h-64 mb-4">
@@ -157,10 +165,7 @@ export default function Carousel() {
       content: (
         <>
           {renderSelectedStageInfo()}
-          <PersonalInfoForm
-            initialData={personalInfo} // Pré-remplir avec les données existantes
-            onNext={handlePersonalInfoSubmit}
-          />
+          <PersonalInfoForm onNext={handlePersonalInfoSubmit} />
         </>
       ),
     },
@@ -169,10 +174,7 @@ export default function Carousel() {
       content: (
         <>
           {renderSelectedStageInfo()}
-          <DrivingLicenseForm
-            initialData={drivingLicenseInfo} // Pré-remplir avec les données existantes
-            onSubmit={handleDrivingLicenseSubmit}
-          />
+          <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />
         </>
       ),
     },
