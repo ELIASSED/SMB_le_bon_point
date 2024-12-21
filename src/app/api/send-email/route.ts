@@ -1,29 +1,22 @@
-import nodemailer from "nodemailer";
-import { NextResponse } from "next/server";
+import { sendEmail } from "../../../lib/mailer";
 
-export async function POST(req: Request) {
-  const { email, stageDetails } = await req.json();
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Méthode non autorisée" });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail", // ou un autre service de messagerie
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Confirmation d'inscription au stage",
-    text: `Bonjour,\n\nVotre inscription au stage "${stageDetails}" a été confirmée.\n\nMerci !`,
-  };
+  const { email, subject, text, html } = req.body;
 
   try {
-    await transporter.sendMail(mailOptions);
-    return NextResponse.json({ message: "E-mail envoyé avec succès." });
+    const emailSent = await sendEmail(email, subject, text, html);
+
+    if (emailSent) {
+      return res.status(200).json({ message: "Email envoyé avec succès." });
+    } else {
+      throw new Error("Échec de l'envoi de l'email.");
+    }
   } catch (error) {
-    console.error("Erreur lors de l'envoi de l'e-mail :", error);
-    return NextResponse.json({ error: "Échec de l'envoi de l'e-mail." }, { status: 500 });
+    console.error("Erreur dans l'API d'email :", error);
+    return res.status(500).json({ message: "Erreur lors de l'envoi de l'email." });
   }
 }

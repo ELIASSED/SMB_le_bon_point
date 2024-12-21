@@ -8,7 +8,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-[#a28e65] text-white">
+    <header className="bg-[#1E3A5F] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
         {/* Logo et titre */}
         <div className="flex items-center space-x-3">
@@ -36,22 +36,22 @@ export default function Header() {
 
           {/* Texte principal */}
           <div className="text-left">
-            <Link href="/" className="text-xl font-bold leading-tight">
-              <span className="block">LE BON POINT</span>
-              <span className="block text-sm">CENTRE DE RÉCUPÉRATION DE POINTS</span>
+            <Link href="/" className="text-xlfont-bold leading-tight">
+              <span className="block  bg-light ">LE BON POINT</span>
+              <span className="block text-sm  bg-light ">CENTRE DE RÉCUPÉRATION DE POINTS</span>
             </Link>
           </div>
         </div>
 
         {/* Navigation Desktop */}
         <nav className="hidden md:flex space-x-8 text-base font-medium">
-          <Link href="/" className="hover:text-gray-200">
+          <Link href="/" className="hover:text-light">
             Accueil
           </Link>
-          <Link href="/stages" className="hover:text-gray-200">
+          <Link href="/stages" className="hover:text-light">
             Stages
           </Link>
-          <Link href="/contact" className="hover:text-gray-200">
+          <Link href="/contact" className="hover:text-light">
             Contact
           </Link>
         </nav>
@@ -93,21 +93,21 @@ export default function Header() {
             <Link
               href="/"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-blue-600"
+              className="px-4 py-2 text-light hover:bg-blue-600"
             >
               Accueil
             </Link>
             <Link
               href="/stages"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-blue-600"
+              className="px-4 py-2 text-light hover:bg-blue-600"
             >
               Stages
             </Link>
             <Link
               href="/contact"
               onClick={() => setMenuOpen(false)}
-              className="px-4 py-2 text-white hover:bg-blue-600"
+              className="px-4 py-2 text-light hover:bg-blue-600"
             >
               Contact
             </Link>
