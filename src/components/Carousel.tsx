@@ -7,12 +7,24 @@ import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
 
 interface Stage {
   id: number;
+  numeroStageAnts: string;
   startDate: string;
   endDate: string;
   location: string;
   capacity: number;
   price: number;
 }
+
+// Format date with weekday
+const formatDateWithDay = (date: string) => {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  return new Date(date).toLocaleDateString("fr-FR", options);
+};
 
 export default function Carousel() {
   const [currentStep, setCurrentStep] = useState(0); // Current step in the carousel
@@ -43,7 +55,7 @@ export default function Carousel() {
 
   // Handle stage selection
   const handleStageSelection = (stage: Stage) => {
-    setSelectedStage(stage);
+    setSelectedStage(stage); // Store the entire stage object in selectedStage
     setCurrentStep(1);
   };
 
@@ -58,6 +70,37 @@ export default function Carousel() {
     setDrivingLicenseInfo(data);
     setCurrentStep(3);
   };
+
+  // Render selected stage info
+  const renderSelectedStageInfo = () =>
+    selectedStage && (
+      <div className="mb-6 p-4 border rounded bg-gray-50">
+        <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
+        <p>
+          <span className="font-bold">Dates :</span>{" "}
+          {formatDateWithDay(selectedStage.startDate)} au {formatDateWithDay(selectedStage.endDate)}
+        </p>
+        <p>
+          <span className="font-bold">{selectedStage.location}</span> 
+        </p>
+        <p> <span className="font-bold">Numéro de stage préfectoral :</span>{" "}
+          <span className="font-semibold">{selectedStage.numeroStageAnts}</span> 
+        </p>
+        <p>
+          <span className="font-bold">Places restantes :</span>{" "}
+          <span className={selectedStage.capacity <= 5 ? "text-red-600 " : "text-gray-600 "}>
+            {selectedStage.capacity}
+          </span>
+        </p>
+        <p>
+          <span className="font-bold text-green-600">Prix :</span>{" "}
+          {selectedStage.price.toLocaleString("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          })}
+        </p>
+      </div>
+    );
 
   // Handle registration and payment
   const handleRegistration = async () => {
@@ -135,19 +178,18 @@ export default function Carousel() {
                 >
                   <div className="flex items-center space-x-8">
                     <div className="text-lg font-bold text-yellow-600">
-                      {new Date(stage.startDate).toLocaleDateString("fr-FR")} au {" "}
-                      {new Date(stage.endDate).toLocaleDateString("fr-FR")}
+                      {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
                     </div>
                     <div className="text-sm text-gray-700">
-                      <span className="font-semibold">Lieu :</span> {stage.location}
+                      <span className="font-semibold">{stage.location}</span> 
                     </div>
                     <div
-                      className={`text-sm font-semibold ${
-                        stage.capacity <= 5 ? "text-red-600" : "text-gray-600"
+                      className={`text-xl font-semibold ${
+                        stage.capacity <= 5 ? "text-red-600 " : "text-gray-600"
                       }`}
-                    >
-                      <span>Places restantes</span> {stage.capacity}
-                    </div>
+                    > <span>{stage.capacity}{" "}</span> 
+                      
+                    </div><div><span>Places restantes</span> </div>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="text-lg font-bold text-green-600">
@@ -169,17 +211,28 @@ export default function Carousel() {
     },
     {
       title: "Informations personnelles",
-      content: <PersonalInfoForm onNext={handlePersonalInfoSubmit} />,
+      content: (
+        <>
+          {renderSelectedStageInfo()}
+          <PersonalInfoForm onNext={handlePersonalInfoSubmit} />
+        </>
+      ),
     },
     {
       title: "Informations du permis de conduire",
-      content: <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />,
+      content: (
+        <>
+          {renderSelectedStageInfo()}
+          <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />
+        </>
+      ),
     },
     {
       title: "Paiement",
       content: (
         <div>
           <h3 className="text-xl font-bold mb-4">Effectuez votre paiement</h3>
+          {renderSelectedStageInfo()}
           <button
             className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
             onClick={handleRegistration}
