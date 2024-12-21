@@ -52,6 +52,14 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prev) => ({
+        ...prev,
+        scanIdentite: e.target.files[0], // Stocke le fichier sélectionné
+      }));
+    }
+  };
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     const requiredFields = [
@@ -275,7 +283,20 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
           className="mt-1 block w-full border rounded-md p-2"
         />
         {errors.confirmationEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
+      </div> <div>
+        <label htmlFor="scanIdentite" className="block text-sm font-medium text-gray-700">
+          Scan de la pièce d'identité (optionnel)
+        </label>
+        <input
+          type="file"
+          id="scanIdentite"
+          name="scanIdentite"
+          accept="image/*,application/pdf"
+          onChange={handleFileChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
       </div>
+
 
       <div className="col-span-2">
         <button

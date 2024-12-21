@@ -7,7 +7,7 @@ export default function BookingButton() {
 
   const handleClick = () => {
     // Redirige vers la page des stages
-    router.push("/inscription");
+    router.push("/stages");
   };
 
   return (
