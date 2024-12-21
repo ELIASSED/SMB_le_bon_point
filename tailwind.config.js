@@ -10,7 +10,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#ffcf40',   // Jaune vif pour les éléments principaux et les appels à l'action
+        primary: '#264e70',   // Jaune vif pour les éléments principaux et les appels à l'action
         secondary: '#000000', // Noir pour le texte principal et les titres
         accent: '#F5F5F5',    // Gris clair pour les arrière-plans secondaires et les bordures
         dark: '#000000',      // Noir pour le texte principal

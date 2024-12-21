@@ -33,7 +33,14 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
       [name]: value,
     }));
   };
-
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prev) => ({
+        ...prev,
+        scanPermis: e.target.files[0], // Stocke le fichier sélectionné
+      }));
+    }
+  };
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     const requiredFields = ["numeroPermis", "dateDelivrancePermis", "prefecture", "etatPermis", "casStage"];
@@ -138,6 +145,19 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
           <option value="Cas 2">Cas 2 (Obligatoire)</option>
         </select>
         {errors.casStage && <p className="text-red-500 text-xs mt-1">{errors.casStage}</p>}
+      </div>
+      <div>
+        <label htmlFor="scanPermis" className="block text-sm font-medium text-gray-700">
+          Scan du permis de conduire (optionnel)
+        </label>
+        <input
+          type="file"
+          id="scanPermis"
+          name="scanPermis"
+          accept="image/*,application/pdf"
+          onChange={handleFileChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
       </div>
 
       <div className="col-span-2">

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import PersonalInfoForm, { PersonalInfo } from "./PersonalInfoForm";
 import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
 
@@ -10,15 +11,17 @@ interface Stage {
   endDate: string;
   location: string;
   capacity: number;
+  price: number;
 }
 
 export default function Carousel() {
-  const [currentStep, setCurrentStep] = useState(0); // Current step in the form carousel
+  const [currentStep, setCurrentStep] = useState(0); // Current step in the carousel
   const [stages, setStages] = useState<Stage[]>([]); // List of stages
-  const [loading, setLoading] = useState(true); // Loading indicator for fetching stages
+  const [loading, setLoading] = useState(true); // Loading indicator
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Selected stage
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Personal info data
   const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
+  const router = useRouter();
 
   // Fetch stages from the API
   useEffect(() => {
@@ -41,26 +44,29 @@ export default function Carousel() {
   // Handle stage selection
   const handleStageSelection = (stage: Stage) => {
     setSelectedStage(stage);
-    setCurrentStep(1); // Move to personal info step
+    setCurrentStep(1);
   };
 
-  // Handle personal info form submission
+  // Handle personal info submission
   const handlePersonalInfoSubmit = (data: PersonalInfo) => {
-    const { confirmationEmail, ...cleanData } = data; // Remove confirmationEmail
-    setPersonalInfo(cleanData);
-    setCurrentStep(2); // Move to driving license info step
+    setPersonalInfo(data);
+    setCurrentStep(2);
   };
 
-  // Handle driving license form submission
-  const handleDrivingLicenseSubmit = async (data: DrivingLicenseInfo) => {
+  // Handle driving license submission
+  const handleDrivingLicenseSubmit = (data: DrivingLicenseInfo) => {
     setDrivingLicenseInfo(data);
+    setCurrentStep(3);
+  };
 
-    if (!selectedStage || !personalInfo) return;
+  // Handle registration and payment
+  const handleRegistration = async () => {
+    if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
 
     const fullData = {
       stageId: selectedStage.id,
       userData: personalInfo,
-      drivingLicenseData: data,
+      drivingLicenseData: drivingLicenseInfo,
     };
 
     try {
@@ -79,80 +85,81 @@ export default function Carousel() {
       const result = await response.json();
       alert(result.message);
 
-      // Reset the state after successful registration
-      resetForm();
-      window.location.reload();
+      // Redirect to success page
+      router.push("/success");
     } catch (error) {
       console.error("Erreur:", error);
       alert("Une erreur est survenue lors de l'inscription.");
     }
   };
 
-  // Reset the form and selections
-  const resetForm = () => {
-    setCurrentStep(0);
-    setSelectedStage(null);
-    setPersonalInfo(null);
-    setDrivingLicenseInfo(null);
-  };
-
-  // Render selected stage info
-  const renderSelectedStageInfo = () =>
-    selectedStage && (
-      <div className="mb-6 p-4 border rounded bg-gray-50">
-        <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
-        <p>
-          <span className="font-bold">Dates: </span>
-          {new Date(selectedStage.startDate).toLocaleDateString("fr-FR")} -{" "}
-          {new Date(selectedStage.endDate).toLocaleDateString("fr-FR")}
-        </p>
-        <p>
-          <span className="font-bold">Lieu: </span>
-          {selectedStage.location}
-        </p>
-        <p>
-          <span className="font-bold">Places restantes: </span>
-          {selectedStage.capacity}
-        </p>
+  // Progress bar and step indicators
+  const renderProgress = () => (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-2">
+        {steps.map((_, index) => (
+          <div
+            key={index}
+            className={`flex items-center justify-center w-10 h-10 rounded-full ${
+              index <= currentStep ? "bg-green-500 text-white" : "bg-gray-300 text-gray-600"
+            }`}
+          >
+            {index + 1}
+          </div>
+        ))}
       </div>
-    );
+      <div className="relative w-full h-2 bg-gray-300 rounded-full">
+        <div
+          className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+          style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+        ></div>
+      </div>
+    </div>
+  );
 
+  // Steps array for the carousel
   const steps = [
     {
       title: "Sélectionnez un stage",
       content: (
-        <div className="flex flex-col items-center bg-gray-50 p-8 rounded-lg shadow-md">
-          <div className="relative w-full h-64 mb-4">
-            <Image
-              src="/images/center.png"
-              alt="Bannière Stage Permis"
-              fill
-              style={{ objectFit: "cover" }}
-              className="rounded-lg"
-            />
-          </div>
+        <div className="bg-gray-50 p-8 rounded-lg shadow-md">
           <h3 className="text-xl font-bold mb-4">Stages disponibles</h3>
           {loading ? (
             <p>Chargement des stages...</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            <div className="space-y-4">
               {stages.map((stage) => (
                 <div
                   key={stage.id}
-                  className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow"
+                  className="flex items-center justify-between border-b p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <p className="text-lg font-bold text-yellow-600">
-                    Stage du {new Date(stage.startDate).toLocaleDateString("fr-FR")} au{" "}
-                    {new Date(stage.endDate).toLocaleDateString("fr-FR")}
-                  </p>
-                  <p className="text-sm text-gray-700">Lieu: {stage.location}</p>
-                  <p className="text-sm text-gray-600">Places restantes: {stage.capacity}</p>
-                  <button
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mt-2"
-                    onClick={() => handleStageSelection(stage)}
-                  >
-                    Réserver
-                  </button>
+                  <div className="flex items-center space-x-8">
+                    <div className="text-lg font-bold text-yellow-600">
+                      {new Date(stage.startDate).toLocaleDateString("fr-FR")} au {" "}
+                      {new Date(stage.endDate).toLocaleDateString("fr-FR")}
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      <span className="font-semibold">Lieu :</span> {stage.location}
+                    </div>
+                    <div
+                      className={`text-sm font-semibold ${
+                        stage.capacity <= 5 ? "text-red-600" : "text-gray-600"
+                      }`}
+                    >
+                      <span>Places restantes</span> {stage.capacity}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-lg font-bold text-green-600">
+                      {stage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                    </div>
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+                      onClick={() => handleStageSelection(stage)}
+                    >
+                      Réserver
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -162,20 +169,24 @@ export default function Carousel() {
     },
     {
       title: "Informations personnelles",
-      content: (
-        <>
-          {renderSelectedStageInfo()}
-          <PersonalInfoForm onNext={handlePersonalInfoSubmit} />
-        </>
-      ),
+      content: <PersonalInfoForm onNext={handlePersonalInfoSubmit} />,
     },
     {
       title: "Informations du permis de conduire",
+      content: <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />,
+    },
+    {
+      title: "Paiement",
       content: (
-        <>
-          {renderSelectedStageInfo()}
-          <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />
-        </>
+        <div>
+          <h3 className="text-xl font-bold mb-4">Effectuez votre paiement</h3>
+          <button
+            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
+            onClick={handleRegistration}
+          >
+            Finaliser et Payer
+          </button>
+        </div>
       ),
     },
   ];
@@ -183,9 +194,8 @@ export default function Carousel() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-4xl">
-        {steps[currentStep].title && (
-          <h2 className="text-2xl font-bold mb-6 text-center">{steps[currentStep].title}</h2>
-        )}
+        {renderProgress()}
+        <h2 className="text-2xl font-bold mb-6 text-center">{steps[currentStep].title}</h2>
         <div>{steps[currentStep].content}</div>
         {currentStep > 0 && (
           <div className="flex justify-between mt-6">

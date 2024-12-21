@@ -8,7 +8,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-[#246ed4] text-white">
+    <header className="bg-[#a28e65] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
         {/* Logo et titre */}
         <div className="flex items-center space-x-3">
@@ -36,7 +36,7 @@ export default function Header() {
 
           {/* Texte principal */}
           <div className="text-left">
-            <Link href="/" className="text-lg font-bold leading-tight">
+            <Link href="/" className="text-xl font-bold leading-tight">
               <span className="block">LE BON POINT</span>
               <span className="block text-sm">CENTRE DE RÉCUPÉRATION DE POINTS</span>
             </Link>
