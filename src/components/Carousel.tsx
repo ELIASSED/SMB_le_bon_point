@@ -105,13 +105,13 @@ export default function Carousel() {
   // Handle registration and payment
   const handleRegistration = async () => {
     if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
-
+  
     const fullData = {
       stageId: selectedStage.id,
       userData: personalInfo,
       drivingLicenseData: drivingLicenseInfo,
     };
-
+  
     try {
       const response = await fetch("/api/register", {
         method: "POST",
@@ -120,22 +120,36 @@ export default function Carousel() {
         },
         body: JSON.stringify(fullData),
       });
-
+  
       if (!response.ok) {
         throw new Error("Erreur lors de l'inscription");
       }
-
+  
       const result = await response.json();
       alert(result.message);
-
-      // Redirect to success page
+  
+      // Appeler l'API pour envoyer un email
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: personalInfo.email,
+          subject: "Confirmation d'inscription",
+          text: `Bonjour ${personalInfo.prenom},\n\nVotre inscription est confirmée pour le stage à ${selectedStage.location}.`,
+          html: `<p>Bonjour ${personalInfo.prenom},</p><p>Votre inscription est confirmée pour le stage à ${selectedStage.location}.</p>`,
+        }),
+      });
+  
       router.push("/success");
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Erreur :", error);
       alert("Une erreur est survenue lors de l'inscription.");
     }
   };
-
+  
+ 
   // Progress bar and step indicators
   const renderProgress = () => (
     <div className="mb-8">
@@ -144,7 +158,7 @@ export default function Carousel() {
           <div
             key={index}
             className={`flex items-center justify-center w-10 h-10 rounded-full ${
-              index <= currentStep ? "bg-green-500 text-white" : "bg-gray-300 text-gray-600"
+              index <= currentStep ? "bg-[#508CA4] text-white" : "bg-gray-300 text-gray-600"
             }`}
           >
             {index + 1}
@@ -153,7 +167,7 @@ export default function Carousel() {
       </div>
       <div className="relative w-full h-2 bg-gray-300 rounded-full">
         <div
-          className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+          className="absolute top-0 left-0 h-2 bg-[#508CA4] rounded-full"
           style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
         ></div>
       </div>

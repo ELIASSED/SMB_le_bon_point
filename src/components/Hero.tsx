@@ -14,33 +14,33 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative bg-[#264e70] text-white overflow-hidden">
+    <section className="relative bg-[#91AEC1] text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex flex-col-reverse lg:flex-row items-center justify-between relative">
           {/* Contenu textuel */}
           <div className="lg:w-1/2 relative z-10">
-            <div className="space-y-4">
-              <h1 className="text-4xl bg-white font-bold">
-                Récupérez Vos Points à Saint-Maur-des-Fossés
-              </h1>
-              <p className="text-lg">
-                Participez à nos stages agréés et reprenez confiance au volant.
-                </p>
-              <button
-  type="button"
-  onClick={handleRedirect}
-  className={`
-    bg-yellow-500 text-white font-bold py-3 px-6 
-    rounded-full transition-transform duration-300 ease-in-out
-    hover:scale-110
-    ${isSliding ? 'transform scale-90 opacity-50' : ''}
-  `}
->
-  Voir les stages
-</button>
+  <div className="space-y-4">
+    <h1 className="rounded-[12px] p-2 bg-light font-bold text-4xl">
+  Récupérez Vos Points à Saint-Maur-des-Fossés
+</h1>
 
-            </div>
-          </div>
+    <p className="text-lg">
+      Participez à nos stages agréés et reprenez confiance au volant.
+    </p>
+    <button
+      type="button"
+      onClick={handleRedirect}
+      className={`
+        bg-yellow-500 text-white font-bold py-3 px-6 
+        rounded-full transition-transform duration-300 ease-in-out
+        hover:scale-110
+        ${isSliding ? 'transform scale-90 opacity-50' : ''}
+      `}
+    >
+      Voir les stages
+    </button>
+  </div>
+</div>
 
           {/* Image avec animation */}
           <div

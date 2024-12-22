@@ -1,36 +1,35 @@
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Service Gmail
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.GMAIL_USER, // Adresse Gmail
-    pass: process.env.GMAIL_PASS, // Mot de passe d'application
+    user: process.env.SMTP_USER, // Gmail email
+    pass: process.env.SMTP_PASSWORD, // App password
   },
 });
 
-/**
- * Fonction pour envoyer un email
- * @param {string} to - Destinataire de l'email
- * @param {string} subject - Sujet de l'email
- * @param {string} text - Texte brut de l'email
- * @param {string} html - Version HTML de l'email
- * @returns {boolean} - True si l'email est envoyé avec succès, sinon false
- */
-async function sendEmail(to, subject, text, html) {
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  text: string,
+  html: string
+) => {
+  const mailOptions = {
+    from: `"Stage Recovery Team" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  };
+
   try {
-    const info = await transporter.sendMail({
-      from: `"Stage Permis" <${process.env.GMAIL_USER}>`, // Expéditeur
-      to, // Destinataire
-      subject, // Sujet
-      text, // Texte brut
-      html, // Version HTML
-    });
-    console.log("Email envoyé avec succès :", info.messageId);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent:", info.messageId);
     return true;
   } catch (error) {
-    console.error("Erreur d'envoi d'email :", error);
+    console.error("Error sending email:", error);
     return false;
   }
-}
-
-module.exports = { sendEmail };
+};
