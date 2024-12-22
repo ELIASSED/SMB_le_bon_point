@@ -1,22 +1,18 @@
-import { sendEmail } from "../../../lib/mailer";
+import { NextApiRequest, NextApiResponse } from "next";
+import { sendEmail } from "@/lib/mailer"; // Votre mailer configuré ici
 
-export default async function handler(req, res) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Méthode non autorisée" });
+    return res.status(405).json({ error: "Méthode non autorisée" });
   }
 
-  const { email, subject, text, html } = req.body;
+  const { to, subject, text, html } = req.body;
 
   try {
-    const emailSent = await sendEmail(email, subject, text, html);
-
-    if (emailSent) {
-      return res.status(200).json({ message: "Email envoyé avec succès." });
-    } else {
-      throw new Error("Échec de l'envoi de l'email.");
-    }
+    await sendEmail(to, subject, text, html);
+    res.status(200).json({ message: "Email envoyé avec succès" });
   } catch (error) {
-    console.error("Erreur dans l'API d'email :", error);
-    return res.status(500).json({ message: "Erreur lors de l'envoi de l'email." });
+    console.error("Erreur lors de l'envoi de l'email :", error);
+    res.status(500).json({ error: "Erreur lors de l'envoi de l'email" });
   }
 }
