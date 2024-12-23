@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PersonalInfoForm, { PersonalInfo } from "./PersonalInfoForm";
 import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
+import { generateConfirmationEmail } from "@/lib/emailTemplates"; 
 
 interface Stage {
   id: number;
@@ -131,19 +132,28 @@ export default function Carousel() {
       const result = await response.json();
       alert(result.message);
   
-      // Vérification locale si on doit envoyer un email de confirmation
-      // (cette vérification n’a rien à faire dans le payload Prisma)
       if (!process.env.IGNORE_EMAIL_CONFIRMATION) {
+        const htmlTemplate = generateConfirmationEmail(
+          personalInfo.prenom,
+          personalInfo.nom,
+          selectedStage.location,
+          selectedStage.numeroStageAnts,
+          formatDateWithDay(selectedStage.startDate),
+          formatDateWithDay(selectedStage.endDate),
+          "contact@smbebonpoint.com", // Email de contact
+          "01 23 45 67 89"                // Téléphone de contact
+        );
+      
         const emailResponse = await fetch("/api/send-mail", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            to: restPersonalInfo.email,
+            to: personalInfo.email,
             subject: "Confirmation d'inscription",
-            text: `Bonjour ${restPersonalInfo.prenom},\n\nVotre inscription est confirmée pour le stage à ${selectedStage.location}.`,
-            html: `<p>Bonjour ${restPersonalInfo.prenom},</p><p>Votre inscription est confirmée pour le stage à ${selectedStage.location}.</p>`,
+            text: htmlTemplate,
+            html: htmlTemplate, // On fournit le template HTML complet
           }),
         });
   
