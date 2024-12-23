@@ -106,9 +106,12 @@ export default function Carousel() {
   const handleRegistration = async () => {
     if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
   
+    // Déstructuration pour enlever 'confirmationEmail' de l'objet
+    const { confirmationEmail, ...restPersonalInfo } = personalInfo;
+  
     const fullData = {
       stageId: selectedStage.id,
-      userData: personalInfo,
+      userData: restPersonalInfo,         // on n'envoie que l'email principal (et autres champs)
       drivingLicenseData: drivingLicenseInfo,
     };
   
@@ -128,20 +131,30 @@ export default function Carousel() {
       const result = await response.json();
       alert(result.message);
   
-      // Appeler l'API pour envoyer un email
-      await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: personalInfo.email,
-          subject: "Confirmation d'inscription",
-          text: `Bonjour ${personalInfo.prenom},\n\nVotre inscription est confirmée pour le stage à ${selectedStage.location}.`,
-          html: `<p>Bonjour ${personalInfo.prenom},</p><p>Votre inscription est confirmée pour le stage à ${selectedStage.location}.</p>`,
-        }),
-      });
+      // Vérification locale si on doit envoyer un email de confirmation
+      // (cette vérification n’a rien à faire dans le payload Prisma)
+      if (!process.env.IGNORE_EMAIL_CONFIRMATION) {
+        const emailResponse = await fetch("/api/send-mail", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: restPersonalInfo.email,
+            subject: "Confirmation d'inscription",
+            text: `Bonjour ${restPersonalInfo.prenom},\n\nVotre inscription est confirmée pour le stage à ${selectedStage.location}.`,
+            html: `<p>Bonjour ${restPersonalInfo.prenom},</p><p>Votre inscription est confirmée pour le stage à ${selectedStage.location}.</p>`,
+          }),
+        });
   
+        if (!emailResponse.ok) {
+          const errorDetails = await emailResponse.json();
+          console.error("Erreur d'envoi de l'email :", errorDetails);
+          throw new Error("L'envoi de l'email a échoué");
+        }
+      }
+  
+      // Redirection si tout est OK
       router.push("/success");
     } catch (error) {
       console.error("Erreur :", error);
@@ -149,6 +162,7 @@ export default function Carousel() {
     }
   };
   
+
  
   // Progress bar and step indicators
   const renderProgress = () => (
