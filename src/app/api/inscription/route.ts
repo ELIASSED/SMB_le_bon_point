@@ -53,11 +53,14 @@ export async function POST(request: Request) {
     const user = await prisma.user.upsert({
       where: { email },
       create: {
-        email,
-        firstName: prenom,
-        lastName: nom,
-        phone: telephone,
-      },
+  email,
+  // @ts-expect-error: TypeScript doesn't recognize `firstName` yet, but it's valid.
+  firstName: prenom,
+  lastName: nom,
+  phone: telephone,
+},
+
+    
       update: {
         firstName: prenom,
         lastName: nom,

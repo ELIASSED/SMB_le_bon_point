@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
+import Image from 'next/image';
 export default function Hero() {
   const router = useRouter();
   const [isSliding, setIsSliding] = useState(false);
@@ -51,11 +51,13 @@ export default function Hero() {
             `}
           >
             <div className="bg-white p-4 rounded-lg shadow-lg">
-              <img
-                src="/images/volant.png"
+            <Image
+                src="/images/volant.png" // Chemin de l'image
                 alt="Stage de récupération de points"
-                className="rounded-lg w-full h-auto object-cover"
-              />
+                width={500} // Largeur optimisée
+                height={300} // Hauteur optimisée
+                className="rounded-lg"
+            />
             </div>
           </div>
         </div>
