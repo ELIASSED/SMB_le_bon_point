@@ -10,36 +10,39 @@
 
 /* Styles personnalisés */
 @layer base {
+  /* Configuration de base */
   html, body {
-    font-family: 'Inter', sans-serif;
-    background-color: theme('colors.light');
-    color: theme('colors.dark');
+    @apply bg-gray-light text-gray-dark font-sans;
     line-height: 1.6;
     scroll-behavior: smooth;
   }
 
+  /* Liens */
   a {
-    @apply text-primary ;
+    @apply text-teal;
   }
 
   a:hover {
-    @apply text-secondary;
+    @apply text-yellow;
   }
 
+  /* Titres */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif text-primary;
+    @apply font-serif text-teal;
   }
 
+  /* Paragraphes */
   p {
     @apply mb-4;
   }
 
+  /* Boutons personnalisés */
   .btn-primary {
-    @apply bg-primary text-white font-semibold py-2 px-4 rounded shadow hover:bg-secondary transition duration-300;
+    @apply bg-teal text-white font-semibold py-2 px-4 rounded shadow hover:bg-yellow-dark transition duration-300;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-white font-semibold py-2 px-4 rounded shadow hover:bg-primary transition duration-300;
+    @apply bg-yellow text-white font-semibold py-2 px-4 rounded shadow hover:bg-teal transition duration-300;
   }
 
   /* Personnalisation de react-calendar */
@@ -48,18 +51,18 @@
   }
 
   .react-calendar__tile {
-    @apply text-dark hover:bg-primary hover:text-white;
+    @apply text-gray-dark hover:bg-teal hover:text-white;
   }
 
   .react-calendar__tile--now {
-    @apply bg-accent text-white;
+    @apply bg-yellow text-white;
   }
 
   .react-calendar__tile--active {
-    @apply bg-success text-white;
+    @apply bg-teal text-white;
   }
 
-  /* Boutons */
+  /* Boutons génériques */
   .btn {
     @apply inline-block font-semibold text-center rounded transition duration-300;
   }
@@ -68,8 +71,8 @@
     @apply opacity-90;
   }
 
-  /* Animations pour les Cartes */
+  /* Effets de survol pour les cartes */
   .card:hover {
-    @apply transform scale-105 shadow-xl;
+    @apply transform scale-105 shadow-xl transition duration-300;
   }
 }
