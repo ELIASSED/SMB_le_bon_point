@@ -1,34 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { sendEmail } from "../../../lib/mailer";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse the request body
     const body = await req.json();
     const { stageId, userData, drivingLicenseData } = body;
 
+    // Validate required fields
     if (!stageId || !userData || !drivingLicenseData) {
-      throw new Error("Données manquantes. Veuillez vérifier les champs requis.");
+      throw new Error("Les champs 'stageId', 'userData', et 'drivingLicenseData' sont requis.");
     }
 
-    // Clean and format user data
-    const { confirmationEmail, ...cleanUserData } = userData;
+    // Format user and driving license data
     const formattedUserData = {
-      ...cleanUserData,
-      dateNaissance: new Date(cleanUserData.dateNaissance),
+      ...userData,
+      dateNaissance: userData.dateNaissance ? new Date(userData.dateNaissance) : null,
     };
 
-    // Format driving license data
     const formattedDrivingLicenseData = {
       ...drivingLicenseData,
-      dateDelivrancePermis: new Date(drivingLicenseData.dateDelivrancePermis),
+      dateDelivrancePermis: drivingLicenseData.dateDelivrancePermis
+        ? new Date(drivingLicenseData.dateDelivrancePermis)
+        : null,
     };
 
-    // Perform the database transaction
     await prisma.$transaction(async (tx) => {
+      // Check session availability
       const session = await tx.session.findUnique({
         where: { id: stageId },
       });
@@ -50,16 +49,9 @@ export async function POST(req: NextRequest) {
         create: formattedUserData,
       });
 
-      // Upsert session registration
-      await tx.sessionUsers.upsert({
-        where: {
-          sessionId_userId: {
-            sessionId: stageId,
-            userId: user.id,
-          },
-        },
-        update: {},
-        create: {
+      // Link user to session
+      await tx.sessionUsers.create({
+        data: {
           sessionId: stageId,
           userId: user.id,
           ...formattedDrivingLicenseData,
@@ -68,24 +60,28 @@ export async function POST(req: NextRequest) {
     });
 
     // Send confirmation email
-    const emailSent = await sendEmail(
-      formattedUserData.email,
-      "Confirmation d'inscription",
-      `Bonjour ${formattedUserData.prenom},\n\nVotre inscription au stage est confirmée.`,
-      `<p>Bonjour ${formattedUserData.prenom},</p><p>Votre inscription au stage est confirmée.</p>`
-    );
+    const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/send-mail`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: userData.email,
+        subject: "Confirmation d'inscription",
+        text: `Bonjour ${userData.prenom},\n\nVotre inscription au stage ${stageId} est confirmée.`,
+        html: `<p>Bonjour ${userData.prenom},</p><p>Votre inscription au stage ${stageId} est confirmée.</p>`,
+      }),
+    });
 
-    if (!emailSent) {
-      console.error("Échec de l'envoi de l'email.");
+    if (!emailResponse.ok) {
+      console.error("Erreur lors de l'envoi de l'email :", await emailResponse.text());
+      throw new Error("L'envoi de l'email a échoué.");
     }
 
-    return NextResponse.json({ status: 200 });
+    return NextResponse.json({ message: "Inscription réussie." });
   } catch (error: any) {
     console.error("Erreur lors de l'inscription :", error);
-    return NextResponse.json(
-      { message: error.message || "Une erreur est survenue lors de l'inscription." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 400 });
   } finally {
     await prisma.$disconnect();
   }
