@@ -49,12 +49,21 @@ export async function POST(req: NextRequest) {
         create: formattedUserData,
       });
 
-      // Link user to session
-      await tx.sessionUsers.create({
-        data: {
+      // Link user to session with upsert
+      await tx.sessionUsers.upsert({
+        where: {
+          sessionId_userId: {
+            sessionId: stageId,
+            userId: user.id,
+          },
+        },
+        update: {
+          ...formattedDrivingLicenseData, // Mise à jour si l'entrée existe
+        },
+        create: {
           sessionId: stageId,
           userId: user.id,
-          ...formattedDrivingLicenseData,
+          ...formattedDrivingLicenseData, // Création si l'entrée n'existe pas
         },
       });
     });

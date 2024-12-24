@@ -4,7 +4,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PersonalInfoForm, { PersonalInfo } from "./PersonalInfoForm";
 import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
-import { generateConfirmationEmail } from "@/lib/emailTemplates"; 
+import { generateConfirmationEmail } from "@/lib/emailTemplates";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import CheckoutForm from "./CheckoutForm";
+
 
 interface Stage {
   id: number;
@@ -36,8 +40,13 @@ export default function Carousel() {
   const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
   const router = useRouter();
 
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  
   // Fetch stages from the API
   useEffect(() => {
+  
+    
     const fetchStages = async () => {
       try {
         const response = await fetch("/api/stage");
@@ -54,11 +63,34 @@ export default function Carousel() {
     fetchStages();
   }, []);
 
-  // Handle stage selection
-  const handleStageSelection = (stage: Stage) => {
-    setSelectedStage(stage); // Store the entire stage object in selectedStage
-    setCurrentStep(1);
+  const createPaymentIntent = async (stage: Stage) => {
+    try {
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: stage.price * 100, // Convertir en centimes (Stripe gère en centimes)
+          currency: "eur",
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Erreur lors de la création de PaymentIntent");
+      }
+  
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      console.error("Erreur PaymentIntent :", error);
+    }
   };
+  // Handle stage selection
+  const handleStageSelection = async (stage: Stage) => {
+    setSelectedStage(stage); // Stocke le stage sélectionné
+    await createPaymentIntent(stage); // Crée un PaymentIntent pour le stage
+    setCurrentStep(1); // Passe à l'étape suivante
+  };
+  
 
   // Handle personal info submission
   const handlePersonalInfoSubmit = (data: PersonalInfo) => {
@@ -265,21 +297,26 @@ export default function Carousel() {
         </>
       ),
     },
-    {
-      title: "Paiement",
-      content: (
-        <div>
-          <h3 className="text-xl font-bold mb-4">Effectuez votre paiement</h3>
-          {renderSelectedStageInfo()}
-          <button
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
-            onClick={handleRegistration}
-          >
-            Finaliser et Payer
-          </button>
-        </div>
-      ),
-    },
+   {
+  title: "Paiement",
+  content: (
+    <div>
+      <h3 className="text-xl font-bold mb-4">Effectuez votre paiement</h3>
+      {renderSelectedStageInfo()}
+      {clientSecret ? (
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <CheckoutForm
+            clientSecret={clientSecret}
+            onPaymentSuccess={handleRegistration} // Appelé après le succès
+          />
+        </Elements>
+      ) : (
+        <p>Chargement des informations de paiement...</p>
+      )}
+    </div>
+  ),
+},
+    
   ];
 
   return (
