@@ -9,7 +9,7 @@ module.exports = {
     extend: {
       colors: {
         teal: {
-          DEFAULT: '#006A6A',
+          DEFAULT: '#33658A',
           light: '#009D9D',
         },
         beige: {
@@ -26,9 +26,10 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Marianne', 'sans-serif'],  // Police officielle française
-        serif: ['Georgia', 'serif'],       // Police classique pour les textes en serif
-      },
+      sans: ['Marianne', 'Roboto', 'Arial', 'sans-serif'],
+      serif: ['Merriweather', 'Georgia', 'serif'],
+      mono: ['Courier New', 'Menlo', 'monospace'],
+    },
       fontSize: {
         xs: '.75rem',
         sm: '.875rem',
