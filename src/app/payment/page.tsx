@@ -1,7 +1,8 @@
+'use client'
 import React, { useEffect, useState } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import CheckoutForm from '../components/CheckoutForm';
+import CheckoutForm from '../../components/CheckoutForm';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY as string);
 
