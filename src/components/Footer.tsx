@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Bloc logo */}
           <div className="flex flex-col items-center md:items-start">
             <Image
-              src="/logo.png" // Remplacez par le chemin de votre logo
+              src="/gov-logo.png" // Remplacez par le chemin de votre logo
               alt="Logo SMB Le Bon Point"
               width={120}
               height={60}
