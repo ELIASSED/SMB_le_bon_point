@@ -1,7 +1,6 @@
-// components/PersonalInfoForm.tsx
-
 "use client";
 import React, { useState } from "react";
+import AutocompleteAddress from "./AutocompleteAddress";
 
 interface PersonalInfoFormProps {
   onNext: (formData: PersonalInfo) => void;
@@ -22,6 +21,7 @@ export interface PersonalInfo {
   telephone: string;
   email: string;
   confirmationEmail: string;
+  scanIdentite?: File;
 }
 
 export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
@@ -52,13 +52,29 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     }));
   };
 
+  const handleAddressSelect = (address: string, postalCode: string, city: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      adresse: address,
+      codePostal: postalCode,
+      ville: city,
+    }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFormData((prev) => ({
         ...prev,
-        scanIdentite: e.target.files[0], // Stocke le fichier sélectionné
+        scanIdentite: e.target.files[0],
       }));
     }
+  };
+  
+  const handleVilleNaissanceSelect = (city: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      villeNaissance: city,
+    }));
   };
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -94,7 +110,7 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
-      onNext(formData); // Passe les données à l'étape suivante
+      onNext(formData);
     }
   };
 
@@ -169,15 +185,10 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
       </div>
 
       <div>
-        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">Adresse</label>
-        <input
-          type="text"
-          id="adresse"
-          name="adresse"
-          value={formData.adresse}
-          onChange={handleChange}
-          className="mt-1 block w-full border rounded-md p-2"
-        />
+        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
+          Adresse
+        </label>
+        <AutocompleteAddress onSelectAddress={handleAddressSelect} />
         {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
       </div>
 
@@ -221,16 +232,11 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
       </div>
 
       <div>
-        <label htmlFor="codePostalNaissance" className="block text-sm font-medium text-gray-700">Lieu de naissance (Code postal)</label>
-        <input
-          type="text"
-          id="codePostalNaissance"
-          name="codePostalNaissance"
-          value={formData.codePostalNaissance}
-          onChange={handleChange}
-          className="mt-1 block w-full border rounded-md p-2"
-        />
-        {errors.codePostalNaissance && <p className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
+        <label htmlFor="villeNaissance" className="block text-sm font-medium text-gray-700">
+          Ville de naissance
+        </label>
+        <AutocompleteAddress onSelectAddress={(city) => handleVilleNaissanceSelect(city)} />
+        {errors.villeNaissance && <p className="text-red-500 text-xs mt-1">{errors.villeNaissance}</p>}
       </div>
 
       <div>
@@ -283,7 +289,9 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
           className="mt-1 block w-full border rounded-md p-2"
         />
         {errors.confirmationEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
-      </div> <div>
+      </div>
+
+      <div>
         <label htmlFor="scanIdentite" className="block text-sm font-medium text-gray-700">
           Scan de la pièce d'identité (optionnel)
         </label>
@@ -296,7 +304,6 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
           className="mt-1 block w-full border rounded-md p-2"
         />
       </div>
-
 
       <div className="col-span-2">
         <button

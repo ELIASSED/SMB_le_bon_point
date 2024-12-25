@@ -9,7 +9,7 @@ export default function Header() {
 
   return (
 <header className="bg-teal text-white">
-  <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
+  <div className="max-w-6xl mx-auto px-4 sm:px-6  flex items-center justify-between">
     {/* Logo et titre */}
     <div className="flex items-center space-x-3">
       <Link href="/">
@@ -32,9 +32,9 @@ export default function Header() {
         <h6 className="text-xs text-beige mt-1">Agrément R2209400050</h6>
       </Link>
       <div className="text-left">
-        <Link href="/" className="text-xl p-8 font-bold leading-tight text-white">
-          <span className="block">LE BON POINT</span>
-          <span className="block text-sm">CENTRE DE RÉCUPÉRATION DE POINTS</span>
+        <Link href="/" className="p-8 font-bold leading-tight text-white">
+          <span className="text-2xl block">LE BON POINT</span>
+          <span className="text-xs block text-sm">CENTRE DE RÉCUPÉRATION DE POINTS</span>
         </Link>
       </div>
     </div>
