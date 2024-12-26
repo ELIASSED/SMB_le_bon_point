@@ -10,7 +10,8 @@
     "deploy": "gh-pages -d out",
     "start": "next start",
     "lint": "next lint",
-    "seed": "node prisma/seed.ts"
+    "seed": "node prisma/seed.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
@@ -50,5 +51,9 @@
   },
   "prisma": {
     "seed": "node  prisma/seed.ts"
+  }, "build": {
+    "env": {
+      "PRISMA_GENERATE": "true"
+    }
   }
 }

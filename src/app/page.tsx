@@ -4,12 +4,12 @@
 
 import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
-import Hero from '../components/Hero';
-import ExperiencedTrainers from '../components/ExperiencedTrainers';
-import PointRecovery from '../components/PointRecovery';
-import PrefectureApproval from '../components/PrefectureApproval';
-import SecureBooking from '../components/SecureBooking';
-import FAQ from '../components/FAQ';
+import Hero from '../components/Homepage/Hero';
+import ExperiencedTrainers from '../components/Homepage/ExperiencedTrainers';
+import PointRecovery from '../components/Homepage/PointRecovery';
+import PrefectureApproval from '../components/Homepage/PrefectureApproval';
+import SecureBooking from '../components/Homepage/SecureBooking';
+import FAQ from '../components/Homepage/FAQ';
 import ExternalLinkButton from '../components/ExternalLinkButton';
 
 export default function HomePage() {
