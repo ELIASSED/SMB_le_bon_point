@@ -4,7 +4,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import CheckoutForm from '../../components/CheckoutForm';
 
-const stripePromise = loadStripe('pk_test_51QZanrRMGRTdZZxCjR9M8KuCAy5WkE8qegWemU6DXLRl8bf9wOaBTn1EXxM904utdj530nWGTUaojNHfg8yArzpg00LfWZneVt');
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
 
 const PaymentPage: React.FC = () => {
   const [clientSecret, setClientSecret] = useState<string>('');
