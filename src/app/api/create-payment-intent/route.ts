@@ -1,31 +1,35 @@
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { NextRequest, NextResponse } from 'next/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe('sk_test_51QZanrRMGRTdZZxCupIjUDrSfw7VlF1AZH5tl2HkwtaOZ4R2l5W3jX1Ejn7hpM8Sr3X2c020nuDOIeGLVvOY5Hwk00RUBcLkNx', {
   apiVersion: '2024-12-18.acacia',
 });
 
-interface PaymentIntentRequest {
-  amount: number;
-  currency: string;
-}
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = (await req.json()) as PaymentIntentRequest;
+    const body = await request.json();
+    const { amount, currency } = body;
 
-    if (!body.amount || !body.currency) {
-      return NextResponse.json({ error: 'Amount and currency are required.' }, { status: 400 });
+    if (!amount || !currency) {
+      return NextResponse.json(
+        { error: 'Montant et devise requis' },
+        { status: 400 }
+      );
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: body.amount,
-      currency: body.currency,
+      amount,
+      currency,
+      payment_method_types: ['card'],
     });
 
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    console.error('Error creating payment intent:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Erreur PaymentIntent :', error.message);
+    return NextResponse.json(
+      { error: 'Erreur interne du serveur' },
+      { status: 500 }
+    );
   }
 }
