@@ -15,6 +15,8 @@ interface FormData {
   confirmationEmail: string;
   telephone: string;
   stageId: number | null;
+  pieceIdentite: string | null;
+  permis: string | null;
 }
 
 interface Errors {
@@ -34,6 +36,8 @@ export default function InscriptionPage() {
     confirmationEmail: '',
     telephone: '',
     stageId: null,
+    pieceIdentite: null,
+    permis: null,
   });
 
   const [errors, setErrors] = useState<Errors>({});
@@ -144,8 +148,8 @@ export default function InscriptionPage() {
           confirmationEmail: '',
           telephone: '',
           stageId: null,
-          pieceIdentite: undefined,
-          permis: undefined,
+          pieceIdentite: null,
+          permis: null,
         });
       }
     } catch (err) {
@@ -341,7 +345,7 @@ export default function InscriptionPage() {
                 <p className="text-xs text-gray-500">PNG, JPG, PDF jusqu'à 10Mo</p>
                 {formData.pieceIdentite && (
                   <p className="text-sm text-gray-500">
-                    {formData.pieceIdentite.name}
+                    {formData.pieceIdentite}
                   </p>
                 )}
                 {errors.pieceIdentite && (
@@ -377,7 +381,7 @@ export default function InscriptionPage() {
                 <p className="text-xs text-gray-500">PNG, JPG, PDF jusqu'à 10Mo</p>
                 {formData.permis && (
                   <p className="text-sm text-gray-500">
-                    {formData.permis.name}
+                    {formData.permis}
                   </p>
                 )}
                 {errors.permis && (

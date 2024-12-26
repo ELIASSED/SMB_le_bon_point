@@ -1,0 +1,3 @@
+src/app/api/create-payment-intent/route.ts
+src/app/api/register/route.ts
+src/app/api/send-mail/route.ts

@@ -5,12 +5,12 @@
 import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
 import Hero from '../components/Hero';
-import ExperiencedTrainers from '@/components/ExperiencedTrainers';
-import PointRecovery from '@/components/PointRecovery';
-import PrefectureApproval from '@/components/PrefectureApproval';
-import SecureBooking from '@/components/SecureBooking';
-import FAQ from '@/components/FAQ';
-import ExternalLinkButton from '@/components/ExternalLinkButton';
+import ExperiencedTrainers from '../components/ExperiencedTrainers';
+import PointRecovery from '../components/PointRecovery';
+import PrefectureApproval from '../components/PrefectureApproval';
+import SecureBooking from '../components/SecureBooking';
+import FAQ from '../components/FAQ';
+import ExternalLinkButton from '../components/ExternalLinkButton';
 
 export default function HomePage() {
   return (

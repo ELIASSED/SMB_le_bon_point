@@ -53,13 +53,13 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({
-        ...prev,
-        scanIdentite: e.target.files[0], // Stocke le fichier sélectionné
-      }));
-    }
+    const file = e.target.files?.[0] || null;
+    setFormData((prev) => ({
+      ...prev,
+      scanIdentite: file, // Stocke le fichier sélectionné ou null
+    }));
   };
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     const requiredFields = [
@@ -78,7 +78,7 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     ];
 
     requiredFields.forEach((field) => {
-      if (!formData[field]) {
+      if (!formData[field as keyof PersonalInfo]) {
         newErrors[field] = "Ce champ est requis.";
       }
     });

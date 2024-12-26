@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
+import React from 'react';
 
 export default function Hero() {
   const router = useRouter();
@@ -51,11 +53,13 @@ export default function Hero() {
         `}
       >
         <div className="bg-white p-4 rounded-lg shadow-lg">
-          <img
-            src="/images/volant.png"
-            alt="Stage de récupération de points"
-            className="rounded-lg w-full h-auto object-cover"
-          />
+        <Image
+        src="/images/volant.png"
+        alt="Stage de récupération de points"
+        width={800}
+        height={400}
+        className="rounded-lg object-cover"
+      />
         </div>
       </div>
     </div>

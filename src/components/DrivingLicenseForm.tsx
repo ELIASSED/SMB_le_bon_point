@@ -1,5 +1,3 @@
-// components/DrivingLicenseForm.tsx
-
 "use client";
 import React, { useState } from "react";
 
@@ -33,20 +31,18 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
       [name]: value,
     }));
   };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({
-        ...prev,
-        scanPermis: e.target.files[0], // Stocke le fichier sélectionné
-      }));
-    }
+    const file = e.target.files?.[0] || null;
+    // Placeholder for further file handling logic if needed
   };
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     const requiredFields = ["numeroPermis", "dateDelivrancePermis", "prefecture", "etatPermis", "casStage"];
 
     requiredFields.forEach((field) => {
-      if (!formData[field]) {
+      if (!formData[field as keyof DrivingLicenseInfo]) {
         newErrors[field] = "Ce champ est requis.";
       }
     });
@@ -119,7 +115,7 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
           id="etatPermis"
           name="etatPermis"
           value={formData.etatPermis}
-          onChange={handleChange}
+          onChange={(e) => handleChange(e as React.ChangeEvent<HTMLSelectElement>)}
           className="mt-1 block w-full border rounded-md p-2"
         >
           <option value="">-- Sélectionnez l'état --</option>
@@ -137,7 +133,7 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
           id="casStage"
           name="casStage"
           value={formData.casStage}
-          onChange={handleChange}
+          onChange={(e) => handleChange(e as React.ChangeEvent<HTMLSelectElement>)}
           className="mt-1 block w-full border rounded-md p-2"
         >
           <option value="">-- Sélectionnez un cas --</option>
