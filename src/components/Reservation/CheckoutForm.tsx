@@ -1,5 +1,7 @@
-import React from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+"use client";
+
+import React, { useState } from "react";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 interface CheckoutFormProps {
   clientSecret: string;
@@ -9,6 +11,7 @@ interface CheckoutFormProps {
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -28,7 +31,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSucc
       return;
     }
 
-    if (paymentIntent?.status === 'succeeded') {
+    if (paymentIntent?.status === "succeeded") {
       onPaymentSuccess();
     }
   };
@@ -36,7 +39,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSucc
   return (
     <form onSubmit={handleSubmit}>
       <CardElement />
-      <button type="submit">Payer</button>
+      <button type="submit" disabled={!stripe || loading}>
+        {loading ? "Processing..." : "Pay"}
+      </button>
     </form>
   );
 };
