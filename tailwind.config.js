@@ -26,10 +26,10 @@ module.exports = {
         },
       },
       fontFamily: {
-      sans: ['Marianne', 'Roboto', 'Arial', 'sans-serif'],
-      serif: ['Merriweather', 'Georgia', 'serif'],
-      mono: ['Courier New', 'Menlo', 'monospace'],
-    },
+        sans: ['Poppins', 'Marianne', 'Roboto', 'Arial', 'sans-serif'],
+        serif: ['Merriweather', 'Georgia', 'serif'],
+        mono: ['Courier New', 'Menlo', 'monospace'],
+      },
       fontSize: {
         xs: '.75rem',
         sm: '.875rem',
