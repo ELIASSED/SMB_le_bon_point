@@ -51,7 +51,8 @@
   },
   "prisma": {
     "seed": "node  prisma/seed.ts"
-  }, "build": {
+  },
+  "build": {
     "env": {
       "PRISMA_GENERATE": "true"
     }
