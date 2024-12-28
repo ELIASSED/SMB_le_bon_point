@@ -38,55 +38,39 @@ async function main() {
     },
   });
 
-  // Créer des sessions
-  await prisma.session.createMany({
-    data: [
-      {
-        numeroStageAnts: "STG001",
-        price: 200.0,
+  // Générer des sessions dynamiquement : 8 par mois pendant un an
+  const startDate = new Date("2024-01-01T09:00:00Z");
+  const endDate = new Date("2024-12-31T17:00:00Z");
+  const sessions = [];
+
+  let sessionNumber = 1;
+
+  for (let month = 0; month < 12; month++) {
+    for (let session = 0; session < 8; session++) {
+      const start = new Date(startDate);
+      start.setMonth(startDate.getMonth() + month);
+      start.setDate(session * 3 + 1); // Espacement de 3 jours entre chaque stage
+
+      const end = new Date(start);
+      end.setDate(start.getDate() + 1); // Durée de 2 jours pour chaque stage
+
+      sessions.push({
+        numeroStageAnts: `R0060040934${String(sessionNumber).padStart(3, "0")}`,
+        price: 200 + session * 10, // Prix variable
         description: "Stage de récupération de points",
-        startDate: new Date("2024-01-05T09:00:00Z"),
-        endDate: new Date("2024-01-06T17:00:00Z"),
+        startDate: start,
+        endDate: end,
         location: "Saint-Maur-des-Fossés",
-        capacity: 15,
-        instructorId: instructor1.id,
-        psychologueId: psychologue1.id,
-      },
-      {
-        numeroStageAnts: "STG002",
-        price: 180.0,
-        description: "Stage de récupération de points",
-        startDate: new Date("2024-02-10T09:00:00Z"),
-        endDate: new Date("2024-02-11T17:00:00Z"),
-        location: "Saint-Maur-des-Fossés",
-        capacity: 10,
-        instructorId: instructor2.id,
-        psychologueId: psychologue1.id,
-      },
-      {
-        numeroStageAnts: "STG003",
-        price: 220.0,
-        description: "Stage de récupération de points",
-        startDate: new Date("2024-03-15T09:00:00Z"),
-        endDate: new Date("2024-03-16T17:00:00Z"),
-        location: "Saint-Maur-des-Fossés",
-        capacity: 20,
-        instructorId: instructor1.id,
-        psychologueId: psychologue2.id,
-      },
-      {
-        numeroStageAnts: "STG004",
-        price: 250.0,
-        description: "Stage de récupération de points",
-        startDate: new Date("2024-04-20T09:00:00Z"),
-        endDate: new Date("2024-04-21T17:00:00Z"),
-        location: "Saint-Maur-des-Fossés",
-        capacity: 5,
-        instructorId: instructor2.id,
-        psychologueId: psychologue2.id,
-      },
-    ],
-  });
+        capacity: 15 - (session % 5), // Capacité variable
+        instructorId: session % 2 === 0 ? instructor1.id : instructor2.id,
+        psychologueId: session % 2 === 0 ? psychologue1.id : psychologue2.id,
+      });
+
+      sessionNumber++;
+    }
+  }
+
+  await prisma.session.createMany({ data: sessions });
 
   // Créer un utilisateur
   const user = await prisma.user.create({
@@ -130,3 +114,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+  
