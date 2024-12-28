@@ -39,8 +39,8 @@ async function main() {
   });
 
   // Générer des sessions dynamiquement : 8 par mois pendant un an
-  const startDate = new Date("2024-01-01T09:00:00Z");
-  const endDate = new Date("2024-12-31T17:00:00Z");
+  const startDate = new Date("2025-01-01T09:00:00Z");
+  const endDate = new Date("2025-12-31T17:00:00Z");
   const sessions = [];
 
   let sessionNumber = 1;

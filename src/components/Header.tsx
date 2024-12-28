@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="relative bg-white shadow-lg rounded-lg max-w-6xl mx-auto mt-9">
       {/* Bande supérieure avec logo et titre */}
-      <div className="bg-yellow py-6 px-9 flex items-center justify-between rounded-t-lg">
+      <div className="bg-yellow-dark py-6 px-9 flex items-center justify-between rounded-t-lg">
         <div className="flex items-center space-x-6">
           <Link href="/">
             <img
@@ -22,9 +22,13 @@ export default function Header() {
           </Link>
           <div className="text-left">
             <Link href="/" className="text-xl font-semibold text-gray-dark">
-              <span className="block">Sécurité Routière Formation</span>
-              <span className="block text-base text-gray-600">Stages de Récupération de Points</span>
-              <span className="block text-sm text-gray-500 mt-1">Agrément R2209400050</span>
+              <span className="block text-2xl">Sécurité Routière Formation</span>
+              <span className="block text-base text-gray-600">
+                Stages de Récupération de Points
+              </span>
+              <span className="block text-sm text-gray-500 mt-1">
+                Agrément R2209400050
+              </span>
             </Link>
           </div>
         </div>
@@ -39,14 +43,14 @@ export default function Header() {
 
       {/* Bande noire avec navigation principale */}
       <div className="bg-beige font-bold text-white rounded-b-lg">
-        <nav className="flex justify-end px-9 py-3 space-x-8"> <Link href="/" className="text-base uppercase hover:text-yellow">
+        <nav className="flex justify-end px-9 py-3 space-x-8">
+          <Link href="/" className="text-base uppercase">
             Accueil
           </Link>
-          <Link href="/stages" className="text-base uppercase hover:text-yellow">
+          <Link href="/stages" className="text-base uppercase">
             Trouver un stage
           </Link>
-         
-          <Link href="/contact" className="text-base uppercase hover:text-yellow">
+          <Link href="/contact" className="text-base uppercase">
             Contact
           </Link>
         </nav>
@@ -56,13 +60,25 @@ export default function Header() {
       {menuOpen && (
         <div className="bg-teal text-white md:hidden rounded-b-lg">
           <nav className="flex flex-col space-y-3 py-6 px-9">
-            <Link href="/stages" onClick={() => setMenuOpen(false)} className="text-yellow hover:bg-gray-700 py-3">
+            <Link
+              href="/stages"
+              onClick={() => setMenuOpen(false)}
+              className="py-3"
+            >
               Trouver un stage
             </Link>
-            <Link href="/" onClick={() => setMenuOpen(false)} className="text-yellow hover:bg-gray-700 py-3">
+            <Link
+              href="/"
+              onClick={() => setMenuOpen(false)}
+              className="py-3"
+            >
               Accueil
             </Link>
-            <Link href="/contact" onClick={() => setMenuOpen(false)} className="text-yellow hover:bg-gray-700 py-3">
+            <Link
+              href="/contact"
+              onClick={() => setMenuOpen(false)}
+              className="py-3"
+            >
               Contact
             </Link>
           </nav>

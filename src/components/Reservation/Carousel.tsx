@@ -23,7 +23,7 @@ interface Stage {
 // Format date with weekday
 const formatDateWithDay = (date: string) => {
   const options: Intl.DateTimeFormatOptions = {
-    weekday: "long",
+    weekday: "short",
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -253,16 +253,12 @@ export default function Carousel() {
                     <div className="text-sm text-gray-700">
                       <span className="font-semibold">{stage.location}</span> 
                     </div>
-                    <div
-                      className={`text-xl font-semibold ${
-                        stage.capacity <= 5 ? "text-red-600 " : "text-gray-600"
-                      }`}
-                    > <span>{stage.capacity}{" "}</span> 
-                      
-                    </div><div><span>Places restantes</span> </div>
+                  <div   className={`text-lg font-semibold ${
+                        stage.capacity <= 5 ? "text-red-600 " : "text-green-600"
+                      }`} ><span>Places restantes</span> </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="text-lg font-bold text-green-600">
+                    <div className="text-lg font-bold text-gray">
                       {stage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
                     </div>
                     <button

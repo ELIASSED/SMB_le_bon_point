@@ -12,7 +12,7 @@
 @layer base {
   /* Configuration de base */
   html, body {
-    @apply bg-gray-light text-gray-dark font-sans;
+    @apply bg-gray-200 text-gray-dark font-sans;
     line-height: 1.6;
     scroll-behavior: smooth;
   }
