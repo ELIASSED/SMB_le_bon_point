@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Send confirmation email
-    const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/send-mail`, {
+    const emailResponse = await fetch(`${process.env.DIRECT_URL}/api/send-mail`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
