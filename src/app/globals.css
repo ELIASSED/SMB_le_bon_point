@@ -1,51 +1,32 @@
-/* src/app/globals.css */
+/* globals.css - Mise à jour pour la responsivité */
 
-/* Import des polices Google */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@400;700&display=swap');
 
-/* Import de Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Styles personnalisés */
 @layer base {
-  /* Configuration de base */
   html, body {
     @apply bg-gray-200 text-gray-dark font-sans;
     line-height: 1.6;
     scroll-behavior: smooth;
   }
 
-  /* Liens */
   a {
     @apply text-teal;
   }
 
-  a:hover {
-    @apply text-yellow;
-  }
-
-  /* Titres */
+ 
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif text-teal;
   }
 
-  /* Paragraphes */
   p {
     @apply mb-4;
   }
 
-  /* Boutons personnalisés */
-  .btn-primary {
-    @apply bg-teal text-white font-semibold py-2 px-4 rounded shadow hover:bg-yellow-dark transition duration-300;
-  }
 
-  .btn-secondary {
-    @apply bg-yellow text-white font-semibold py-2 px-4 rounded shadow hover:bg-teal transition duration-300;
-  }
-
-  /* Personnalisation de react-calendar */
   .react-calendar {
     @apply bg-white rounded-lg shadow-lg p-4;
   }
@@ -62,17 +43,28 @@
     @apply bg-teal text-white;
   }
 
-  /* Boutons génériques */
   .btn {
     @apply inline-block font-semibold text-center rounded transition duration-300;
   }
 
-  .btn:hover {
-    @apply opacity-90;
-  }
 
-  /* Effets de survol pour les cartes */
   .card:hover {
     @apply transform scale-105 shadow-xl transition duration-300;
+  }
+
+  /* Responsiveness */
+  .responsive-text {
+    @apply text-sm md:text-base lg:text-lg;
+    font-weight: 400;
+    @screen md {
+      font-weight: 600;
+    }
+    @screen lg {
+      font-weight: 700;
+    }
+  }
+
+  .responsive-padding {
+    @apply p-2 md:p-4 lg:p-6;
   }
 }

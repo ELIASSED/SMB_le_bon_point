@@ -24,7 +24,7 @@ interface Stage {
 const formatDateWithDay = (date: string) => {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "short",
-    year: "numeric",
+    year: "numeric",  
     month: "long",
     day: "numeric",
   };
@@ -38,6 +38,7 @@ export default function Carousel() {
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Selected stage
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Personal info data
   const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
+  
   const router = useRouter();
 
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
@@ -45,8 +46,7 @@ export default function Carousel() {
   
   // Fetch stages from the API
   useEffect(() => {
-  
-    
+
     const fetchStages = async () => {
       try {
         const response = await fetch("/api/stage");
@@ -90,8 +90,6 @@ export default function Carousel() {
     await createPaymentIntent(stage); // Crée un PaymentIntent pour le stage
     setCurrentStep(1); // Passe à l'étape suivante
   };
-  
-
   // Handle personal info submission
   const handlePersonalInfoSubmit = (data: PersonalInfo) => {
     setPersonalInfo(data);
@@ -203,8 +201,6 @@ export default function Carousel() {
       alert("Une erreur est survenue lors de l'inscription.");
     }
   };
-  
-
  
   // Progress bar and step indicators
   const renderProgress = () => (
@@ -235,44 +231,56 @@ export default function Carousel() {
     {
       title: "Sélectionnez un stage",
       content: (
-        <div className="bg-gray-50 p-8 rounded-lg shadow-md">
-          <h3 className="text-xl font-bold mb-4">Stages disponibles</h3>
-          {loading ? (
-            <p>Chargement des stages...</p>
-          ) : (
-            <div className="space-y-4">
-              {stages.map((stage) => (
-                <div
-                  key={stage.id}
-                  className="flex items-center justify-between border-b p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-8">
-                    <div className="text-lg font-bold text-yellow-600">
-                      {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-semibold">{stage.location}</span> 
-                    </div>
-                  <div   className={`text-lg font-semibold ${
-                        stage.capacity <= 5 ? "text-red-600 " : "text-green-600"
-                      }`} ><span>Places restantes</span> </div>
+        <div className="bg-gray-50 p-4 md:p-8 rounded-lg shadow-md">
+        <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
+        
+        {loading ? (
+          <p>Chargement des stages...</p>
+        ) : (
+          <div className="space-y-4">
+            {stages.map((stage) => (
+              <div
+                key={stage.id}
+                className="flex flex-col md:flex-row md:items-center md:justify-between border-b p-4 hover:bg-gray-50 transition-colors"
+              >
+                {/* Course Information */}
+                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
+                  <div className="text-base md:text-lg font-bold text-yellow-600">
+                    {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-lg font-bold text-gray">
-                      {stage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-                    </div>
-                    <button
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
-                      onClick={() => handleStageSelection(stage)}
-                    >
-                      Réserver
-                    </button>
+                  
+                  <div className="text-sm text-gray-700">
+                    <span className="font-semibold">{stage.location}</span>
+                  </div>
+                  
+                  <div className={`text-base md:text-lg font-semibold ${
+                    stage.capacity <= 5 ? "text-red-600" : "text-green-600"
+                  }`}>
+                    <span>Places restantes: {stage.capacity}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+  
+                {/* Price and Button */}
+                <div className="flex items-center justify-between md:justify-end space-x-4">
+                  <div className="text-base md:text-lg font-bold text-gray">
+                    {stage.price.toLocaleString("fr-FR", { 
+                      style: "currency", 
+                      currency: "EUR" 
+                    })}
+                  </div>
+                  
+                  <button
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
+                    onClick={() => handleStageSelection(stage)}
+                  >
+                    Réserver
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       ),
     },
     {
