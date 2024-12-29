@@ -34,10 +34,10 @@ export default function Hero() {
                 className={`bg-yellow text-teal font-bold py-3 px-6 rounded-full transition-transform duration-300 ease-in-out hover:scale-110 hover:bg-yellow-dark ${isSliding ? 'transform scale-90 opacity-50' : ''}`}
               >
                 Voir les stages
-              </button>
+              </button> 
             </div>
           </div>
-          {/* Image */}
+          {/* Image */} 
           <div className={`lg:w-1/2 transition-all duration-1000 ease-in-out ${isSliding ? 'transform -translate-x-full' : ''}`}>
             <div className="bg-white p-4 rounded-lg shadow-lg">
               <Image

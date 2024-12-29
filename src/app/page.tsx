@@ -5,12 +5,9 @@
 import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
 import Hero from '../components/Homepage/Hero';
-import ExperiencedTrainers from '../components/Homepage/ExperiencedTrainers';
-import PointRecovery from '../components/Homepage/PointRecovery';
-import PrefectureApproval from '../components/Homepage/PrefectureApproval';
-import SecureBooking from '../components/Homepage/SecureBooking';
 import FAQ from '../components/Homepage/FAQ';
 import ExternalLinkButton from '../components/ExternalLinkButton';
+import FeaturesGrid from '../components/Homepage/FeatureGrid';
 
 export default function HomePage() {
   return (
@@ -28,13 +25,7 @@ export default function HomePage() {
 
         <h2 className="text-2xl font-semibold mb-2 text-black">Pourquoi choisir notre centre à Saint-Maur-des-Fossés ?</h2>
 
-        <PrefectureApproval />
-        <br />
-        <ExperiencedTrainers />
-        <br />
-        <PointRecovery />
-        <br />
-        <SecureBooking />
+       <FeaturesGrid/>
         <br />
 
         <p className="mb-6 text-gray-700">
