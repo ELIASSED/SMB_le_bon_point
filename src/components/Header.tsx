@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-
+import Image from 'next/image';
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -29,12 +29,12 @@ export default function Header() {
         </button>
       </div>
       <div className="hidden md:flex items-center space-x-4">
-        <img
+        <Image
           src="/logo.png"
           alt="Exemple Banner"
           className="h-16 w-auto"
         />
-        <img
+        <Image
           src="/smblogo.png"
           alt="Exemple Banner"
           className="h-20 w-auto"
