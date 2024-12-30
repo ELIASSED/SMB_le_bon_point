@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PersonalInfoForm, { PersonalInfo } from "./PersonalInfoForm";
-import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
+import DrivingLicenseForm from "./DrivingLicenseForm";
 import { generateConfirmationEmail } from "@/lib/emailTemplates";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
