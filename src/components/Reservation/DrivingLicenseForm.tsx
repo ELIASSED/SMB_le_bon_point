@@ -1,4 +1,5 @@
-'useimport React, { useState } from "react";
+'use client' 
+import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 
 // Export interfaces so they can be used in other components
