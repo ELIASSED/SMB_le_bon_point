@@ -293,7 +293,7 @@ export default function Carousel() {
       ),
     },
     {
-      title: "Informations du permis de conduire",
+      title: "",
       content: (
         <>
           {renderSelectedStageInfo()}
