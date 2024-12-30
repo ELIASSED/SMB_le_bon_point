@@ -1,11 +1,13 @@
+'use client' 
 import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 
-interface DrivingLicenseFormProps {
+// Export interfaces so they can be used in other components
+export interface DrivingLicenseFormProps {
   onSubmit: (formData: DrivingLicenseInfo) => void;
 }
 
-interface DrivingLicenseInfo {
+export interface DrivingLicenseInfo {
   numeroPermis: string;
   dateDelivrancePermis: string;
   prefecture: string;
@@ -13,17 +15,19 @@ interface DrivingLicenseInfo {
   casStage: string;
 }
 
+interface FormFieldProps { 
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+  required?: boolean;
+}
+
 const FormField = ({ 
   label, 
   error, 
   children, 
   required = true 
-}: { 
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-  required?: boolean;
-}) => (
+}: FormFieldProps) => (
   <div className="space-y-2">
     <label className="block text-sm md:text-base font-medium text-gray-700">
       {label}
