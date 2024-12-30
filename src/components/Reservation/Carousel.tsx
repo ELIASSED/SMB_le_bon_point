@@ -1,344 +1,199 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import PersonalInfoForm, { PersonalInfo } from "./PersonalInfoForm";
-import DrivingLicenseForm from "./DrivingLicenseForm";
-import { generateConfirmationEmail } from "@/lib/emailTemplates";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
-import CheckoutForm from "./CheckoutForm";
+import React, { useState } from "react";
+import { AlertCircle } from "lucide-react";
 
-
-interface Stage {
-  id: number;
-  numeroStageAnts: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  capacity: number;
-  price: number;
+// Export interfaces so they can be used in other components
+export interface DrivingLicenseFormProps {
+  onSubmit: (formData: DrivingLicenseInfo) => void;
 }
 
-// Format date with weekday
-const formatDateWithDay = (date: string) => {
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: "short",
-    year: "numeric",  
-    month: "long",
-    day: "numeric",
-  };
-  return new Date(date).toLocaleDateString("fr-FR", options);
-};
+export interface DrivingLicenseInfo {
+  numeroPermis: string;
+  dateDelivrancePermis: string;
+  prefecture: string;
+  etatPermis: string;
+  casStage: string;
+}
 
-export default function Carousel() {
-  const [currentStep, setCurrentStep] = useState(0); // Current step in the carousel
-  const [stages, setStages] = useState<Stage[]>([]); // List of stages
-  const [loading, setLoading] = useState(true); // Loading indicator
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Selected stage
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Personal info data
-  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
-  
-  const router = useRouter();
+interface FormFieldProps { 
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+  required?: boolean;
+}
 
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  
-  // Fetch stages from the API
-  useEffect(() => {
+const FormField = ({ 
+  label, 
+  error, 
+  children, 
+  required = true 
+}: FormFieldProps) => (
+  <div className="space-y-2">
+    <label className="block text-sm md:text-base font-medium text-gray-700">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {children}
+    {error && (
+      <div className="flex items-center text-red-500 text-xs md:text-sm mt-1">
+        <AlertCircle className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+        <span>{error}</span>
+      </div>
+    )}
+  </div>
+);
 
-    const fetchStages = async () => {
-      try {
-        const response = await fetch("/api/stage");
-        if (!response.ok) throw new Error("Erreur lors de la récupération des stages");
-        const data = await response.json();
-        setStages(data);
-      } catch (error) {
-        console.error("Erreur:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps) {
+  const [formData, setFormData] = useState<DrivingLicenseInfo>({
+    numeroPermis: "",
+    dateDelivrancePermis: "",
+    prefecture: "",
+    etatPermis: "",
+    casStage: "",
+  });
 
-    fetchStages();
-  }, []);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const createPaymentIntent = async (stage: Stage) => {
-    try {
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: stage.price * 100, // Convertir en centimes (Stripe gère en centimes)
-          currency: "eur",
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error("Erreur lors de la création de PaymentIntent");
-      }
-  
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
-    } catch (error) {
-      console.error("Erreur PaymentIntent :", error);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
     }
   };
-  // Handle stage selection
-  const handleStageSelection = async (stage: Stage) => {
-    setSelectedStage(stage); // Stocke le stage sélectionné
-    await createPaymentIntent(stage); // Crée un PaymentIntent pour le stage
-    setCurrentStep(1); // Passe à l'étape suivante
-  };
-  // Handle personal info submission
-  const handlePersonalInfoSubmit = (data: PersonalInfo) => {
-    setPersonalInfo(data);
-    setCurrentStep(2);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    // Placeholder for file handling
   };
 
-  // Handle driving license submission
-  const handleDrivingLicenseSubmit = (data: DrivingLicenseInfo) => {
-    setDrivingLicenseInfo(data);
-    setCurrentStep(3);
-  };
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    const requiredFields = [
+      "numeroPermis",
+      "dateDelivrancePermis",
+      "prefecture",
+      "etatPermis",
+      "casStage"
+    ];
 
-  // Render selected stage info
-  const renderSelectedStageInfo = () =>
-    selectedStage && (
-      <div className="mb-6 p-4 border rounded bg-gray-50">
-        <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
-        <p>
-          <span className="font-bold">Dates :</span>{" "}
-          {formatDateWithDay(selectedStage.startDate)} au {formatDateWithDay(selectedStage.endDate)}
-        </p>
-        <p>
-          <span className="font-bold">{selectedStage.location}</span> 
-        </p>
-        <p> <span className="font-bold">Numéro de stage préfectoral :</span>{" "}
-          <span className="font-semibold">{selectedStage.numeroStageAnts}</span> 
-        </p>
-        <p>
-          <span className="font-bold">Places restantes :</span>{" "}
-          <span className={selectedStage.capacity <= 5 ? "text-red-600 " : "text-gray-600 "}>
-            {selectedStage.capacity}
-          </span>
-        </p>
-        <p>
-          <span className="font-bold text-green-600">Prix :</span>{" "}
-          {selectedStage.price.toLocaleString("fr-FR", {
-            style: "currency",
-            currency: "EUR",
-          })}
-        </p>
-      </div>
-    );
-
-  // Handle registration and payment
-  const handleRegistration = async () => {
-    if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
-  
-    // Déstructuration pour enlever 'confirmationEmail' de l'objet
-    const { confirmationEmail, ...restPersonalInfo } = personalInfo;
-  
-    const fullData = {
-      stageId: selectedStage.id,
-      userData: restPersonalInfo,         // on n'envoie que l'email principal (et autres champs)
-      drivingLicenseData: drivingLicenseInfo,
-    };
-  
-    try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(fullData),
-      });
-  
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'inscription");
+    requiredFields.forEach((field) => {
+      if (!formData[field as keyof DrivingLicenseInfo]) {
+        newErrors[field] = "Ce champ est requis";
       }
-  
-      const result = await response.json();
-      alert(result.message);
-  
-      if (!process.env.IGNORE_EMAIL_CONFIRMATION) {
-        const htmlTemplate = generateConfirmationEmail(
-          personalInfo.prenom,
-          personalInfo.nom,
-          selectedStage.location,
-          selectedStage.numeroStageAnts,
-          formatDateWithDay(selectedStage.startDate),
-          formatDateWithDay(selectedStage.endDate),
-          "contact@smbebonpoint.com", // Email de contact
-          "01 23 45 67 89"                // Téléphone de contact
-        );
-      
-        const emailResponse = await fetch("/api/send-mail", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: personalInfo.email,
-            subject: "Confirmation d'inscription",
-            text: htmlTemplate,
-            html: htmlTemplate, // On fournit le template HTML complet
-          }),
-        });
-  
-        if (!emailResponse.ok) {
-          const errorDetails = await emailResponse.json();
-          console.error("Erreur d'envoi de l'email :", errorDetails);
-          throw new Error("L'envoi de l'email a échoué");
-        }
-      }
-  
-      // Redirection si tout est OK
-      router.push("/success");
-    } catch (error) {
-      console.error("Erreur :", error);
-      alert("Une erreur est survenue lors de l'inscription.");
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit(formData);
     }
   };
- 
-  // Progress bar and step indicators
-  const renderProgress = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-2">
-        {steps.map((_, index) => (
-          <div
-            key={index}
-            className={`flex items-center justify-center w-10 h-10 rounded-full ${
-              index <= currentStep ? "bg-[#508CA4] text-white" : "bg-gray-300 text-gray-600"
-            }`}
-          >
-            {index + 1}
-          </div>
-        ))}
-      </div>
-      <div className="relative w-full h-2 bg-gray-300 rounded-full">
-        <div
-          className="absolute top-0 left-0 h-2 bg-[#508CA4] rounded-full"
-          style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-        ></div>
-      </div>
-    </div>
-  );
 
-  // Steps array for the carousel
-  const steps = [
-    {
-      title: "Sélectionnez un stage",
-      content: (
-        <div className="bg-gray-50 p-4 md:p-8 rounded-lg shadow-md">
-        <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
-        
-        {loading ? (
-          <p>Chargement des stages...</p>
-        ) : (
-          <div className="space-y-4">
-            {stages.map((stage) => (
-              <div
-                key={stage.id}
-                className="flex flex-col md:flex-row md:items-center md:justify-between border-b p-4 hover:bg-gray-50 transition-colors"
-              >
-                {/* Course Information */}
-                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
-                  <div className="text-base md:text-lg font-bold text-yellow-600">
-                    {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
-                  </div>
-                  
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">{stage.location}</span>
-                  </div>
-                  
-                  <div className={`text-base md:text-lg font-semibold ${
-                    stage.capacity <= 5 ? "text-red-600" : "text-green-600"
-                  }`}>
-                    <span>Places restantes: {stage.capacity}</span>
-                  </div>
-                </div>
-  
-                {/* Price and Button */}
-                <div className="flex items-center justify-between md:justify-end space-x-4">
-                  <div className="text-base md:text-lg font-bold text-gray">
-                    {stage.price.toLocaleString("fr-FR", { 
-                      style: "currency", 
-                      currency: "EUR" 
-                    })}
-                  </div>
-                  
-                  <button
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
-                    onClick={() => handleStageSelection(stage)}
-                  >
-                    Réserver
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      ),
-    },
-    {
-      title: "Informations personnelles",
-      content: (
-        <>
-          {renderSelectedStageInfo()}
-          <PersonalInfoForm onNext={handlePersonalInfoSubmit} />
-        </>
-      ),
-    },
-    {
-      title: "",
-      content: (
-        <>
-          {renderSelectedStageInfo()}
-          <DrivingLicenseForm onSubmit={handleDrivingLicenseSubmit} />
-        </>
-      ),
-    },
-   {
-  title: "Paiement",
-  content: (
-    <div>
-      <h3 className="text-xl font-bold mb-4">Effectuez votre paiement</h3>
-      {renderSelectedStageInfo()}
-      {clientSecret ? (
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <CheckoutForm
-            clientSecret={clientSecret}
-            onPaymentSuccess={handleRegistration} // Appelé après le succès
-          />
-        </Elements>
-      ) : (
-        <p>Chargement des informations de paiement...</p>
-      )}
-    </div>
-  ),
-},
-    
-  ];
+  const inputClassName = "w-full px-3 py-2 md:py-3 border border-gray-300 rounded-md shadow-sm text-sm md:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-4xl">
-        {renderProgress()}
-        <h2 className="text-2xl font-bold mb-6 text-center">{steps[currentStep].title}</h2>
-        <div>{steps[currentStep].content}</div>
-        {currentStep > 0 && (
-          <div className="flex justify-between mt-6">
+    <div className="w-full min-h-screen md:min-h-0 px-4 md:px-6 lg:px-8 py-6 md:py-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:p-8">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-6">
+            Informations du permis de conduire
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
+            <FormField label="Numéro de permis" error={errors.numeroPermis}>
+              <input
+                type="text"
+                name="numeroPermis"
+                value={formData.numeroPermis}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Ex: 12AB34567"
+              />
+            </FormField>
+
+            <FormField label="Date de délivrance" error={errors.dateDelivrancePermis}>
+              <input
+                type="date"
+                name="dateDelivrancePermis"
+                value={formData.dateDelivrancePermis}
+                onChange={handleChange}
+                className={inputClassName}
+              />
+            </FormField>
+
+            <FormField label="Préfecture de délivrance" error={errors.prefecture}>
+              <input
+                type="text"
+                name="prefecture"
+                value={formData.prefecture}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Ex: Paris"
+              />
+            </FormField>
+
+            <FormField label="État du permis" error={errors.etatPermis}>
+              <select
+                name="etatPermis"
+                value={formData.etatPermis}
+                onChange={handleChange}
+                className={inputClassName}
+              >
+                <option value="">Sélectionnez l'état</option>
+                <option value="Valide">Valide</option>
+                <option value="Invalide">Invalide</option>
+              </select>
+            </FormField>
+
+            <FormField label="Cas de stage" error={errors.casStage}>
+              <select
+                name="casStage"
+                value={formData.casStage}
+                onChange={handleChange}
+                className={inputClassName}
+              >
+                <option value="">Sélectionnez un cas</option>
+                <option value="Cas 1">Cas 1 (Volontaire)</option>
+                <option value="Cas 2">Cas 2 (Obligatoire)</option>
+              </select>
+            </FormField>
+
+            <FormField label="Scan du permis de conduire" required={false}>
+              <input
+                type="file"
+                name="scanPermis"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                  text-sm md:text-base text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm md:file:text-base file:font-semibold
+                  file:bg-indigo-50 file:text-indigo-700
+                  hover:file:bg-indigo-100
+                  transition-all duration-200"
+              />
+            </FormField>
+          </div>
+
+          <div className="mt-6 md:mt-8">
             <button
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              type="submit"
+              className="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white text-sm md:text-base font-medium rounded-md
+                hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                transition-all duration-200"
             >
-              Précédent
+              Enregistrer
             </button>
           </div>
-        )}
+        </form>
       </div>
     </div>
   );
