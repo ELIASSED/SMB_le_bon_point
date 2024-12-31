@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import DrivingLicenseForm, { DrivingLicenseInfo } from "./DrivingLicenseForm";
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
