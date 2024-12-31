@@ -1,3 +1,6 @@
+// components/PersonalInfoForm.tsx
+
+"use client";
 import React, { useState } from "react";
 
 interface PersonalInfoFormProps {
@@ -53,7 +56,7 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({
       ...prev,
-      scanIdentite: file,
+      scanIdentite: file, // Stocke le fichier sélectionné ou null
     }));
   };
 
@@ -91,145 +94,217 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
-      onNext(formData);
+      onNext(formData); // Passe les données à l'étape suivante
     }
   };
 
-  const FormField = ({ 
-    label, 
-    name, 
-    type = "text", 
-    required = true,
-    options = [],
-  }: { 
-    label: string; 
-    name: keyof PersonalInfo; 
-    type?: string;
-    required?: boolean;
-    options?: { value: string; label: string; }[];
-  }) => (
-    <div className="w-full px-2 mb-4">
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {type === "select" ? (
-        <select
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="">-- Sélectionnez --</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          type={type}
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      )}
-      {errors[name] && (
-        <p className="mt-1 text-xs text-red-500">{errors[name]}</p>
-      )}
-    </div>
-  );
-
   return (
-    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto p-4">
-      <div className="flex flex-wrap -mx-2">
-        <FormField
-          label="Civilité"
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label htmlFor="civilite" className="block text-sm font-medium text-gray-700">
+          Civilité
+        </label>
+        <select
+          id="civilite"
           name="civilite"
-          type="select"
-          options={[
-            { value: "Monsieur", label: "Monsieur" },
-            { value: "Madame", label: "Madame" },
-          ]}
-        />
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Nom" name="nom" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Prénom" name="prenom" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Prénom 1" name="prenom1" required={false} />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Prénom 2" name="prenom2" required={false} />
-        </div>
-        
-        <div className="w-full px-2 mb-4">
-          <FormField label="Adresse" name="adresse" />
-        </div>
-        
-        <div className="w-full md:w-1/3 px-2 mb-4">
-          <FormField label="Code Postal" name="codePostal" />
-        </div>
-        
-        <div className="w-full md:w-2/3 px-2 mb-4">
-          <FormField label="Ville" name="ville" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Date de naissance" name="dateNaissance" type="date" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Code postal de naissance" name="codePostalNaissance" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Nationalité" name="nationalite" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Téléphone" name="telephone" type="tel" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Email" name="email" type="email" />
-        </div>
-        
-        <div className="w-full md:w-1/2 px-2 mb-4">
-          <FormField label="Confirmation Email" name="confirmationEmail" type="email" />
-        </div>
-        
-        <div className="w-full px-2 mb-4">
-          <label htmlFor="scanIdentite" className="block text-sm font-medium text-gray-700 mb-1">
-            Scan de la pièce d'identité (optionnel)
-          </label>
-          <input
-            type="file"
-            id="scanIdentite"
-            name="scanIdentite"
-            accept="image/*,application/pdf"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
+          value={formData.civilite}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        >
+          <option value="">-- Sélectionnez une civilité --</option>
+          <option value="Monsieur">Monsieur</option>
+          <option value="Madame">Madame</option>
+        </select>
+        {errors.civilite && <p className="text-red-500 text-xs mt-1">{errors.civilite}</p>}
+      </div>
 
-        <div className="w-full px-2">
-          <button
-            type="submit"
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-4 rounded-md shadow-sm transition duration-150 ease-in-out text-lg font-medium"
-          >
-            Suivant
-          </button>
-        </div>
+      <div>
+        <label htmlFor="nom" className="block text-sm font-medium text-gray-700">Nom</label>
+        <input
+          type="text"
+          id="nom"
+          name="nom"
+          value={formData.nom}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.nom && <p className="text-red-500 text-xs mt-1">{errors.nom}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prénom</label>
+        <input
+          type="text"
+          id="prenom"
+          name="prenom"
+          value={formData.prenom}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.prenom && <p className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="prenom1" className="block text-sm font-medium text-gray-700">Prénom 1 (optionnel)</label>
+        <input
+          type="text"
+          id="prenom1"
+          name="prenom1"
+          value={formData.prenom1}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="prenom2" className="block text-sm font-medium text-gray-700">Prénom 2 (optionnel)</label>
+        <input
+          type="text"
+          id="prenom2"
+          name="prenom2"
+          value={formData.prenom2}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">Adresse</label>
+        <input
+          type="text"
+          id="adresse"
+          name="adresse"
+          value={formData.adresse}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">Code Postal</label>
+        <input
+          type="text"
+          id="codePostal"
+          name="codePostal"
+          value={formData.codePostal}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.codePostal && <p className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="ville" className="block text-sm font-medium text-gray-700">Ville</label>
+        <input
+          type="text"
+          id="ville"
+          name="ville"
+          value={formData.ville}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.ville && <p className="text-red-500 text-xs mt-1">{errors.ville}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="dateNaissance" className="block text-sm font-medium text-gray-700">Date de naissance</label>
+        <input
+          type="date"
+          id="dateNaissance"
+          name="dateNaissance"
+          value={formData.dateNaissance}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.dateNaissance && <p className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="codePostalNaissance" className="block text-sm font-medium text-gray-700">Lieu de naissance (Code postal)</label>
+        <input
+          type="text"
+          id="codePostalNaissance"
+          name="codePostalNaissance"
+          value={formData.codePostalNaissance}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.codePostalNaissance && <p className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">Nationalité</label>
+        <input
+          type="text"
+          id="nationalite"
+          name="nationalite"
+          value={formData.nationalite}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.nationalite && <p className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">Téléphone</label>
+        <input
+          type="tel"
+          id="telephone"
+          name="telephone"
+          value={formData.telephone}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="confirmationEmail" className="block text-sm font-medium text-gray-700">Confirmation Email</label>
+        <input
+          type="email"
+          id="confirmationEmail"
+          name="confirmationEmail"
+          value={formData.confirmationEmail}
+          onChange={handleChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+        {errors.confirmationEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
+      </div> <div>
+        <label htmlFor="scanIdentite" className="block text-sm font-medium text-gray-700">
+          Scan de la pièce d'identité (optionnel)
+        </label>
+        <input
+          type="file"
+          id="scanIdentite"
+          name="scanIdentite"
+          accept="image/*,application/pdf"
+          onChange={handleFileChange}
+          className="mt-1 block w-full border rounded-md p-2"
+        />
+      </div>
+
+
+      <div className="col-span-2">
+        <button
+          type="submit"
+          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-md"
+        >
+          Suivant
+        </button>
       </div>
     </form>
   );

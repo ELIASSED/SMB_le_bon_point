@@ -31,11 +31,15 @@ export default function Header() {
       <div className="hidden md:flex items-center space-x-4">
         <Image
           src="/logo.png"
+          width={100}
+          height={50}
           alt="Exemple Banner"
           className="h-16 w-auto"
         />
         <Image
           src="/smblogo.png"
+          width={100}
+          height={50}
           alt="Exemple Banner"
           className="h-20 w-auto"
         />
