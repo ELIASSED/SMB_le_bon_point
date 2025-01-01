@@ -16,7 +16,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative bg-beige text-white overflow-hidden">
+    <section className="rounded-lg relative bg-beige text-white overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col-reverse lg:flex-row items-center justify-between">
           {/* Contenu textuel */}
@@ -39,7 +39,7 @@ export default function Hero() {
           </div>
           {/* Image */} 
           <div className={`lg:w-1/2 transition-all duration-1000 ease-in-out ${isSliding ? 'transform -translate-x-full' : ''}`}>
-            <div className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="bg-primary p-1 rounded-lg shadow-lg">
               <Image
                 src="/images/volant.png"
                 alt="Stage de récupération de points"
