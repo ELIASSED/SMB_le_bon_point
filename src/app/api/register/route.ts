@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { sendEmail } from "../../../lib/mailer"; // Import direct pour utiliser la logique de mailer
-import { generateConfirmationEmail } from "../../../lib/emailTemplates"; // Pour le template
 
 const prisma = new PrismaClient();
 
@@ -10,18 +8,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { stageId, userData, drivingLicenseData } = body;
 
+    // Validate required fields
     if (!stageId || !userData || !drivingLicenseData) {
-      throw new Error(
-        "Les champs 'stageId', 'userData', et 'drivingLicenseData' sont requis."
-      );
+      throw new Error("Les champs 'stageId', 'userData', et 'drivingLicenseData' sont requis.");
     }
 
-    // Formatage des données
+    // Format user and driving license data
     const formattedUserData = {
       ...userData,
-      dateNaissance: userData.dateNaissance
-        ? new Date(userData.dateNaissance)
-        : null,
+      dateNaissance: userData.dateNaissance ? new Date(userData.dateNaissance) : null,
     };
 
     const formattedDrivingLicenseData = {
@@ -31,8 +26,8 @@ export async function POST(req: NextRequest) {
         : null,
     };
 
-    // Transaction : créer user, inscrire et décrémenter la capacité
     await prisma.$transaction(async (tx) => {
+      // Check session availability
       const session = await tx.session.findUnique({
         where: { id: stageId },
       });
@@ -41,17 +36,20 @@ export async function POST(req: NextRequest) {
         throw new Error("La session est complète ou introuvable.");
       }
 
+      // Decrement session capacity
       await tx.session.update({
         where: { id: stageId },
         data: { capacity: { decrement: 1 } },
       });
 
+      // Upsert user
       const user = await tx.user.upsert({
         where: { email: formattedUserData.email },
         update: formattedUserData,
         create: formattedUserData,
       });
 
+      // Link user to session with upsert
       await tx.sessionUsers.upsert({
         where: {
           sessionId_userId: {
@@ -60,32 +58,34 @@ export async function POST(req: NextRequest) {
           },
         },
         update: {
-          ...formattedDrivingLicenseData,
+          ...formattedDrivingLicenseData, // Mise à jour si l'entrée existe
         },
         create: {
           sessionId: stageId,
           userId: user.id,
-          ...formattedDrivingLicenseData,
+          ...formattedDrivingLicenseData, // Création si l'entrée n'existe pas
         },
       });
-
-      // Génération et envoi d'email après transaction
-      const emailHtml = generateConfirmationEmail(
-        userData.prenom,
-        userData.nom,
-        session.location,
-        session.numeroStageAnts,
-        session.startDate.toISOString(),
-        session.endDate.toISOString()
-      );
-
-      await sendEmail(
-        userData.email,
-        "Confirmation d'inscription",
-        `Bonjour ${userData.prenom}, votre inscription au stage ${stageId} est confirmée.`,
-        emailHtml
-      );
     });
+
+    // Send confirmation email
+    const emailResponse = await fetch(`${process.env.NEXT_VERCEL_API_URL}/api/send-mail`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: userData.email,
+        subject: "Confirmation d'inscription",
+        text: `Bonjour ${userData.prenom},\n\nVotre inscription au stage ${stageId} est confirmée.`,
+        html: `<p>Bonjour ${userData.prenom},</p><p>Votre inscription au stage ${stageId} est confirmée.</p>`,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      console.error("Erreur lors de l'envoi de l'email :", await emailResponse.text());
+      throw new Error("L'envoi de l'email a échoué.");
+    }
 
     return NextResponse.json({ message: "Inscription réussie." });
   } catch (error: any) {

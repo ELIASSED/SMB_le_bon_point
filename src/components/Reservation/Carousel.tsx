@@ -9,7 +9,6 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 
-
 interface Stage {
   id: number;
   numeroStageAnts: string;
@@ -24,7 +23,7 @@ interface Stage {
 const formatDateWithDay = (date: string) => {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "short",
-    year: "numeric",  
+    year: "numeric",
     month: "long",
     day: "numeric",
   };
@@ -32,36 +31,47 @@ const formatDateWithDay = (date: string) => {
 };
 
 export default function Carousel() {
-  const [currentStep, setCurrentStep] = useState(0); // Current step in the carousel
-  const [stages, setStages] = useState<Stage[]>([]); // List of stages
-  const [loading, setLoading] = useState(true); // Loading indicator
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null); // Selected stage
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null); // Personal info data
-  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null); // Driving license data
-  
-  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null);
 
+  const router = useRouter();
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  
-  // Fetch stages from the API
+  const [page, setPage] = useState(1); // Page actuelle
+  const [limit] = useState(10); // Nombre de stages par page
+  const [totalPages, setTotalPages] = useState(0); // Total de pages
+
+  // Fonction pour charger les stages
+  const fetchStages = async () => {
+    setLoading(true); // Début du chargement
+    try {
+      const response = await fetch(`/api/stage?page=${page}&limit=${limit}`);
+      if (!response.ok) throw new Error("Erreur lors de la récupération des stages");
+      const result = await response.json();
+
+      setStages(result.data || []);
+      setTotalPages(result.meta.totalPages || 0);
+    } catch (error) {
+      console.error("Erreur :", error);
+      setStages([]);
+    } finally {
+      setLoading(false); // Fin du chargement
+    }
+  };
+
+  // Charge les stages lors du premier rendu
   useEffect(() => {
-
-    const fetchStages = async () => {
-      try {
-        const response = await fetch("/api/stage");
-        if (!response.ok) throw new Error("Erreur lors de la récupération des stages");
-        const data = await response.json();
-        setStages(data);
-      } catch (error) {
-        console.error("Erreur:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStages();
   }, []);
+
+  // Recharge les stages à chaque changement de page
+  useEffect(() => {
+    fetchStages();
+  }, [page]);
 
   const createPaymentIntent = async (stage: Stage) => {
     try {
@@ -69,71 +79,37 @@ export default function Carousel() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: stage.price * 100, // Convertir en centimes (Stripe gère en centimes)
+          amount: stage.price * 100,
           currency: "eur",
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Erreur lors de la création de PaymentIntent");
       }
-  
+
       const data = await response.json();
       setClientSecret(data.clientSecret);
     } catch (error) {
       console.error("Erreur PaymentIntent :", error);
     }
   };
-  // Handle stage selection
+
   const handleStageSelection = async (stage: Stage) => {
-    setSelectedStage(stage); // Stocke le stage sélectionné
-    await createPaymentIntent(stage); // Crée un PaymentIntent pour le stage
-    setCurrentStep(1); // Passe à l'étape suivante
+    setSelectedStage(stage);
+    await createPaymentIntent(stage);
+    setCurrentStep(1);
   };
-  // Handle personal info submission
+
   const handlePersonalInfoSubmit = (data: PersonalInfo) => {
     setPersonalInfo(data);
     setCurrentStep(2);
   };
 
-  // Handle driving license submission
   const handleDrivingLicenseSubmit = (data: DrivingLicenseInfo) => {
     setDrivingLicenseInfo(data);
     setCurrentStep(3);
   };
-
-  // Render selected stage info
-  const renderSelectedStageInfo = () =>
-    selectedStage && (
-      <div className="mb-6 p-4 border rounded bg-gray-50">
-        <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
-        <p>
-          <span className="font-bold">Dates :</span>{" "}
-          {formatDateWithDay(selectedStage.startDate)} au {formatDateWithDay(selectedStage.endDate)}
-        </p>
-        <p>
-          <span className="font-bold">{selectedStage.location}</span> 
-        </p>
-        <p> <span className="font-bold">Numéro de stage préfectoral :</span>{" "}
-          <span className="font-semibold">{selectedStage.numeroStageAnts}</span> 
-        </p>
-        <p>
-          <span className="font-bold">Places restantes :</span>{" "}
-          <span className={selectedStage.capacity <= 5 ? "text-red-600 " : "text-gray-600 "}>
-            {selectedStage.capacity}
-          </span>
-        </p>
-        <p>
-          <span className="font-bold text-green-600">Prix :</span>{" "}
-          {selectedStage.price.toLocaleString("fr-FR", {
-            style: "currency",
-            currency: "EUR",
-          })}
-        </p>
-      </div>
-    );
-
-  // Handle registration and payment
   const handleRegistration = async () => {
     if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
   
@@ -202,6 +178,38 @@ export default function Carousel() {
     }
   };
  
+
+  const renderSelectedStageInfo = () =>
+    selectedStage && (
+      <div className="mb-6 p-4 border rounded bg-gray-50">
+        <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
+        <p>
+          <span className="font-bold">Dates :</span>{" "}
+          {formatDateWithDay(selectedStage.startDate)} au {formatDateWithDay(selectedStage.endDate)}
+        </p>
+        <p>
+          <span className="font-bold">{selectedStage.location}</span>
+        </p>
+        <p>
+          <span className="font-bold">Numéro de stage préfectoral :</span>{" "}
+          <span className="font-semibold">{selectedStage.numeroStageAnts}</span>
+        </p>
+        <p>
+          <span className="font-bold">Places restantes :</span>{" "}
+          <span className={selectedStage.capacity <= 5 ? "text-red-600 " : "text-gray-600 "}>
+            {selectedStage.capacity}
+          </span>
+        </p>
+        <p>
+          <span className="font-bold text-green-600">Prix :</span>{" "}
+          {selectedStage.price.toLocaleString("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          })}
+        </p>
+      </div>
+    );
+
   // Progress bar and step indicators
   const renderProgress = () => (
     <div className="mb-8">
@@ -226,63 +234,85 @@ export default function Carousel() {
     </div>
   );
 
-  // Steps array for the carousel
   const steps = [
     {
       title: "Sélectionnez un stage",
       content: (
         <div className="bg-gray-50 p-4 md:p-8 rounded-lg shadow-md">
-        <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
-        
-        {loading ? (
-          <p>Chargement des stages...</p>
-        ) : (
-          <div className="space-y-4">
-            {stages.map((stage) => (
-              <div
-                key={stage.id}
-                className="flex flex-col md:flex-row md:items-center md:justify-between border-b p-4 hover:bg-gray-50 transition-colors"
-              >
-                {/* Course Information */}
-                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
-                  <div className="text-base md:text-lg font-bold text-yellow-600">
-                    {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
+          <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
+    
+          {loading ? (
+            <p>Chargement des stages...</p>
+          ) : (
+            <div className="space-y-4">
+              {stages.map((stage) => (
+                <div
+                  key={stage.id}
+                  className="flex flex-col md:flex-row md:items-center md:justify-between border-b p-4 hover:bg-gray-50 transition-colors"
+                >
+                  {/* Informations sur le stage */}
+                  <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
+                    <div className="text-base md:text-lg font-bold text-yellow-600">
+                      {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
+                    </div>
+    
+                    <div className="text-sm text-gray-700">
+                      <span className="font-semibold">{stage.location}</span>
+                    </div>
+    
+                    <div
+                      className={`text-base md:text-lg font-semibold ${
+                        stage.capacity <= 5 ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      <span>Places restantes: {stage.capacity}</span>
+                    </div>
                   </div>
-                  
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">{stage.location}</span>
-                  </div>
-                  
-                  <div className={`text-base md:text-lg font-semibold ${
-                    stage.capacity <= 5 ? "text-red-600" : "text-green-600"
-                  }`}>
-                    <span>Places restantes: {stage.capacity}</span>
+    
+                  {/* Prix et bouton */}
+                  <div className="flex items-center justify-between md:justify-end space-x-4">
+                    <div className="text-base md:text-lg font-bold text-gray">
+                      {stage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                    </div>
+    
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
+                      onClick={() => handleStageSelection(stage)}
+                    >
+                      Réserver
+                    </button>
                   </div>
                 </div>
-  
-                {/* Price and Button */}
-                <div className="flex items-center justify-between md:justify-end space-x-4">
-                  <div className="text-base md:text-lg font-bold text-gray">
-                    {stage.price.toLocaleString("fr-FR", { 
-                      style: "currency", 
-                      currency: "EUR" 
-                    })}
-                  </div>
-                  
-                  <button
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
-                    onClick={() => handleStageSelection(stage)}
-                  >
-                    Réserver
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+    
+          {/* Section des boutons de pagination */}
+          <div className="flex justify-center space-x-6 items-center mt-6">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              className="bg-gray-500 text-white py-2 px-4 rounded disabled:opacity-50"
+            >
+              Précédent
+            </button>
+    
+            <span className="text-gray-700">
+              Page {page} sur {totalPages}
+            </span>
+    
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              className="bg-gray-500 text-white py-2 px-4 rounded disabled:opacity-50"
+            >
+              Suivant
+            </button>
           </div>
-        )}
-      </div>
+        </div>
       ),
-    },
+    }
+    ,
     {
       title: "Informations personnelles",
       content: (
@@ -342,4 +372,6 @@ export default function Carousel() {
       </div>
     </div>
   );
-}
+
+        }
+        

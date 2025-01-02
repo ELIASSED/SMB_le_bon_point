@@ -106,7 +106,7 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-6">
             Informations du permis de conduire
           </h2>
-          
+         
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
             <FormField label="Numéro de permis" error={errors.numeroPermis}>
               <input
