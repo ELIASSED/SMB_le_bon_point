@@ -1,7 +1,9 @@
 // components/PersonalInfoForm.tsx
 
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
+import nationalitiesData from "../nationalite.json"
 
 interface PersonalInfoFormProps {
   onNext: (formData: PersonalInfo) => void;
@@ -43,7 +45,17 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
 
+  useEffect(() => {
+    console.log("Nationalities data:", nationalitiesData);
+    if (nationalitiesData?.nationalities) {
+      setNationalities(nationalitiesData.nationalities);
+    } else {
+      console.error("Les données des nationalités sont introuvables.");
+    }
+  }, []);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -60,7 +72,7 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     }));
   };
 
-  const validate = () => {
+ const validate = () => {
     const newErrors: { [key: string]: string } = {};
     const requiredFields = [
       "civilite",
@@ -232,17 +244,29 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
         />
         {errors.codePostalNaissance && <p className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
       </div>
-
       <div>
-        <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">Nationalité</label>
-        <input
-          type="text"
-          id="nationalite"
-          name="nationalite"
-          value={formData.nationalite}
-          onChange={handleChange}
-          className="mt-1 block w-full border rounded-md p-2"
-        />
+        <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">
+          Nationalité
+        </label>
+        <select
+  id="nationalite"
+  name="nationalite"
+  value={formData.nationalite}
+  onChange={handleChange}
+  className="mt-1 block w-full border rounded-md p-2"
+>
+  <option value="">-- Sélectionnez une nationalité --</option>
+  {Array.isArray(nationalities) && nationalities.length > 0 ? (
+    nationalities.map((nat) => (
+      <option key={nat.code} value={nat.name}>
+        {nat.name}
+      </option>
+    ))
+  ) : (
+    <option disabled>Chargement des nationalités...</option>
+  )}
+</select>
+
         {errors.nationalite && <p className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
       </div>
 

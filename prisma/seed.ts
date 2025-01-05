@@ -10,6 +10,7 @@ async function main() {
       email: "instructor1@example.com",
       firstName: "Jean",
       lastName: "Doe",
+      numeroAutorisationPrefectorale:"B7543986745",
     },
   });
 
@@ -18,6 +19,7 @@ async function main() {
       email: "instructor2@example.com",
       firstName: "Alice",
       lastName: "Smith",
+      numeroAutorisationPrefectorale:"B7554386745",
     },
   });
 
@@ -27,6 +29,7 @@ async function main() {
       email: "psychologue1@example.com",
       firstName: "Marie",
       lastName: "Curie",
+      numeroAutorisationPrefectorale:"B7543965745",
     },
   });
 
@@ -35,6 +38,7 @@ async function main() {
       email: "psychologue2@example.com",
       firstName: "Albert",
       lastName: "Einstein",
+      numeroAutorisationPrefectorale:"B7523409745",
     },
   });
 
