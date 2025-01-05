@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { generateConfirmationEmail } from "@/lib/emailTemplates";
+import { generateConfirmationEmail } from "@/lib/emailTemplates"; // Ajustez le chemin si nécessaire
 
 import { Stage, PersonalInfo, DrivingLicenseInfo } from "./types";
 import { formatDateWithDay } from "./utils";
@@ -19,7 +19,9 @@ export default function Carousel() {
   const [loading, setLoading] = useState(true);
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
-  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(null);
+  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(
+    null
+  );
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const router = useRouter();
@@ -50,7 +52,7 @@ export default function Carousel() {
       const response = await fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: stage.price * 100, currency: "eur" }),
+        body: JSON.stringify({ amount: stage.price * 100, currency: "eur" })
       });
 
       if (!response.ok) {
@@ -195,20 +197,14 @@ export default function Carousel() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      {/* Limiter la largeur du contenu à 90% de l’écran */}
-      <div 
-        className="mx-auto"
-        // On conserve max-w-4xl si on veut limiter une large résolution
-        style={{
-          maxWidth: "80%",   // <= pour ne pas dépasser 90% de l'écran
-        }}
-      >
+      <div className="w-full max-w-4xl">
         <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
         <h2 className="text-2xl font-bold mb-6 text-center">
           {steps[currentStep].title}
         </h2>
         <div>{steps[currentStep].content}</div>
 
+        {/* Bouton "Précédent" (si nécessaire) */}
         {currentStep > 0 && (
           <div className="flex justify-between mt-6">
             <button
@@ -222,4 +218,4 @@ export default function Carousel() {
       </div>
     </div>
   );
-}
+} 
