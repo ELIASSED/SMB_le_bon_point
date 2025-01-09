@@ -10,6 +10,7 @@ async function main() {
       email: "instructor1@example.com",
       firstName: "Jean",
       lastName: "Doe",
+      phone: "01 23 45 67 89",
       numeroAutorisationPrefectorale:"B7543986745",
     },
   });
@@ -19,6 +20,7 @@ async function main() {
       email: "instructor2@example.com",
       firstName: "Alice",
       lastName: "Smith",
+      phone: "01 23 45 67 54",
       numeroAutorisationPrefectorale:"B7554386745",
     },
   });
@@ -29,6 +31,7 @@ async function main() {
       email: "psychologue1@example.com",
       firstName: "Marie",
       lastName: "Curie",
+      phone: "01 23 45 43 89",
       numeroAutorisationPrefectorale:"B7543965745",
     },
   });
@@ -38,6 +41,7 @@ async function main() {
       email: "psychologue2@example.com",
       firstName: "Albert",
       lastName: "Einstein",
+      phone: "01 73 44 67 19",
       numeroAutorisationPrefectorale:"B7523409745",
     },
   });

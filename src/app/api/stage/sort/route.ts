@@ -6,16 +6,15 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Paramètres de tri
+  // Récupération des paramètres de tri
   const orderDate = url.searchParams.get("orderDate") === "desc" ? "desc" : "asc";
   const orderPrice = url.searchParams.get("orderPrice") === "desc" ? "desc" : "asc";
 
   try {
-    // Requête Prisma avec tri croisé
     const sessions = await prisma.session.findMany({
       where: {
         capacity: {
-          gt: 0, // Filtre : sessions avec des places disponibles
+          gt: 0, // Sessions avec des places disponibles
         },
       },
       select: {
@@ -28,15 +27,16 @@ export async function GET(request: Request) {
         capacity: true,
       },
       orderBy: [
-        { startDate: orderDate }, // Tri par date
-        { price: orderPrice },    // Tri par prix
+        { startDate: orderDate },
+        { price: orderPrice },
       ],
     });
+
     return NextResponse.json(sessions);
   } catch (error) {
-    console.error("Erreur Prisma :", error);
+    console.error("Erreur lors du tri des sessions :", error);
     return NextResponse.json(
-      { error: "Erreur lors de la récupération des sessions" },
+      { error: "Impossible de trier les sessions" },
       { status: 500 }
     );
   } finally {
