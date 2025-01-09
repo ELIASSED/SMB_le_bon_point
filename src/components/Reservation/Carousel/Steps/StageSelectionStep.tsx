@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stage } from "../types";
 import { formatDateWithDay } from "../utils";
+import SortModal from "../SortModal";
 
 interface StageSelectionStepProps {
   stages: Stage[];
@@ -38,11 +39,39 @@ const StageSelectionStep: React.FC<StageSelectionStepProps> = ({
       setCurrentPage((prev) => prev - 1);
     }
   };
+  
+  const [stage, setStages] = useState<any[]>([]);
+
+  // Fonction pour mettre à jour les données après tri
+  const handleDataUpdate = (data: any) => {
+    setStages(data); // Met à jour la liste des stages après tri
+  };
+
+  useEffect(() => {
+    // Appel initial pour récupérer les stages
+    const fetchStages = async () => {
+      try {
+        const response = await fetch("/api/stage/combined");
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des données.");
+        }
+        const data = await response.json();
+        setStages(data); // Met à jour les stages avec les données récupérées
+      } catch (error) {
+        console.error("Erreur lors du chargement des stages:", error);
+      }
+    };
+
+    fetchStages();
+  }, []); // Cette fonction se lance au chargement initial
+
+
 
   return (
     <div className="bg-gray-50 p-4 md:p-8 rounded-lg shadow-md">
       <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
-
+ {/* Bouton pour ouvrir la modale de tri */}
+ <SortModal onDataUpdate={handleDataUpdate} />
       {loading ? (
         <p>Chargement des stages...</p>
       ) : (
