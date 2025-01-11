@@ -2,11 +2,21 @@
 
 "use client";
 import React, { useEffect, useState } from "react";
-
-import nationalitiesData from "../nationalite.json"
+import axios from "axios";
+import { debounce } from "lodash";
+import nationalitiesData from "../nationalite.json";
 
 interface PersonalInfoFormProps {
   onNext: (formData: PersonalInfo) => void;
+}
+
+interface AddressSuggestion {
+  properties: {
+    label: string;
+    postcode: string;
+    city: string;
+    name: string;
+  };
 }
 
 export interface PersonalInfo {
@@ -46,16 +56,67 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    console.log("Nationalities data:", nationalitiesData);
     if (nationalitiesData?.nationalities) {
       setNationalities(nationalitiesData.nationalities);
-    } else {
-      console.error("Les données des nationalités sont introuvables.");
     }
   }, []);
-  
+
+  // Fonction debounce pour l'appel API
+  const fetchAddressSuggestions = debounce(async (query: string) => {
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoadingAddress(true);
+    try {
+      const response = await axios.get(
+        `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`
+      );
+      setAddressSuggestions(response.data.features);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Erreur lors de la recherche d'adresse:", error);
+      setAddressSuggestions([]);
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  }, 300);
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, adresse: value }));
+    fetchAddressSuggestions(value);
+  };
+
+  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+    setFormData(prev => ({
+      ...prev,
+      adresse: suggestion.properties.name,
+      codePostal: suggestion.properties.postcode,
+      ville: suggestion.properties.city
+    }));
+    setShowSuggestions(false);
+  };
+
+ 
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === "adresse" && value.length > 2) {
+      handleSubmit(value);
+    } else {
+      setShowSuggestions([]);
+    }
+  };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -103,12 +164,30 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
-      onNext(formData); // Passe les données à l'étape suivante
+      try {
+        // Envoi des données avec Axios
+        const response = await axios.post("/api/submit-personal-info", formData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  
+        console.log("Données envoyées avec succès :", response.data);
+  
+        // Passe les données à l'étape suivante après un succès
+        onNext(formData);
+      } catch (error) {
+        console.error("Erreur lors de l'envoi des données :", error);
+        // Vous pouvez afficher un message d'erreur ici
+      }
     }
   };
+
+
+  
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -179,44 +258,68 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
           className="mt-1 block w-full border rounded-md p-2"
         />
       </div>
-
-      <div>
-        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">Adresse</label>
+      <div className="relative">
+        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
+          Adresse
+        </label>
         <input
           type="text"
           id="adresse"
           name="adresse"
           value={formData.adresse}
-          onChange={handleChange}
+          onChange={handleAddressChange}
+          onFocus={() => formData.adresse.length >= 3 && setShowSuggestions(true)}
           className="mt-1 block w-full border rounded-md p-2"
+          placeholder="Commencez à taper une adresse..."
+          autoComplete="off"
         />
-        {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
-      </div>
+        
+        {isLoadingAddress && (
+          <div className="absolute right-2 top-[38px] text-gray-400">
+            Chargement...
+          </div>
+        )}
 
+        {showSuggestions && addressSuggestions.length > 0 && (
+          <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-auto">
+            {addressSuggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className="p-2 hover:bg-indigo-50 cursor-pointer transition-colors duration-150"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion.properties.label}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div>
-        <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">Code Postal</label>
+        <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">
+          Code Postal
+        </label>
         <input
           type="text"
           id="codePostal"
           name="codePostal"
           value={formData.codePostal}
-          onChange={handleChange}
+          onChange={handleInputChange}
           className="mt-1 block w-full border rounded-md p-2"
         />
-        {errors.codePostal && <p className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
       </div>
 
       <div>
-        <label htmlFor="ville" className="block text-sm font-medium text-gray-700">Ville</label>
+        <label htmlFor="ville" className="block text-sm font-medium text-gray-700">
+          Ville
+        </label>
         <input
           type="text"
           id="ville"
           name="ville"
           value={formData.ville}
-          onChange={handleChange}
+          onChange={handleInputChange}
           className="mt-1 block w-full border rounded-md p-2"
         />
-        {errors.ville && <p className="text-red-500 text-xs mt-1">{errors.ville}</p>}
       </div>
 
       <div>

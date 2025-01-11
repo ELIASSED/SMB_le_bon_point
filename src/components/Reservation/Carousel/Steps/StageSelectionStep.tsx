@@ -51,7 +51,7 @@ const StageSelectionStep: React.FC<StageSelectionStepProps> = ({
     // Appel initial pour récupérer les stages
     const fetchStages = async () => {
       try {
-        const response = await fetch("/api/stage/combined");
+        const response = await fetch("/api/stage");
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des données.");
         }
