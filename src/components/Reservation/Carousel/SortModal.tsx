@@ -98,7 +98,7 @@ const SortModal: React.FC<SortModalProps> = ({ onDataUpdate }) => {
                       onChange={(e) => setSortOption(e.target.value as SortOption)}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span>Plus proches d'abord</span>
+                    <span>Plus récent</span>
                   </label>
 
                   <label className="flex items-center space-x-3 cursor-pointer">
@@ -110,7 +110,7 @@ const SortModal: React.FC<SortModalProps> = ({ onDataUpdate }) => {
                       onChange={(e) => setSortOption(e.target.value as SortOption)}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span>Plus éloignés d'abord</span>
+                    <span>Moins récent</span>
                   </label>
                 </div>
               </div>

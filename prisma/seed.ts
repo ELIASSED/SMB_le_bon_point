@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
@@ -64,7 +64,7 @@ async function main() {
 
       sessions.push({
         numeroStageAnts: `R0060040934${String(sessionNumber).padStart(3, "0")}`,
-        price: 200 + session * 10, // Prix variable
+        price: 199 + session * 10, // Prix variable
         description: "Stage de récupération de points",
         startDate: start,
         endDate: end,

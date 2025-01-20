@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     // Requête Prisma avec tri croisé
     const sessions = await prisma.session.findMany({
       where: {
+        isArchived: false,
         capacity: {
           gt: 0, // Filtre : sessions avec des places disponibles
         },
