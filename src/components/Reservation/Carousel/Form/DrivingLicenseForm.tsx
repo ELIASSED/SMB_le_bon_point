@@ -1,7 +1,7 @@
 'use client' 
 import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
-
+import casStageData from "../cas_stage.json";
 // Export interfaces so they can be used in other components
 export interface DrivingLicenseFormProps {
   onSubmit: (formData: DrivingLicenseInfo) => void;
@@ -154,16 +154,24 @@ export default function DrivingLicenseForm({ onSubmit }: DrivingLicenseFormProps
             </FormField>
 
             <FormField label="Cas de stage" error={errors.casStage}>
-              <select
-                name="casStage"
-                value={formData.casStage}
-                onChange={handleChange}
-                className={inputClassName}
-              >
-                <option value="">Sélectionnez un cas</option>
-                <option value="Cas 1">Cas 1 (Volontaire)</option>
-                <option value="Cas 2">Cas 2 (Obligatoire)</option>
-              </select>
+            <select
+  id="CasdeStage"
+  name="CasdeStage"
+  value={formData.casStage}
+  onChange={handleChange}
+  className="mt-1 block w-full border rounded-md p-2"
+>
+  <option value="">-- Sélectionnez une cas --</option>
+  {Array.isArray(casStageData) && casStageData.length > 0 ? (
+    casStageData.map((nat) => (
+      <option key={nat.type} value={nat.description}>
+        {nat.type}
+      </option>
+    ))
+  ) : (
+    <option disabled>Chargement des nationalités...</option>
+  )}
+</select>
             </FormField>
 
             <FormField label="Scan du permis de conduire" required={false}>

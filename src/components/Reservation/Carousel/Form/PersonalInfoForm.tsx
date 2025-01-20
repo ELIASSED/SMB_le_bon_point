@@ -53,6 +53,8 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     email: "",
     confirmationEmail: "",
   });
+  
+  
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
@@ -168,14 +170,21 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
     e.preventDefault();
     if (validate()) {
       try {
-        // Envoi des données avec Axios
-        const response = await axios.post("/api/submit-personal-info", formData, {
+        // Envoi des données avec fetch
+        const response = await fetch("/api/submit-personal-info", {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(formData),
         });
   
-        console.log("Données envoyées avec succès :", response.data);
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP : ${response.status}`);
+        }
+  
+        const data = await response.json();
+        console.log("Données envoyées avec succès :", data);
   
         // Passe les données à l'étape suivante après un succès
         onNext(formData);
@@ -185,9 +194,8 @@ export default function PersonalInfoForm({ onNext }: PersonalInfoFormProps) {
       }
     }
   };
-
-
   
+     
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">

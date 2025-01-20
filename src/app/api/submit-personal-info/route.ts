@@ -1,15 +1,38 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "POST") {
-    const personalInfo = req.body;
+const prisma = new PrismaClient();
 
-    // Traitement des données ici (par exemple, enregistrement dans une base de données)
-    console.log("Données reçues :", personalInfo);
+// POST: Enregistrer des informations personnelles
+// POST: Enregistrer les informations complètes
+export async function POST(request: Request) {
+  try {
+    const personalInfo = await request.json();
 
-    res.status(200).json({ message: "Données enregistrées avec succès." });
-  } else {
-    res.setHeader("Allow", ["POST"]);
-    res.status(405).end(`Méthode ${req.method} non autorisée`);
+    // Validation des données reçues
+    if (!personalInfo.nom || !personalInfo.prenom || !personalInfo.email) {
+      return NextResponse.json(
+        { error: "Certains champs obligatoires sont manquants." },
+        { status: 400 }
+      );
+    }
+
+    // Sauvegarde dans la base de données
+    const savedInfo = await prisma.personalInfo.create({
+      data: personalInfo,
+    });
+
+    return NextResponse.json({
+      message: "Données enregistrées avec succès.",
+      data: savedInfo,
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement des données :", error);
+    return NextResponse.json(
+      { error: "Une erreur est survenue lors de l'enregistrement." },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }

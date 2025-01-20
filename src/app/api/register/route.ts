@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { sendEmail } from "../../../lib/mailer"; // Import direct pour utiliser la logique de mailer
-import { generateConfirmationEmail } from "../../../lib/emailTemplates"; // Pour le template
+import { sendEmail } from "../../../lib/mailer"; 
+import { generateConfirmationEmail } from "../../../lib/emailTemplates";
 
 const prisma = new PrismaClient();
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Formatage des données
+    // 1. Merge / format user fields
     const formattedUserData = {
       ...userData,
       dateNaissance: userData.dateNaissance
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         : null,
     };
 
+    // 2. Merge / format driving license fields (these belong to the User model)
     const formattedDrivingLicenseData = {
       ...drivingLicenseData,
       dateDelivrancePermis: drivingLicenseData.dateDelivrancePermis
@@ -31,60 +32,83 @@ export async function POST(req: NextRequest) {
         : null,
     };
 
-    // Transaction : créer user, inscrire et décrémenter la capacité
+    // Combine both objects into one for the User
+    const mergedUserData = {
+      ...formattedUserData,
+      ...formattedDrivingLicenseData,
+    };
+
     await prisma.$transaction(async (tx) => {
+      // 3. Fetch the session
       const session = await tx.session.findUnique({
         where: { id: stageId },
       });
 
-      if (!session || session.capacity <= 0) {
-        throw new Error("La session est complète ou introuvable.");
+      if (!session) {
+        throw new Error("Session introuvable.");
       }
 
-      await tx.session.update({
-        where: { id: stageId },
-        data: { capacity: { decrement: 1 } },
-      });
-
+      // 4. Upsert the user with driving license fields on the User model
       const user = await tx.user.upsert({
-        where: { email: formattedUserData.email },
-        update: formattedUserData,
-        create: formattedUserData,
+        where: { email: mergedUserData.email },
+        update: mergedUserData,
+        create: mergedUserData,
       });
 
-      await tx.sessionUsers.upsert({
+      // 5. Check if the user is already enrolled in the session
+      const existingSessionUser = await tx.sessionUsers.findUnique({
         where: {
           sessionId_userId: {
             sessionId: stageId,
             userId: user.id,
           },
         },
-        update: {
-          ...formattedDrivingLicenseData,
-        },
-        create: {
-          sessionId: stageId,
-          userId: user.id,
-          ...formattedDrivingLicenseData,
-        },
       });
 
-      // Génération et envoi d'email après transaction
-      const emailHtml = generateConfirmationEmail(
-        userData.prenom,
-        userData.nom,
-        session.location,
-        session.numeroStageAnts,
-        session.startDate.toISOString(),
-        session.endDate.toISOString()
-      );
+      // 6. If not enrolled, proceed with capacity decrement, enrollment, and email
+      if (!existingSessionUser) {
+        // Make sure the session isn't full
+        if (session.capacity <= 0) {
+          throw new Error("La session est complète.");
+        }
 
-      await sendEmail(
-        userData.email,
-        "Confirmation d'inscription",
-        `Bonjour ${userData.prenom}, votre inscription au stage ${stageId} est confirmée.`,
-        emailHtml
-      );
+        // Decrement session capacity by 1
+        await tx.session.update({
+          where: { id: stageId },
+          data: { capacity: { decrement: 1 } },
+        });
+
+        // Enroll the user in SessionUsers
+        await tx.sessionUsers.create({
+          data: {
+            sessionId: stageId,
+            userId: user.id,
+          },
+        });
+
+        // Generate and send a confirmation email
+        const emailHtml = generateConfirmationEmail(
+          userData.prenom,
+          userData.nom,
+          session.location,
+          session.numeroStageAnts,
+          session.startDate.toISOString(),
+          session.endDate.toISOString()
+        );
+
+        await sendEmail(
+          userData.email,
+          "Confirmation d'inscription",
+          `Bonjour ${userData.prenom}, votre inscription au stage ${stageId} est confirmée.`,
+          emailHtml
+        );
+      } else {
+        // If already enrolled, you can decide how to handle:
+        // - throw error
+        // - return a message 
+        // - or handle re-enrollment differently
+        throw new Error("Vous êtes déjà inscrit à cette session.");
+      }
     });
 
     return NextResponse.json({ message: "Inscription réussie." });
