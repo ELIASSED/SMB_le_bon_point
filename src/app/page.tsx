@@ -1,8 +1,6 @@
 // Mise à jour des fichiers pour refléter le style institutionnel
 
 "use client";
-
-import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
 import Hero from '../components/Hero';
 import ExperiencedTrainers from '@/components/ExperiencedTrainers';
@@ -40,7 +38,7 @@ export default function HomePage() {
           Notre centre est situé au cœur de Saint-Maur, facilement accessible en transport en commun ou en voiture. Les sessions ont lieu régulièrement, et les places sont limitées (maximum 20 participants).
         </p>
 
-        <BookingButton className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded" />
+        <BookingButton  />
 
         <h2 className="text-2xl font-semibold mt-8 mb-2 text-black">Informations pratiques</h2>
         <p className="mb-2 text-gray-700">
