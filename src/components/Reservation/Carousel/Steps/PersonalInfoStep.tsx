@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import StageList from "../StageList"; // Chemin à adapter selon votre projet
-
+import MergedForm, { MergedFormData } from "../Form/MergedForm";
 const StageSelectionStep = ({ onStageSelected }) => {
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,19 +12,7 @@ const StageSelectionStep = ({ onStageSelected }) => {
     const fetchStages = async () => {
       setLoading(true);
       setError(null);
-      try {
-        const response = await fetch("/api/stages");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des stages");
-        }
-        const data = await response.json();
-        setStages(data);
-      } catch (err) {
-        console.error("Erreur :", err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+
     };
 
     fetchStages();
@@ -59,15 +46,9 @@ const StageSelectionStep = ({ onStageSelected }) => {
 
       {/* Liste des stages ou chargement */}
       {!error && (
-        <StageList
-          stages={paginatedStages}
-          loading={loading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onStageSelected={onStageSelected}
-          handlePrevPage={handlePrevPage}
-          handleNextPage={handleNextPage}
-          handleDataUpdate={handleDataUpdate}
+        <MergedForm onSubmit={function (data: MergedFormData): void {
+          throw new Error("Function not implemented.");
+        } }         
         />
       )}
     </div>

@@ -1,8 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-import { fetchStages, createPaymentIntent, registerUser, sendConfirmationEmail } from "../../../lib/api";
+import {
+  fetchStages,
+  createPaymentIntent,
+  registerUser,
+  sendConfirmationEmail,
+} from "../../../lib/api";
 
 import ProgressBar from "./ProgressBar";
 import StageSelectionStep from "./Steps/StageSelectionStep";
@@ -16,18 +20,18 @@ export default function Carousel() {
   const [selectedStage, setSelectedStage] = useState(null);
   const [personalInfo, setPersonalInfo] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
+  const [error, setError] = useState(null);
 
   const router = useRouter();
 
-  // Récupération des stages
   useEffect(() => {
     async function loadStages() {
       try {
         const data = await fetchStages();
         setStages(data);
-        console.log(data);
-      } catch (error) {
-        console.error(error.message);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des stages :", err.message);
+        setError("Impossible de charger les stages. Veuillez réessayer.");
       } finally {
         setLoading(false);
       }
@@ -36,58 +40,50 @@ export default function Carousel() {
     loadStages();
   }, []);
 
-  // Gestion des étapes
   const nextStep = () => setCurrentStep((prev) => prev + 1);
   const prevStep = () => setCurrentStep((prev) => Math.max(0, prev - 1));
 
-  // Sélection d’un stage
   const handleStageSelection = async (stage) => {
     try {
       setSelectedStage(stage);
       const paymentIntent = await createPaymentIntent(stage);
       setClientSecret(paymentIntent.clientSecret);
       nextStep();
-    } catch (error) {
-      console.error(error.message);
+    } catch (err) {
+      console.error("Erreur lors de la sélection du stage :", err.message);
+      setError("Impossible de créer un paiement. Veuillez réessayer.");
     }
   };
 
-  // Soumission des infos personnelles
   const handlePersonalInfoSubmit = (data) => {
     setPersonalInfo(data);
     nextStep();
   };
 
-  // Enregistrement et confirmation
   const handleRegistration = async () => {
     if (!selectedStage || !personalInfo) return;
 
-    const { confirmationEmail, ...restPersonalInfo } = personalInfo;
-    const fullData = {
-      stageId: selectedStage.id,
-      userData: restPersonalInfo,
-    };
-
     try {
-      const result = await registerUser(fullData);
-      console.log(result.message);
+      const registrationData = {
+        stageId: selectedStage.id,
+        userData: personalInfo,
+      };
 
-      const emailData = {
+      await registerUser(registrationData);
+      await sendConfirmationEmail({
         to: personalInfo.email,
         subject: "Confirmation d'inscription",
         text: `Votre inscription au stage ${selectedStage.description} est confirmée.`,
         html: `<p>Merci pour votre inscription au stage ${selectedStage.description}.</p>`,
-      };
-
-      await sendConfirmationEmail(emailData);
+      });
 
       router.push("/success");
-    } catch (error) {
-      console.error(error.message);
+    } catch (err) {
+      console.error("Erreur lors de l'enregistrement :", err.message);
+      setError("L'inscription a échoué. Veuillez réessayer.");
     }
   };
 
-  // Définir les étapes
   const steps = [
     {
       title: "Sélectionnez un stage",
@@ -124,9 +120,14 @@ export default function Carousel() {
     <div className="carousel-container">
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       <h1>{steps[currentStep].title}</h1>
+      {error && <p className="text-red-500 text-center">{error}</p>}
       <div>{steps[currentStep].content}</div>
       <div className="navigation">
-        {currentStep > 0 && <button onClick={prevStep}>Précédent</button>}
+        {currentStep > 0 && (
+          <button onClick={prevStep} className="btn-secondary">
+            Précédent
+          </button>
+        )}
       </div>
     </div>
   );
