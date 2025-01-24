@@ -1,159 +1,93 @@
-// components/Carousel/Carousel.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { generateConfirmationEmail } from "@/lib/emailTemplates"; // Ajustez le chemin si nécessaire
 
-import { Stage, PersonalInfo, DrivingLicenseInfo } from "./types";
-import { formatDateWithDay } from "./utils";
+import { fetchStages, createPaymentIntent, registerUser, sendConfirmationEmail } from "../../../lib/api";
 
 import ProgressBar from "./ProgressBar";
 import StageSelectionStep from "./Steps/StageSelectionStep";
 import PersonalInfoStep from "./Steps/PersonalInfoStep";
-import DrivingLicenseStep from "./Steps/DrivingLicenseStep";
 import PaymentStep from "./Steps/PaymentStep";
 
 export default function Carousel() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [stages, setStages] = useState<Stage[]>([]);
+  const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
-  const [drivingLicenseInfo, setDrivingLicenseInfo] = useState<DrivingLicenseInfo | null>(
-    null
-  );
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [selectedStage, setSelectedStage] = useState(null);
+  const [personalInfo, setPersonalInfo] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
 
   const router = useRouter();
 
-  // 1. Récupération des stages
+  // Récupération des stages
   useEffect(() => {
-    const fetchStages = async () => {
+    async function loadStages() {
       try {
-        const response = await fetch("/api/stage");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des stages");
-        }
-        const data = await response.json();
+        const data = await fetchStages();
         setStages(data);
+        console.log(data);
       } catch (error) {
-        console.error("Erreur:", error);
+        console.error(error.message);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetchStages();
+    loadStages();
   }, []);
 
-  // 2. Création du PaymentIntent Stripe
-  const createPaymentIntent = async (stage: Stage) => {
+  // Gestion des étapes
+  const nextStep = () => setCurrentStep((prev) => prev + 1);
+  const prevStep = () => setCurrentStep((prev) => Math.max(0, prev - 1));
+
+  // Sélection d’un stage
+  const handleStageSelection = async (stage) => {
     try {
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: stage.price * 100, currency: "eur" })
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la création de PaymentIntent");
-      }
-
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
+      setSelectedStage(stage);
+      const paymentIntent = await createPaymentIntent(stage);
+      setClientSecret(paymentIntent.clientSecret);
+      nextStep();
     } catch (error) {
-      console.error("Erreur PaymentIntent :", error);
+      console.error(error.message);
     }
   };
 
-  // 3. Sélection d’un stage
-  const handleStageSelection = async (stage: Stage) => {
-    setSelectedStage(stage);
-    await createPaymentIntent(stage);
-    setCurrentStep(1);
-  };
-
-  // 4. Soumission des infos personnelles
-  const handlePersonalInfoSubmit = (data: PersonalInfo) => {
+  // Soumission des infos personnelles
+  const handlePersonalInfoSubmit = (data) => {
     setPersonalInfo(data);
-    setCurrentStep(2);
+    nextStep();
   };
 
-  // 5. Soumission des infos du permis
-  const handleDrivingLicenseSubmit = (data: DrivingLicenseInfo) => {
-    setDrivingLicenseInfo(data);
-    setCurrentStep(3);
-  };
-
-  // 6. Enregistrement (inscription) et envoi de mail après succès du paiement
+  // Enregistrement et confirmation
   const handleRegistration = async () => {
-    if (!selectedStage || !personalInfo || !drivingLicenseInfo) return;
+    if (!selectedStage || !personalInfo) return;
 
-    // On enlève le champ confirmationEmail avant d'envoyer
     const { confirmationEmail, ...restPersonalInfo } = personalInfo;
-
     const fullData = {
       stageId: selectedStage.id,
       userData: restPersonalInfo,
-      drivingLicenseData: drivingLicenseInfo,
     };
 
     try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fullData),
-      });
+      const result = await registerUser(fullData);
+      console.log(result.message);
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de l'inscription");
-      }
+      const emailData = {
+        to: personalInfo.email,
+        subject: "Confirmation d'inscription",
+        text: `Votre inscription au stage ${selectedStage.description} est confirmée.`,
+        html: `<p>Merci pour votre inscription au stage ${selectedStage.description}.</p>`,
+      };
 
-      const result = await response.json();
-      alert(result.message);
+      await sendConfirmationEmail(emailData);
 
-      // Envoi de l'email de confirmation
-      if (!process.env.IGNORE_EMAIL_CONFIRMATION) {
-        const htmlTemplate = generateConfirmationEmail(
-          personalInfo.prenom,
-          personalInfo.nom,
-          selectedStage.location,
-          selectedStage.numeroStageAnts,
-          formatDateWithDay(selectedStage.startDate),
-          formatDateWithDay(selectedStage.endDate),
-          "contact@smbebonpoint.com",
-          "01 23 45 67 89"
-        );
-
-        const emailResponse = await fetch("/api/send-mail", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: personalInfo.email,
-            subject: "Confirmation d'inscription",
-            text: htmlTemplate,
-            html: htmlTemplate,
-          }),
-        });
-
-        if (!emailResponse.ok) {
-          const errorDetails = await emailResponse.json();
-          console.error("Erreur d'envoi de l'email :", errorDetails);
-          throw new Error("L'envoi de l'email a échoué");
-        }
-      }
-
-      // Redirection si tout est OK
       router.push("/success");
     } catch (error) {
-      console.error("Erreur :", error);
-      alert("Une erreur est survenue lors de l'inscription.");
+      console.error(error.message);
     }
   };
 
-  // Liste d’étapes
+  // Définir les étapes
   const steps = [
     {
       title: "Sélectionnez un stage",
@@ -166,20 +100,11 @@ export default function Carousel() {
       ),
     },
     {
-      title: "Informations personnelles",
+      title: "Renseignez vos informations",
       content: (
         <PersonalInfoStep
           selectedStage={selectedStage}
           onSubmit={handlePersonalInfoSubmit}
-        />
-      ),
-    },
-    {
-      title: "Informations sur le permis",
-      content: (
-        <DrivingLicenseStep
-          selectedStage={selectedStage}
-          onSubmit={handleDrivingLicenseSubmit}
         />
       ),
     },
@@ -196,26 +121,13 @@ export default function Carousel() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-4xl">
-        <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {steps[currentStep].title}
-        </h2>
-        <div>{steps[currentStep].content}</div>
-
-        {/* Bouton "Précédent" (si nécessaire) */}
-        {currentStep > 0 && (
-          <div className="flex justify-between mt-6">
-            <button
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded"
-            >
-              Précédent
-            </button>
-          </div>
-        )}
+    <div className="carousel-container">
+      <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
+      <h1>{steps[currentStep].title}</h1>
+      <div>{steps[currentStep].content}</div>
+      <div className="navigation">
+        {currentStep > 0 && <button onClick={prevStep}>Précédent</button>}
       </div>
     </div>
   );
-} 
+}

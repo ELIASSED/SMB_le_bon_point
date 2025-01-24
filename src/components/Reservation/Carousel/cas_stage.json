@@ -1,22 +1,22 @@
 [
     {
       "type": "Cas 1",
-      "description": "Stage volontaire pour récupération de points. Tout conducteur peut suivre volontairement un stage de sensibilisation afin de récupérer jusqu'à 4 points sur son permis de conduire, une fois par an.",
+      "description": "Stage volontaire pour récupération de points.",
       "reference_legale": "Article L223-6 du Code de la route"
     },
     {
       "type": "Cas 2",
-      "description": "Stage obligatoire en période probatoire. Un conducteur en période probatoire ayant commis une infraction entraînant le retrait de 3 points ou plus est dans l'obligation de suivre un stage de sensibilisation. Cette obligation lui est notifiée par une lettre 48N envoyée en recommandé.",
+      "description": "Stage obligatoire en période probatoire.",
       "reference_legale": "Article L223-6 du Code de la route"
     },
     {
       "type": "Cas 3",
-      "description": "Stage obligatoire en alternative à la poursuite judiciaire (composition pénale). Le procureur de la République peut proposer au contrevenant de suivre un stage de sensibilisation en alternative aux poursuites judiciaires. L'acceptation de cette mesure entraîne le classement sans suite de l'affaire.",
+      "description": "Stage obligatoire en alternative à la poursuite judiciaire (composition pénale).",
       "reference_legale": "Articles 41-1 et 41-2 du Code de procédure pénale"
     },
     {
       "type": "Cas 4",
-      "description": "Stage obligatoire en peine complémentaire. Le juge peut imposer un stage de sensibilisation à la sécurité routière en tant que peine complémentaire à une sanction principale pour certaines infractions graves.",
+      "description": "Stage obligatoire en peine complémentaire.",
       "reference_legale": "Article 131-35-1 du Code pénal"
     }
   ]
