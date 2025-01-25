@@ -1,33 +1,8 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
-
-// Interface des données utilisateur basée sur le modèle Prisma
-export interface UserFormData {
-  civilite: string;
-  nom: string;
-  prenom: string;
-  prenom1?: string; // Premier prénom (optionnel)
-  prenom2?: string; // Second prénom (optionnel)
-  adresse: string;
-  codePostal: string;
-  ville: string;
-  telephone: string;
-  email: string;
-  confirmationEmail: string; // Pour validation côté client
-  nationalite: string;
-  dateNaissance: string;
-  lieuNaissance: string;
-  codePostalNaissance: string;
-  numeroPermis: string;
-  dateDelivrancePermis: string;
-  prefecture: string;
-  etatPermis: string;
-  casStage: string;
-  scanIdentite?: File | null;
-  scanPermis?: File | null;
-  commentaire?: string; // Zone de commentaire (optionnelle)
-}
+import { fetchAddressSuggestions } from "../utils";
+import { AddressSuggestion, UserFormData } from "../types";
 
 const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<UserFormData>({
@@ -58,6 +33,9 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out";
@@ -78,6 +56,32 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, [name]: file }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleAddressChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setFormData((prev) => ({ ...prev, adresse: query }));
+
+    if (query.length >= 3) {
+      setIsLoadingAddress(true);
+      const suggestions = await fetchAddressSuggestions(query);
+      setAddressSuggestions(suggestions);
+      setShowSuggestions(true);
+      setIsLoadingAddress(false);
+    } else {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+    setFormData((prev) => ({
+      ...prev,
+      adresse: suggestion.properties.name,
+      codePostal: suggestion.properties.postcode,
+      ville: suggestion.properties.city,
+    }));
+    setShowSuggestions(false);
   };
 
   const validate = () => {
@@ -104,10 +108,7 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
     ];
 
     requiredFields.forEach((field) => {
-      if (
-        !formData[field as keyof UserFormData] ||
-        formData[field as keyof UserFormData]?.trim() === ""
-      ) {
+      if (!formData[field as keyof UserFormData]?.trim()) {
         newErrors[field] = "Ce champ est requis";
       }
     });
@@ -116,13 +117,11 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
       newErrors.confirmationEmail = "Les emails ne correspondent pas.";
     }
 
-    // Validation supplémentaire pour les formats (exemple : email)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       newErrors.email = "Format d'email invalide.";
     }
 
-    // Validation du numéro de téléphone
     const phoneRegex = /^[0-9]{10}$/;
     if (formData.telephone && !phoneRegex.test(formData.telephone)) {
       newErrors.telephone = "Format de téléphone invalide.";
@@ -138,22 +137,19 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
       setIsSubmitting(true);
       const submissionData = new FormData();
 
-      // Append les champs texte
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "scanIdentite" || key === "scanPermis") {
           if (value) {
-            submissionData.append(key, value);
+            submissionData.append(key, value as File);
           }
         } else {
-          submissionData.append(key, value);
+          submissionData.append(key, value as string);
         }
       });
 
       try {
         await onSubmit(submissionData);
-        // Optionnel: Réinitialiser le formulaire ou afficher un message de succès
       } catch (error) {
-        // Gestion des erreurs de soumission
         console.error(error);
       } finally {
         setIsSubmitting(false);
@@ -251,20 +247,39 @@ const MergedForm: React.FC<{ onSubmit: (data: FormData) => void }> = ({ onSubmit
           </div>
 
           {/* Adresse */}
-          <div>
-            <label className="block text-gray-700 font-medium">
-              Adresse<span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="adresse"
-              value={formData.adresse}
-              onChange={handleChange}
-              className={`${inputClassName} ${errors.adresse ? "border-red-500" : ""}`}
-              placeholder="Entrez votre adresse"
-            />
-            <ErrorMessage message={errors.adresse} />
-          </div>
+          <div className="relative">
+        <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
+          Adresse
+        </label>
+        <input
+          type="text"
+          id="adresse"
+          name="adresse"
+          value={formData.adresse}
+          onChange={handleAddressChange}
+          className="mt-1 block w-full border rounded-md p-2"
+          placeholder="Commencez à taper une adresse..."
+          autoComplete="off"
+        />
+
+        {isLoadingAddress && (
+          <div className="absolute right-2 top-[38px] text-gray-400">Chargement...</div>
+        )}
+
+        {showSuggestions && addressSuggestions.length > 0 && (
+          <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-auto">
+            {addressSuggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className="p-2 hover:bg-indigo-50 cursor-pointer transition-colors duration-150"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion.properties.label}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
           {/* Code Postal */}
           <div>

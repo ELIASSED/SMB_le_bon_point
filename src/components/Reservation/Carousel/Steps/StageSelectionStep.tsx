@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import SortModal from "../SortModal"; // Modale pour trier les stages
-
+import { formatDateWithDay } from "../utils";
+import { Stage } from "../types";
 const StageSelectionStep = ({ onStageSelected }) => {
   const [stages, setStages] = useState([]); // Liste des stages
   const [loading, setLoading] = useState(true); // État de chargement
