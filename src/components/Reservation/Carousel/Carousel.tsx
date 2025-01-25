@@ -96,7 +96,7 @@ export default function Carousel() {
       ),
     },
     {
-      title: "Renseignez vos informations",
+      title: "",
       content: (
         <PersonalInfoStep
           selectedStage={selectedStage}
