@@ -28,4 +28,29 @@ export interface Stage {
     categoriePermis: string;
     // ajoutez d'autres champs selon vos besoins
   }
-  
+
+export interface AddressSuggestion {
+  properties: {
+    label: string;
+    postcode: string;
+    city: string;
+    name: string;
+  };
+}
+
+export interface PersonalInfo {
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1?: string;
+  prenom2?: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  dateNaissance: string;
+  codePostalNaissance: string;
+  nationalite: string;
+  telephone: string;
+  email: string;
+  confirmationEmail: string;
+}
