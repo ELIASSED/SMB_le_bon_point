@@ -1,87 +1,117 @@
 "use client";
-import React, { useState } from "react";
-import { Stage } from "../types";
-import { formatDateWithDay } from "../utils";
+import React, { useState, useEffect } from "react";
+import SortModal from "../SortModal"; // Modale pour trier les stages
 
-interface StageSelectionStepProps {
-  stages: Stage[];
-  loading: boolean;
-  onStageSelected: (stage: Stage) => void;
-}
+const StageSelectionStep = ({ onStageSelected }) => {
+  const [stages, setStages] = useState([]); // Liste des stages
+  const [loading, setLoading] = useState(true); // État de chargement
+  const [error, setError] = useState(null); // État pour les erreurs éventuelles
+  const [currentPage, setCurrentPage] = useState(1); // Page actuelle
+  const itemsPerPage = 5; // Nombre d'éléments par page
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false); // État pour ouvrir/fermer la modale de tri
 
-const StageSelectionStep: React.FC<StageSelectionStepProps> = ({
-  stages,
-  loading,
-  onStageSelected,
-}) => {
-  // -- États pour la pagination --
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 5; // Nombre de stages à afficher par page
+  useEffect(() => {
+    const fetchStages = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/stage"); // Remplacez par l'URL réelle de votre API
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des stages");
+        }
+        const data = await response.json();
+        setStages(data);
+      } catch (err) {
+        console.error("Erreur :", err.message);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Calcul du nombre total de pages
-  const totalPages = Math.ceil(stages.length / pageSize);
+    fetchStages();
+  }, []);
 
-  // Extraction des stages pour la page courante
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedStages = stages.slice(startIndex, endIndex);
-
-  // Fonctions de navigation
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
+  // Gestion de la pagination
+  const totalPages = Math.ceil(stages.length / itemsPerPage);
+  const paginatedStages = stages.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
+    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   };
 
-  return (
-    <div className="bg-gray-50 p-4 md:p-8 rounded-lg shadow-md">
-      <h3 className="text-lg md:text-xl font-bold mb-4">Stages disponibles</h3>
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  };
 
-      {loading ? (
-        <p>Chargement des stages...</p>
-      ) : (
+  // Mise à jour des données triées depuis la modale
+  const handleDataUpdate = (sortedStages) => {
+    setStages(sortedStages);
+    setCurrentPage(1); // Réinitialiser à la première page après tri
+  };
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Chargement des stages...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500">Erreur : {error}</p>;
+  }
+
+  return (
+    <div className="bg-white p-6 md:p-10 rounded-lg shadow-lg border border-gray-200">
+      {/* Modale pour trier les stages */}
+      <div className="mb-6 flex justify-end">
+  
+        {isSortModalOpen && (
+          <SortModal
+            onDataUpdate={handleDataUpdate}
+            onClose={() => setIsSortModalOpen(false)}
+          />
+        )}
+      </div>
+
+      {/* Liste des stages */}
+      {stages.length > 0 ? (
         <>
-          {/* Liste paginée des stages */}
           <div className="space-y-4">
             {paginatedStages.map((stage) => (
               <div
                 key={stage.id}
-                className="flex flex-col md:flex-row md:items-center md:justify-between border-b p-4 hover:bg-gray-50 transition-colors"
+                className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border transition-colors shadow-sm"
               >
-                {/* Informations sur le stage */}
-                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-8 mb-4 md:mb-0">
-                  <div className="text-base md:text-lg font-bold text-yellow-600">
-                    {formatDateWithDay(stage.startDate)} au {formatDateWithDay(stage.endDate)}
+                {/* Informations du stage */}
+                <div className="flex flex-col md:flex-row md:items-center md:space-x-8 space-y-2 md:space-y-0">
+                  <div className="text-lg font-semibold text-yellow-600">
+                    {new Date(stage.startDate).toLocaleDateString()} -{" "}
+                    {new Date(stage.endDate).toLocaleDateString()}
                   </div>
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">{stage.location}</span>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">{stage.location}</span>
                   </div>
                   <div
-                    className={`text-base md:text-lg font-semibold ${
+                    className={`text-lg font-medium ${
                       stage.capacity <= 5 ? "text-red-600" : "text-green-600"
                     }`}
                   >
-                    <span>Places restantes: {stage.capacity}</span>
+                    Places restantes : {stage.capacity}
                   </div>
                 </div>
 
-                {/* Prix et bouton de réservation */}
-                <div className="flex items-center justify-between md:justify-end space-x-4">
-                  <div className="text-base md:text-lg font-bold text-gray">
+                {/* Prix et bouton */}
+                <div className="flex flex-col md:flex-row items-center md:space-x-4 space-y-4 md:space-y-0">
+                  <div className="text-lg font-bold text-gray-700">
                     {stage.price.toLocaleString("fr-FR", {
                       style: "currency",
                       currency: "EUR",
                     })}
                   </div>
                   <button
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded w-full md:w-auto"
                     onClick={() => onStageSelected(stage)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded shadow transition"
                   >
                     Réserver
                   </button>
@@ -90,35 +120,37 @@ const StageSelectionStep: React.FC<StageSelectionStepProps> = ({
             ))}
           </div>
 
-          {/* Contrôles de pagination */}
-          <div className="flex items-center justify-center space-x-4 mt-6">
+          {/* Pagination */}
+          <div className="mt-8 flex justify-center items-center space-x-4">
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className={`py-2 px-4 rounded ${
+              className={`px-4 py-2 rounded-lg shadow ${
                 currentPage === 1
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
               }`}
             >
               Précédent
             </button>
-            <span>
-              Page {currentPage} / {totalPages}
+            <span className="text-gray-700">
+              Page <strong>{currentPage}</strong> / {totalPages}
             </span>
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className={`py-2 px-4 rounded ${
+              className={`px-4 py-2 rounded-lg shadow ${
                 currentPage === totalPages
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
               }`}
             >
               Suivant
             </button>
           </div>
         </>
+      ) : (
+        <p className="text-center text-gray-500">Aucun stage disponible pour le moment.</p>
       )}
     </div>
   );

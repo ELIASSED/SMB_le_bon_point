@@ -1,97 +1,107 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { sendEmail } from "../../../lib/mailer"; // Import direct pour utiliser la logique de mailer
-import { generateConfirmationEmail } from "../../../lib/emailTemplates"; // Pour le template
 
 const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const { stageId, userData, drivingLicenseData } = body;
+    // Récupérer les données du corps de la requête
+    const body = await request.json();
+    const { userData, stageId } = body;
 
-    if (!stageId || !userData || !drivingLicenseData) {
-      throw new Error(
-        "Les champs 'stageId', 'userData', et 'drivingLicenseData' sont requis."
-      );
+    // Validation des données
+    if (!userData || !stageId) {
+      return NextResponse.json({ error: "Données invalides." }, { status: 400 });
     }
 
-    // Formatage des données
-    const formattedUserData = {
-      ...userData,
-      dateNaissance: userData.dateNaissance
-        ? new Date(userData.dateNaissance)
-        : null,
-    };
-
-    const formattedDrivingLicenseData = {
-      ...drivingLicenseData,
-      dateDelivrancePermis: drivingLicenseData.dateDelivrancePermis
-        ? new Date(drivingLicenseData.dateDelivrancePermis)
-        : null,
-    };
-
-    // Transaction : créer user, inscrire et décrémenter la capacité
-    await prisma.$transaction(async (tx) => {
-      const session = await tx.session.findUnique({
-        where: { id: stageId },
-      });
-
-      if (!session || session.capacity <= 0) {
-        throw new Error("La session est complète ou introuvable.");
-      }
-
-      await tx.session.update({
-        where: { id: stageId },
-        data: { capacity: { decrement: 1 } },
-      });
-
-      const user = await tx.user.upsert({
-        where: { email: formattedUserData.email },
-        update: formattedUserData,
-        create: formattedUserData,
-      });
-
-      await tx.sessionUsers.upsert({
-        where: {
-          sessionId_userId: {
-            sessionId: stageId,
-            userId: user.id,
-          },
-        },
-        update: {
-          ...formattedDrivingLicenseData,
-        },
-        create: {
-          sessionId: stageId,
-          userId: user.id,
-          ...formattedDrivingLicenseData,
-        },
-      });
-
-      // Génération et envoi d'email après transaction
-      const emailHtml = generateConfirmationEmail(
-        userData.prenom,
-        userData.nom,
-        session.location,
-        session.numeroStageAnts,
-        session.startDate.toISOString(),
-        session.endDate.toISOString()
-      );
-
-      await sendEmail(
-        userData.email,
-        "Confirmation d'inscription",
-        `Bonjour ${userData.prenom}, votre inscription au stage ${stageId} est confirmée.`,
-        emailHtml
-      );
+    // Vérifier si la session existe et a des places disponibles
+    const session = await prisma.session.findUnique({
+      where: { id: stageId },
     });
 
-    return NextResponse.json({ message: "Inscription réussie." });
-  } catch (error: any) {
+    if (!session) {
+      return NextResponse.json({ error: "La session n'existe pas." }, { status: 404 });
+    }
+
+    if (session.capacity <= 0) {
+      return NextResponse.json({ error: "Plus de places disponibles." }, { status: 400 });
+    }
+
+    // Créer ou mettre à jour l'utilisateur
+    const user = await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {
+        civilite: userData.civilite,
+        nom: userData.nom,
+        prenom: userData.prenom,
+        adresse: userData.adresse,
+        codePostal: userData.codePostal,
+        ville: userData.ville,
+        telephone: userData.telephone,
+        nationalite: userData.nationalite,
+        dateNaissance: new Date(userData.dateNaissance),
+        codePostalNaissance: userData.codePostalNaissance,
+        numeroPermis: userData.numeroPermis,
+        dateDelivrancePermis: new Date(userData.dateDelivrancePermis),
+        prefecture: userData.prefecture,
+        etatPermis: userData.etatPermis,
+        casStage: userData.casStage,
+      },
+      create: {
+        civilite: userData.civilite,
+        nom: userData.nom,
+        prenom: userData.prenom,
+        adresse: userData.adresse,
+        codePostal: userData.codePostal,
+        ville: userData.ville,
+        telephone: userData.telephone,
+        email: userData.email,
+        nationalite: userData.nationalite,
+        dateNaissance: new Date(userData.dateNaissance),
+        codePostalNaissance: userData.codePostalNaissance,
+        numeroPermis: userData.numeroPermis,
+        dateDelivrancePermis: new Date(userData.dateDelivrancePermis),
+        prefecture: userData.prefecture,
+        etatPermis: userData.etatPermis,
+        casStage: userData.casStage,
+      },
+    });
+
+    // Vérifier si l'utilisateur est déjà inscrit à cette session
+    const existingSessionUser = await prisma.sessionUsers.findUnique({
+      where: {
+        sessionId_userId: {
+          sessionId: stageId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (existingSessionUser) {
+      return NextResponse.json({ error: "L'utilisateur est déjà inscrit à cette session." }, { status: 400 });
+    }
+
+    // Créer l'entrée dans SessionUsers
+    const sessionUser = await prisma.sessionUsers.create({
+      data: {
+        sessionId: stageId,
+        userId: user.id,
+      },
+    });
+
+    // Réduire la capacité de la session
+    await prisma.session.update({
+      where: { id: stageId },
+      data: { capacity: { decrement: 1 } },
+    });
+
+    return NextResponse.json({
+      message: "Utilisateur inscrit avec succès.",
+      user,
+      sessionUser,
+    });
+  } catch (error) {
     console.error("Erreur lors de l'inscription :", error);
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }

@@ -17,7 +17,7 @@ export default function Header() {
           <span className="block text-base text-gray-600">
             Stages de Récupération de Points
           </span>
-          <span className="block text-sm text-gray-500 mt-1">
+          <span className="block text-sm text-[#004c97] mt-1">
             Agrément R2209400050
           </span>
         </Link>

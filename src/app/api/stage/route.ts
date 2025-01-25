@@ -3,14 +3,20 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+
+  // Paramètres de tri
+  const orderDate = url.searchParams.get("orderDate") === "desc" ? "desc" : "asc";
+  const orderPrice = url.searchParams.get("orderPrice") === "desc" ? "desc" : "asc";
+
   try {
-    // Récupération des sessions avec capacité > 0
-    // et sélection des champs nécessaires
+    // Requête Prisma avec tri croisé
     const sessions = await prisma.session.findMany({
       where: {
+        isArchived: false,
         capacity: {
-          gt: 0, // strictly greater than 0
+          gt: 0, // Filtre : sessions avec des places disponibles
         },
       },
       select: {
@@ -22,17 +28,16 @@ export async function GET() {
         location: true,
         capacity: true,
       },
-      // Tri croissant par date de début (optionnel)
-      orderBy: {
-        startDate: "asc",
-      },
+      orderBy: [
+        { startDate: orderDate }, // Tri par date
+        { price: orderPrice },    // Tri par prix
+      ],
     });
-
     return NextResponse.json(sessions);
   } catch (error) {
-    console.error("Erreur lors de la récupération des sessions:", error);
+    console.error("Erreur Prisma :", error);
     return NextResponse.json(
-      { error: "Une erreur est survenue lors de la récupération des sessions." },
+      { error: "Erreur lors de la récupération des sessions" },
       { status: 500 }
     );
   } finally {
