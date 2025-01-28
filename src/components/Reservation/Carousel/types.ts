@@ -10,17 +10,6 @@ export interface Stage {
     price: number;
   }
   
-  export interface PersonalInfo {
-    nom: string;
-    prenom: string;
-    email: string;
-    confirmationEmail: string;
-    telephone: string;
-    adresse: string;
-    codePostal: string;
-    ville: string;
-    // ajoutez d'autres champs selon vos besoins
-  }
   
   export interface DrivingLicenseInfo {
     numeroPermis: string;
@@ -54,3 +43,42 @@ export interface PersonalInfo {
   email: string;
   confirmationEmail: string;
 }
+
+export interface UserFormData {
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1: string;
+  prenom2: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  telephone: string;
+  email: string;
+  confirmationEmail: string;
+  nationalite: string;
+  dateNaissance: string;
+  lieuNaissance: string;
+  codePostalNaissance: string;
+  numeroPermis: string;
+  dateDelivrancePermis: string;
+  prefecture: string;
+  etatPermis: string;
+  casStage: string;
+  scanIdentiteRecto: File | null;
+  scanIdentiteVerso: File | null;
+  scanPermisRecto: File | null;
+  scanPermisVerso: File | null;
+  commentaire: string | null;
+}
+
+export interface AddressSuggestion {
+  properties: {
+    name: string;
+    postcode: string;
+    city: string;
+    label: string;
+  };
+}
+
+export type FormDataType = any; // Remplacez par le type approprié si nécessaire
