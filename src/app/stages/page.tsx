@@ -20,7 +20,7 @@ export default function MaintenancePage() {
         </h1>
         <p className="text-gray-700 mb-4">
           Nous travaillons activement à résoudre ce problème et à restaurer notre système de réservation en ligne.
-        </p>
+        </p><p>Veuillez noter que le prix de chaque stage est de 210 €. </p>
         <p className="text-gray-700 mb-4">
           En attendant, vous pouvez nous contacter :
         </p>
