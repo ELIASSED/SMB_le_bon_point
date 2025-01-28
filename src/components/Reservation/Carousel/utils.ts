@@ -3,19 +3,51 @@
   import { AddressSuggestion } from "./types";
 
 /**
- * Formate une date (YYYY-MM-DD) en une date lisible avec le jour
- * @param date - la date au format string (ex: "2025-01-05")
- * @returns ex: "lun. 5 janvier 2025"
+ * Retourne la date formatée avec nom du jour, jour, mois, année.
+ * ex: "jeu. 16 janvier 2025"
  */
-export const formatDateWithDay = (date: string): string => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: "short",
-      year: "numeric",
-      month: "long",
+export function formatDateWithDay(dateStr: string) {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: "long", // "jeu."
+    year: "numeric",  // "2025"
+    month: "long",    // "janvier"
+    day: "numeric",   // "16"
+  };
+  return new Date(dateStr).toLocaleDateString("fr-FR", options);
+}
+
+/**
+ * Retourne un intervalle de dates ("start" - "end") avec la logique demandée :
+ * - Si même mois + année, renvoie "jeu. 16 et ven. 17 janvier 2025"
+ * - Sinon, renvoie "jeu. 16 janvier 2025 - ven. 17 janvier 2025"
+ */
+export function formatDateRange(startStr: string, endStr: string): string {
+  const startDate = new Date(startStr);
+  const endDate   = new Date(endStr);
+
+  // Vérifie si c'est le même mois et la même année
+  const sameMonthYear =
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getFullYear() === endDate.getFullYear();
+
+  if (sameMonthYear) {
+    // -> "jeu. 16" (sans mois/année) + "et" + "ven. 17 janvier 2025"
+    // 1) Format "jour + nom du jour" (sans mois/année)
+    const shortOptions: Intl.DateTimeFormatOptions = {
+      weekday: "long",
       day: "numeric",
     };
-    return new Date(date).toLocaleDateString("fr-FR", options);
-  };
+    const startShort = startDate.toLocaleDateString("fr-FR", shortOptions);
+    // 2) Format complet pour la deuxième date
+    const endFull = formatDateWithDay(endStr);
+
+    // ex: "jeu. 16 et ven. 17 janvier 2025"
+    return `${startShort} et ${endFull}`;
+  } else {
+    // Cas normal : "formatDateWithDay(start) - formatDateWithDay(end)"
+    return `${formatDateWithDay(startStr)} - ${formatDateWithDay(endStr)}`;
+  }
+}
 
 
 /**

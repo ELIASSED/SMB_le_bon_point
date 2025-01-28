@@ -1,4 +1,4 @@
-import SortModal from "./SortModal";
+import SortModal from "./SortOptions";
 import { formatDateWithDay } from "./utils";
 const StageList = ({
     stages,
