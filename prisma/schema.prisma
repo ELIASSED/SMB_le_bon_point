@@ -32,8 +32,8 @@ model User {
   civilite            String
   nom                 String
   prenom              String
-  prenom1             String?      // Nullable
-  prenom2             String?      // Nullable
+  prenom1             String?      
+  prenom2             String?      
   adresse             String
   codePostal          String
   ville               String
@@ -43,15 +43,15 @@ model User {
   dateNaissance       DateTime        
   codePostalNaissance String
   createdAt           DateTime     @default(now())
-
+  
   // Champs pour le suivi des relances
   relanceCount        Int          @default(0)
   lastRelanceAt       DateTime?
-
+  
   // Champs pour les scans d'images confidentielles
-  imageScan1          String?      // URL S3 ou chemin local
-  imageScan2          String?      // URL S3 ou chemin local
-
+  imageScan1          String?      
+  imageScan2          String?      
+  
   // Champs déplacés depuis SessionUsers
   numeroPermis         String
   dateDelivrancePermis DateTime
@@ -59,9 +59,12 @@ model User {
   etatPermis           String
   casStage             String
 
+  // Champ de statut de paiement global
+  isPaid              Boolean      @default(false)
+
   // Relations
-  sessionUsers SessionUsers[]
-  relances     Relance[]
+  sessionUsers        SessionUsers[]
+  relances            Relance[]
 }
 
 model SessionUsers {

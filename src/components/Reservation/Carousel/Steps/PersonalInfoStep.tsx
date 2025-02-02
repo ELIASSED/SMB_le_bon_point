@@ -10,6 +10,10 @@ interface PaymentStepProps {
   onPaymentSuccess: () => void;
 }
 
+interface PersonalInfoStepProps {
+  onSubmit: (data: DrivingLicenseInfo) => void;
+}
+
 const StageSelectionStep = ({ onStageSelected }) => {
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +61,7 @@ const StageSelectionStep = ({ onStageSelected }) => {
 
     return (
       <div className="mb-6 p-4 border rounded bg-gray-50">
+        <SelectedStageInfo/>
         <h3 className="text-lg font-semibold mb-2">Stage Sélectionné</h3>
         <p>
           <span className="font-bold">Dates :</span>{" "}

@@ -6,7 +6,7 @@
  * Retourne la date formatée avec nom du jour, jour, mois, année.
  * ex: "jeu. 16 janvier 2025"
  */
-export function formatDateWithDay(dateStr: string) {
+export function formatDateWithDay(dateStr: string): string {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long", // "jeu."
     year: "numeric",  // "2025"
