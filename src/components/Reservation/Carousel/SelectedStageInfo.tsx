@@ -2,8 +2,8 @@
 "use client";
 
 import React from "react";
-import { Stage } from "../types";
-import { formatDateWithDay } from "../utils";
+import { Stage } from "./types";
+import { formatDateWithDay } from "./utils";
 
 interface SelectedStageInfoProps {
   selectedStage?: Stage;

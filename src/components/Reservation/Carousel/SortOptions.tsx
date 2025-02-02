@@ -8,6 +8,11 @@ interface SortOptionsProps {
 
 const SortOptions: React.FC<SortOptionsProps> = ({ onDataUpdate }) => {
   const [sortOption, setSortOption] = useState<SortOption>("date-asc");
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIsChecked(event.target.checked);  // Met à jour l'état en fonction de l'action de l'utilisateur
+  };
 
   const handleApply = async () => {
     try {
@@ -74,7 +79,7 @@ const SortOptions: React.FC<SortOptionsProps> = ({ onDataUpdate }) => {
           </label>
 
           <label
-            className={` items-center space-x-3 cursor-pointer ${
+            className={`items-center space-x-3 cursor-pointer ${
               sortOption === "price-asc" ? "text-blue-600" : ""
             }`}
             onClick={() => applySort("price-asc")}
@@ -88,6 +93,8 @@ const SortOptions: React.FC<SortOptionsProps> = ({ onDataUpdate }) => {
             />
             <span>Prix croissants</span>
           </label>
+
+       
         </div>
       </div>
     </div>
