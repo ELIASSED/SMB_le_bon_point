@@ -49,8 +49,10 @@ model User {
   lastRelanceAt       DateTime?
   
   // Champs pour les scans d'images confidentielles
-  imageScan1          String?      
-  imageScan2          String?      
+  id_recto          String?      
+  id_verso          String?   
+  permis_recto          String?      
+  permis_verso          String?      
   
   // Champs déplacés depuis SessionUsers
   numeroPermis         String
