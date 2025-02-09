@@ -1,131 +1,126 @@
-// prisma/seed.ts (or seed.js)
-const { PrismaClient } = require('@prisma/client');
+// prisma/seed.ts
+
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding database...");
+  // Suppression des données existantes dans l'ordre (pour respecter les contraintes relationnelles)
+  await prisma.payment.deleteMany();
+  await prisma.relance.deleteMany();
+  await prisma.sessionUsers.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.psychologue.deleteMany();
+  await prisma.instructor.deleteMany();
+  await prisma.user.deleteMany();
 
-  // 1. Create instructors
-  const instructor1 = await prisma.instructor.create({
+  // Création d'un instructeur
+  const instructor = await prisma.instructor.create({
     data: {
-      email: "instructor1@example.com",
-      firstName: "Jean",
-      lastName: "Doe",
-      phone: "01 23 45 67 89",
-      numeroAutorisationPrefectorale:"B7543986745",    
-      isArchived: false,
+      email: 'instructor@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      numeroAutorisationPrefectorale: 'AUTH123456',
+      phone: '0123456789',
     },
   });
 
-  const instructor2 = await prisma.instructor.create({
+  // Création d'un psychologue
+  const psychologue = await prisma.psychologue.create({
     data: {
-      email: "instructor2@example.com",
-      firstName: "Alice",
-      lastName: "Smith",
-      phone: "01 23 45 67 54",
-      numeroAutorisationPrefectorale:"B7554386745",
-      isArchived: false,
+      email: 'psychologue@example.com',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      numeroAutorisationPrefectorale: 'AUTH654321',
+      phone: '0987654321',
     },
   });
 
-  // 2. Create psychologues
-  const psychologue1 = await prisma.psychologue.create({
+  // Création d'une session
+  const session = await prisma.session.create({
     data: {
-      email: "psychologue1@example.com",
-      firstName: "Marie",
-      lastName: "Curie",
-      phone: "01 23 45 43 89",
-      numeroAutorisationPrefectorale:"B7543965745",
-      isArchived: false,
+      numeroStageAnts: 'STAGE001',
+      price: 200.0,
+      description: 'Session de formation initiale',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 86400000), // 1 jour plus tard
+      location: 'Paris',
+      capacity: 20,
+      instructorId: instructor.id,
+      psychologueId: psychologue.id,
     },
   });
 
-  const psychologue2 = await prisma.psychologue.create({
-    data: {
-      email: "psychologue2@example.com",
-      firstName: "Albert",
-      lastName: "Einstein",
-      phone: "01 73 44 67 19",
-      numeroAutorisationPrefectorale:"B7523409745",
-      isArchived: false,
-    },
-  });
-
-  // 3. Generate sessions dynamically: 8 per month for one year
-  const startDate = new Date("2025-01-01T09:00:00Z");
-  const endDate = new Date("2025-12-31T17:00:00Z");
-  const sessions = [];
-
-  let sessionNumber = 1;
-
-  for (let month = 0; month < 12; month++) {
-    for (let s = 0; s < 8; s++) {
-      const start = new Date(startDate);
-      start.setMonth(startDate.getMonth() + month);
-      start.setDate(s * 3 + 1); // space of 3 days between each stage
-
-      const end = new Date(start);
-      end.setDate(start.getDate() + 1); // 2-day stage
-
-      sessions.push({
-        numeroStageAnts: `R0060040934${String(sessionNumber).padStart(3, "0")}`,
-        price: 200 + s * 10, // variable price
-        description: "Stage de récupération de points",
-        startDate: start,
-        endDate: end,
-        location: "Saint-Maur-des-Fossés",
-        capacity: 15 - (s % 5), // variable capacity
-        instructorId: s % 2 === 0 ? instructor1.id : instructor2.id,
-        psychologueId: s % 2 === 0 ? psychologue1.id : psychologue2.id,
-      });
-
-      sessionNumber++;
-    }
-  }
-
-  await prisma.session.createMany({ data: sessions });
-
-  // 4. Create a user (including driving license fields)
+  // Création d'un utilisateur
   const user = await prisma.user.create({
     data: {
-      civilite: "Monsieur",
-      nom: "Dupont",
-      prenom: "Jean",
-      prenom2: "Louis",
-      adresse: "12 rue Exemple",
-      codePostal: "75001",
-      ville: "Paris",
-      telephone: "0123456789",
-      email: "jean.dupont@example.com",
-      nationalite: "Française",
-      dateNaissance: new Date("1990-01-01"),
-      codePostalNaissance: "75001",
-
-      // Driving license fields that are now in the User model
-      numeroPermis: "123456789",
-      dateDelivrancePermis: new Date("2015-06-01"),
-      prefecture: "Paris",
-      etatPermis: "Valide",
-      casStage: "Volontaire",
+      civilite: 'Mr',
+      nom: 'Dupont',
+      prenom: 'Jean',
+      adresse: '123 Rue de la République',
+      codePostal: '75001',
+      ville: 'Paris',
+      telephone: '0123456789',
+      email: 'jean.dupont@example.com',
+      nationalite: 'Française',
+      dateNaissance: new Date('1990-01-01'),
+      codePostalNaissance: '75001',
+      // Suivi des relances
+      relanceCount: 0,
+      lastRelanceAt: null,
+      // Scans d'images (optionnels)
+      id_recto: null,
+      id_verso: null,
+      permis_recto: null,
+      permis_verso: null,
+      // Infos provenant de SessionUsers
+      numeroPermis: 'P123456',
+      dateDelivrancePermis: new Date('2020-01-01'),
+      prefecture: 'Paris',
+      etatPermis: 'Valide',
+      casStage: 'N/A',
+      // Statut de paiement global
+      isPaid: false,
     },
   });
 
-  // 5. Link user to a session via SessionUsers
-  // Note: sessionUsers no longer includes driving license fields
-  await prisma.sessionUsers.create({
+  // Création d'une inscription (SessionUsers) liant l'utilisateur à la session
+  const sessionUser = await prisma.sessionUsers.create({
     data: {
-      sessionId: 1, // an ID that exists
+      sessionId: session.id,
       userId: user.id,
-      // isArchived: false, // or any other optional field from your SessionUsers model
     },
   });
 
-  console.log("Seeding finished.");
+  // Création d'un paiement associé à l'inscription
+  const payment = await prisma.payment.create({
+    data: {
+      sessionUserId: sessionUser.id,
+      amount: 200.0,
+      method: 'Credit Card',
+    },
+  });
+
+  // Création d'une relance pour l'utilisateur (en lien avec la session)
+  const relance = await prisma.relance.create({
+    data: {
+      email: user.email,
+      firstName: user.prenom,
+      lastName: user.nom,
+      phone: user.telephone,
+      userId: user.id,
+      lastSessionId: session.id, // Champ optionnel renseigné ici
+      profession: 'Ingénieur',
+    },
+  });
+
+  console.log('Base de données semée avec succès !');
+  console.log({ instructor, psychologue, session, user, sessionUser, payment, relance });
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error('Erreur lors du seed : ', error);
     process.exit(1);
   })
   .finally(async () => {
