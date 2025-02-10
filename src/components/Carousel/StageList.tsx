@@ -1,5 +1,5 @@
 import SortModal from "./SortOptions";
-import { formatDateWithDay } from "./utils";
+import { formatDateWithDay } from "../utils";
 const StageList = ({
     stages,
     loading,

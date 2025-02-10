@@ -1,9 +1,10 @@
+// components/Carousel/Carousel.tsx
 "use client";
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPaymentIntent, registerUser, sendConfirmationEmail } from "../../../lib/api";
-import { Stage, DrivingLicenseInfo } from "./types";
+import { createPaymentIntent, registerUser, sendConfirmationEmail } from "../../lib/api";
+import { Stage, RegistrationInfo } from "../types";
 import ProgressBar from "./ProgressBar";
 import StageSelectionStep from "./Steps/StageSelectionStep";
 import PersonalInfoStep from "./Steps/PersonalInfoStep";
@@ -12,7 +13,7 @@ import PaymentStep from "./Steps/PaymentStep";
 export default function Carousel() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
-  const [personalInfo, setPersonalInfo] = useState<DrivingLicenseInfo | null>(null);
+  const [registrationInfo, setRegistrationInfo] = useState<RegistrationInfo | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -26,7 +27,6 @@ export default function Carousel() {
   const handleStageSelection = async (stage: Stage) => {
     try {
       setSelectedStage(stage);
-      // Appel à votre API pour créer le PaymentIntent et récupérer le clientSecret
       const paymentIntent = await createPaymentIntent(stage);
       setClientSecret(paymentIntent.clientSecret);
       nextStep();
@@ -36,25 +36,25 @@ export default function Carousel() {
     }
   };
 
-  // Étape 2 : Soumission des informations personnelles
-  const handlePersonalInfoSubmit = (data: DrivingLicenseInfo) => {
-    console.log("Payload data :", data); // Affichage dans la console pour vérification
-    setPersonalInfo(data);
+  // Étape 2 : Soumission des infos d'inscription
+  const handleRegistrationSubmit = (info: RegistrationInfo) => {
+    console.log("Données d'inscription :", info);
+    setRegistrationInfo(info);
     nextStep();
   };
 
-  // Enregistrement final après paiement
-  const handleRegistration = async () => {
-    if (!selectedStage || !personalInfo) return;
+  // Étape 3 : Paiement réussi, finalisation de l'inscription
+  const handlePaymentSuccess = async () => {
+    if (!selectedStage || !registrationInfo) return;
     try {
       setIsSubmitting(true);
       const registrationData = {
         stageId: selectedStage.id,
-        userData: personalInfo,
+        userData: registrationInfo,
       };
       await registerUser(registrationData);
       await sendConfirmationEmail({
-        to: personalInfo.email,
+        to: registrationInfo.email,
         subject: "Confirmation d'inscription",
         text: `Votre inscription au stage ${selectedStage.description} est confirmée.`,
         html: `<p>Merci pour votre inscription au stage ${selectedStage.description}.</p>`,
@@ -68,12 +68,6 @@ export default function Carousel() {
     }
   };
 
-  // Étape 3 : Après paiement réussi
-  const handlePaymentSuccess = async () => {
-    await handleRegistration();
-  };
-
-  // Définition des étapes du carousel
   const steps = [
     {
       title: "Sélectionnez un stage",
@@ -83,8 +77,8 @@ export default function Carousel() {
       title: "Formulaire d'inscription",
       content: (
         <PersonalInfoStep
-          selectedStage={selectedStage}
-          onSubmit={handlePersonalInfoSubmit}
+          selectedStage={selectedStage!}
+          onSubmit={handleRegistrationSubmit}
         />
       ),
     },
@@ -92,8 +86,8 @@ export default function Carousel() {
       title: "Paiement",
       content: (
         <PaymentStep
-          selectedStage={selectedStage}
-          clientSecret={clientSecret}
+          selectedStage={selectedStage!}
+          clientSecret={clientSecret!}
           onPaymentSuccess={handlePaymentSuccess}
         />
       ),

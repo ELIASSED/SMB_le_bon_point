@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import CheckoutForm from '../../components/Reservation/Carousel/Form/CheckoutForm';
+import CheckoutForm from '../../components/Carousel/Form/CheckoutForm';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
 
