@@ -1,11 +1,11 @@
 // components/Carousel/PaymentStep.tsx
 "use client";
 import React from "react";
-import { Stage } from "../types";
-import { formatDateWithDay } from "../utils";
+import { Stage } from "../../types";
+import { formatDateWithDay } from "../../utils";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import CheckoutForm from "../Form/CheckoutForm"; // Chemin d'import à ajuster selon votre structure
+import CheckoutForm from "../Form/CheckoutForm."; // Chemin d'import à ajuster selon votre structure
 
 interface PaymentStepProps {
   selectedStage: Stage | null;

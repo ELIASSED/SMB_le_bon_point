@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import SortOptions from "../SortOptions";
-import { formatDateRange } from "../utils";  // <-- importez formatDateRange
-import { Stage } from "../types";  // Assurez-vous que le type Stage est bien importé
+import { formatDateRange } from "../../utils";  // <-- importez formatDateRange
+import { Stage } from "../../types";  // Assurez-vous que le type Stage est bien importé
 import { fetchStages } from "@/lib/api";  // Assurez-vous que cette fonction existe
 
 interface StageSelectionStepProps {
