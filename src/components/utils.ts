@@ -1,6 +1,6 @@
 // components/Carousel/utils.ts
   import axios from "axios";
-  import { AddressSuggestion } from "./types";
+  import { AddressSuggestion } from "./Carousel/types";
 
 /**
  * Retourne la date formatée avec nom du jour, jour, mois, année.

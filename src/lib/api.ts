@@ -1,3 +1,5 @@
+import { RegistrationInfo, Stage } from "@/components/Carousel/types";
+
 // lib/api.ts
 export async function fetchStages() {
     const response = await fetch("/api/stage");
@@ -7,7 +9,7 @@ export async function fetchStages() {
     return response.json();
   }
   
-  export async function createPaymentIntent(stage) {
+  export async function createPaymentIntent(stage: Stage) {
     const response = await fetch("/api/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -19,7 +21,7 @@ export async function fetchStages() {
     return response.json();
   }
   
-  export async function registerUser(data) {
+  export async function registerUser(data: { stageId: number; userData: RegistrationInfo; }) {
     const response = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,7 +33,7 @@ export async function fetchStages() {
     return response.json();
   }
   
-  export async function sendConfirmationEmail(data) {
+  export async function sendConfirmationEmail(data: { to: string; subject: string; text: string; html: string; }) {
     const response = await fetch("/api/send-mail", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

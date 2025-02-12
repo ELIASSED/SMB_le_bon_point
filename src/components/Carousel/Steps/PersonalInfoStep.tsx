@@ -1,15 +1,16 @@
 // components/Carousel/Steps/PersonalInfoStep.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Stage, AddressSuggestion, RegistrationInfo } from "../../types";
 import SelectedStageInfo from "../SelectedStageInfo";
 import { fetchAddressSuggestions } from "../utils";
-
+import nationalitiesData from "../nationalite.json";
+import casStageData from "../cas_stage.json";
 
 interface PersonalInfoStepProps {
   selectedStage: Stage;
-  onSubmit: (info: RegistrationInfo) => void;
+  onSubmit: (data: FormData) => void;
 }
 
 export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalInfoStepProps) {
@@ -23,40 +24,58 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     adresse: "",
     codePostal: "",
     ville: "",
-    dateNaissance: "",
-    codePostalNaissance: "",
-    nationalite: "",
     telephone: "",
     email: "",
     confirmationEmail: "",
+    nationalite: "",
+    dateNaissance: "",
+    lieuNaissance: "",
+    codePostalNaissance: "",
     // Informations sur le permis
     numeroPermis: "",
     dateDelivrancePermis: "",
     prefecture: "",
     etatPermis: "",
     casStage: "",
+    // Fichiers et commentaire (optionnels)
+    scanIdentiteRecto: null,
+    scanIdentiteVerso: null,
+    scanPermisRecto: null,
+    scanPermisVerso: null,
+    commentaire: "",
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // États pour la suggestion d'adresse
+  // Suggestions d'adresse
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
 
-  const inputClassName = "mt-1 block w-full border border-gray-300 rounded-md p-2";
+  // Nationalités chargées depuis le JSON
+  const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
 
-  // Gestion classique des changements pour la plupart des champs
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const inputClassName =
+    "mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Gestion spécifique du champ "adresse" avec appel aux suggestions
-  const handleAddressChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    const file = e.target.files?.[0] || null;
+    setFormData((prev) => ({ ...prev, [name]: file }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleAddressChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    setFormData(prev => ({ ...prev, adresse: value }));
-    if (value.length > 2) {
+    setFormData((prev) => ({ ...prev, adresse: value }));
+    if (value.length >= 3) {
       setIsLoadingAddress(true);
       setShowSuggestions(true);
       try {
@@ -64,17 +83,17 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
         setAddressSuggestions(suggestions);
       } catch (error) {
         console.error("Erreur lors de la récupération des suggestions d'adresse :", error);
+      } finally {
+        setIsLoadingAddress(false);
       }
-      setIsLoadingAddress(false);
     } else {
       setShowSuggestions(false);
       setAddressSuggestions([]);
     }
   };
 
-  // Lorsqu'une suggestion est sélectionnée, on met à jour le champ et on masque la liste
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       adresse: suggestion.properties.label,
       codePostal: suggestion.properties.postcode || prev.codePostal,
@@ -83,219 +102,558 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     setShowSuggestions(false);
   };
 
+  useEffect(() => {
+    if (nationalitiesData?.nationalities) {
+      setNationalities(nationalitiesData.nationalities);
+    }
+  }, []);
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
-    // Champs obligatoires pour les infos personnelles
     const requiredPersonal = [
-      "civilite", "nom", "prenom", "adresse", "codePostal", "ville",
-      "dateNaissance", "codePostalNaissance", "nationalite", "telephone", "email", "confirmationEmail"
+      "civilite",
+      "nom",
+      "prenom",
+      "adresse",
+      "codePostal",
+      "ville",
+      "telephone",
+      "email",
+      "confirmationEmail",
+      "nationalite",
+      "dateNaissance",
+      "codePostalNaissance",
     ];
-    requiredPersonal.forEach(field => {
-      if (!formData[field as keyof RegistrationInfo]) {
+    requiredPersonal.forEach((field) => {
+      if (!formData[field as keyof RegistrationInfo]?.toString().trim()) {
         newErrors[field] = "Ce champ est requis.";
       }
     });
     if (formData.email !== formData.confirmationEmail) {
       newErrors.confirmationEmail = "Les emails ne correspondent pas.";
     }
-    // Champs obligatoires pour le permis
-    const requiredLicense = [
-      "numeroPermis", "dateDelivrancePermis", "prefecture", "etatPermis", "casStage"
-    ];
-    requiredLicense.forEach(field => {
-      if (!formData[field as keyof RegistrationInfo]) {
+
+    const requiredLicense = ["numeroPermis", "dateDelivrancePermis", "prefecture", "etatPermis", "casStage"];
+    requiredLicense.forEach((field) => {
+      if (!formData[field as keyof RegistrationInfo]?.toString().trim()) {
         newErrors[field] = "Ce champ est requis.";
       }
     });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = "Format d'email invalide.";
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (formData.telephone && !phoneRegex.test(formData.telephone)) {
+      newErrors.telephone = "Format de téléphone invalide.";
+    }
+
+    const allowedFileTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (formData.scanPermisRecto && !allowedFileTypes.includes(formData.scanPermisRecto.type)) {
+      newErrors.scanPermisRecto = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+    }
+    if (formData.scanPermisVerso && !allowedFileTypes.includes(formData.scanPermisVerso.type)) {
+      newErrors.scanPermisVerso = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+    }
+    if (formData.scanIdentiteRecto && !allowedFileTypes.includes(formData.scanIdentiteRecto.type)) {
+      newErrors.scanIdentiteRecto = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+    }
+    if (formData.scanIdentiteVerso && !allowedFileTypes.includes(formData.scanIdentiteVerso.type)) {
+      newErrors.scanIdentiteVerso = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(formData);
+      setIsSubmitting(true);
+      const formDataObj = new FormData(e.currentTarget);
+      console.log("FormData envoyé :", Object.fromEntries(formDataObj.entries()));
+      onSubmit(formDataObj);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="px-4 py-6 bg-gray-50 min-h-screen">
       {/* Affichage du stage sélectionné */}
-      <div className="mb-6 p-4 border rounded bg-white shadow">
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Stage Sélectionné</h2>
+      <section aria-labelledby="selected-stage-heading" className="mb-6 p-4 border rounded bg-white shadow">
+        <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900 mb-2">Stage Sélectionné</h2>
         <SelectedStageInfo selectedStage={selectedStage} />
-      </div>
+      </section>
 
-      {/* Formulaire d'inscription fusionné */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow relative">
-        <h3 className="col-span-2 text-xl font-bold text-gray-800 mb-4">Informations Personnelles</h3>
+      <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 rounded-lg shadow" encType="multipart/form-data" noValidate>
+        {/* SECTION : Informations Personnelles */}
+        <fieldset className="border p-4 rounded" aria-labelledby="personal-info-legend">
+          <legend id="personal-info-legend" className="text-xl font-bold text-gray-800 mb-4">
+            Informations Personnelles
+          </legend>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Civilité */}
+            <div>
+              <label htmlFor="civilite" className="block text-sm font-medium text-gray-700">
+                Civilité <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <select
+                id="civilite"
+                name="civilite"
+                value={formData.civilite}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.civilite ? "border-red-500" : ""}`}
+                aria-required="true"
+              >
+                <option value="">-- Sélectionnez --</option>
+                <option value="Monsieur">Monsieur</option>
+                <option value="Madame">Madame</option>
+              </select>
+              {errors.civilite && <p id="civilite-error" className="text-red-500 text-xs mt-1">{errors.civilite}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Civilité</label>
-          <select name="civilite" value={formData.civilite} onChange={handleChange} className={inputClassName}>
-            <option value="">-- Sélectionnez --</option>
-            <option value="Monsieur">Monsieur</option>
-            <option value="Madame">Madame</option>
-          </select>
-          {errors.civilite && <p className="text-red-500 text-xs mt-1">{errors.civilite}</p>}
-        </div>
+            {/* Nom */}
+            <div>
+              <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
+                Nom <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="nom"
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.nom ? "border-red-500" : ""}`}
+                placeholder="Votre nom"
+                aria-required="true"
+              />
+              {errors.nom && <p id="nom-error" className="text-red-500 text-xs mt-1">{errors.nom}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nom</label>
-          <input type="text" name="nom" value={formData.nom} onChange={handleChange} className={inputClassName} placeholder="Votre nom" />
-          {errors.nom && <p className="text-red-500 text-xs mt-1">{errors.nom}</p>}
-        </div>
+            {/* Prénom */}
+            <div>
+              <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">
+                Prénom <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="prenom"
+                type="text"
+                name="prenom"
+                value={formData.prenom}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.prenom ? "border-red-500" : ""}`}
+                placeholder="Votre prénom"
+                aria-required="true"
+              />
+              {errors.prenom && <p id="prenom-error" className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Prénom</label>
-          <input type="text" name="prenom" value={formData.prenom} onChange={handleChange} className={inputClassName} placeholder="Votre prénom" />
-          {errors.prenom && <p className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
-        </div>
+            {/* Prénom 1 (Optionnel) */}
+            <div>
+              <label htmlFor="prenom1" className="block text-sm font-medium text-gray-700">Prénom 1 (Optionnel)</label>
+              <input
+                id="prenom1"
+                type="text"
+                name="prenom1"
+                value={formData.prenom1}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Optionnel"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Prénom 1 (Optionnel)</label>
-          <input type="text" name="prenom1" value={formData.prenom1} onChange={handleChange} className={inputClassName} placeholder="Optionnel" />
-        </div>
+            {/* Prénom 2 (Optionnel) */}
+            <div>
+              <label htmlFor="prenom2" className="block text-sm font-medium text-gray-700">Prénom 2 (Optionnel)</label>
+              <input
+                id="prenom2"
+                type="text"
+                name="prenom2"
+                value={formData.prenom2}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Optionnel"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Prénom 2 (Optionnel)</label>
-          <input type="text" name="prenom2" value={formData.prenom2} onChange={handleChange} className={inputClassName} placeholder="Optionnel" />
-        </div>
+            {/* Adresse avec suggestions */}
+            <div className="relative">
+              <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
+                Adresse <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="adresse"
+                type="text"
+                name="adresse"
+                value={formData.adresse}
+                onChange={handleAddressChange}
+                className={`${inputClassName} ${errors.adresse ? "border-red-500" : ""}`}
+                placeholder="Votre adresse"
+                autoComplete="off"
+                aria-required="true"
+              />
+              {isLoadingAddress && <div className="absolute right-2 top-9 text-gray-400 text-sm">Chargement...</div>}
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <ul className="absolute z-10 bg-white border mt-1 w-full max-h-60 overflow-auto">
+                  {addressSuggestions.map((suggestion, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="p-2 hover:bg-gray-200 cursor-pointer"
+                    >
+                      {suggestion.properties.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {errors.adresse && <p id="adresse-error" className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
+            </div>
 
-        {/* Champ Adresse avec suggestions */}
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700">Adresse</label>
-          <input
-            type="text"
-            name="adresse"
-            value={formData.adresse}
-            onChange={handleAddressChange}
-            className={inputClassName}
-            placeholder="Votre adresse"
-            autoComplete="off"
-          />
-          {isLoadingAddress && <div className="absolute right-2 top-9 text-gray-400 text-sm">Chargement...</div>}
-          {showSuggestions && addressSuggestions.length > 0 && (
-            <ul className="absolute z-10 bg-white border mt-1 w-full max-h-60 overflow-auto">
-              {addressSuggestions.map((suggestion, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="p-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  {suggestion.properties.label}
-                </li>
-              ))}
-            </ul>
-          )}
-          {errors.adresse && <p className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
-        </div>
+            {/* Code Postal */}
+            <div>
+              <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">
+                Code Postal <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="codePostal"
+                type="text"
+                name="codePostal"
+                value={formData.codePostal}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.codePostal ? "border-red-500" : ""}`}
+                placeholder="Ex: 75001"
+                aria-required="true"
+              />
+              {errors.codePostal && <p id="codePostal-error" className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Code Postal</label>
-          <input type="text" name="codePostal" value={formData.codePostal} onChange={handleChange} className={inputClassName} placeholder="Ex: 75001" />
-          {errors.codePostal && <p className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
-        </div>
+            {/* Ville */}
+            <div>
+              <label htmlFor="ville" className="block text-sm font-medium text-gray-700">
+                Ville <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="ville"
+                type="text"
+                name="ville"
+                value={formData.ville}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.ville ? "border-red-500" : ""}`}
+                placeholder="Votre ville"
+                aria-required="true"
+              />
+              {errors.ville && <p id="ville-error" className="text-red-500 text-xs mt-1">{errors.ville}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Ville</label>
-          <input type="text" name="ville" value={formData.ville} onChange={handleChange} className={inputClassName} placeholder="Votre ville" />
-          {errors.ville && <p className="text-red-500 text-xs mt-1">{errors.ville}</p>}
-        </div>
+            {/* Téléphone */}
+            <div>
+              <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">
+                Téléphone <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="telephone"
+                type="tel"
+                name="telephone"
+                value={formData.telephone}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.telephone ? "border-red-500" : ""}`}
+                placeholder="Ex: 0123456789"
+                pattern="[0-9]{10}"
+                aria-required="true"
+              />
+              {errors.telephone && <p id="telephone-error" className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Date de naissance</label>
-          <input type="date" name="dateNaissance" value={formData.dateNaissance} onChange={handleChange} className={inputClassName} />
-          {errors.dateNaissance && <p className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
-        </div>
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.email ? "border-red-500" : ""}`}
+                placeholder="Votre email"
+                aria-required="true"
+              />
+              {errors.email && <p id="email-error" className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Lieu de naissance (Code Postal)</label>
-          <input type="text" name="codePostalNaissance" value={formData.codePostalNaissance} onChange={handleChange} className={inputClassName} placeholder="Ex: 75001" />
-          {errors.codePostalNaissance && <p className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
-        </div>
+            {/* Confirmation Email */}
+            <div>
+              <label htmlFor="confirmationEmail" className="block text-sm font-medium text-gray-700">
+                Confirmation Email <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="confirmationEmail"
+                type="email"
+                name="confirmationEmail"
+                value={formData.confirmationEmail}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.confirmationEmail ? "border-red-500" : ""}`}
+                placeholder="Confirmez votre email"
+                aria-required="true"
+              />
+              {errors.confirmationEmail && <p id="confirmationEmail-error" className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Nationalité</label>
-          <input type="text" name="nationalite" value={formData.nationalite} onChange={handleChange} className={inputClassName} placeholder="Votre nationalité" />
-          {errors.nationalite && <p className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
-        </div>
+            {/* Nationalité (Dropdown) */}
+            <div>
+              <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">
+                Nationalité <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <select
+                id="nationalite"
+                name="nationalite"
+                value={formData.nationalite}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.nationalite ? "border-red-500" : ""}`}
+                aria-required="true"
+              >
+                <option value="">-- Sélectionnez une nationalité --</option>
+                {nationalities && nationalities.length > 0 ? (
+                  nationalities.map((nat) => (
+                    <option key={nat.code} value={nat.name}>
+                      {nat.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Chargement des nationalités...</option>
+                )}
+              </select>
+              {errors.nationalite && <p id="nationalite-error" className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Téléphone</label>
-          <input type="tel" name="telephone" value={formData.telephone} onChange={handleChange} className={inputClassName} placeholder="Ex: 0123456789" />
-          {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
-        </div>
+            {/* Date de naissance */}
+            <div>
+              <label htmlFor="dateNaissance" className="block text-sm font-medium text-gray-700">
+                Date de naissance <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="dateNaissance"
+                type="date"
+                name="dateNaissance"
+                value={formData.dateNaissance}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.dateNaissance ? "border-red-500" : ""}`}
+                aria-required="true"
+              />
+              {errors.dateNaissance && <p id="dateNaissance-error" className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputClassName} placeholder="Votre email" />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-        </div>
+            {/* Lieu de naissance (Code Postal) */}
+            <div>
+              <label htmlFor="codePostalNaissance" className="block text-sm font-medium text-gray-700">
+                Lieu de naissance (Code Postal) <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="codePostalNaissance"
+                type="text"
+                name="codePostalNaissance"
+                value={formData.codePostalNaissance}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`}
+                placeholder="Ex: 75001"
+                aria-required="true"
+              />
+              {errors.codePostalNaissance && <p id="codePostalNaissance-error" className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
+            </div>
+          </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Confirmation Email</label>
-          <input type="email" name="confirmationEmail" value={formData.confirmationEmail} onChange={handleChange} className={inputClassName} placeholder="Confirmez votre email" />
-          {errors.confirmationEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
-        </div>
+        {/* SECTION : Informations sur le Permis de Conduire */}
+        <fieldset className="border p-4 rounded" aria-labelledby="driving-license-legend">
+          <legend id="driving-license-legend" className="text-xl font-bold text-gray-800 mb-4">
+            Informations sur le Permis de Conduire
+          </legend>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Numéro de permis */}
+            <div>
+              <label htmlFor="numeroPermis" className="block text-sm font-medium text-gray-700">
+                Numéro de permis <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="numeroPermis"
+                type="text"
+                name="numeroPermis"
+                value={formData.numeroPermis}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.numeroPermis ? "border-red-500" : ""}`}
+                placeholder="Ex: 12AB34567"
+                aria-required="true"
+              />
+              {errors.numeroPermis && <p id="numeroPermis-error" className="text-red-500 text-xs mt-1">{errors.numeroPermis}</p>}
+            </div>
 
-        {/* Section pour les informations sur le permis */}
-        <h3 className="col-span-2 text-xl font-bold text-gray-800 mt-6 mb-4">Informations sur le Permis de Conduire</h3>
+            {/* Date de délivrance */}
+            <div>
+              <label htmlFor="dateDelivrancePermis" className="block text-sm font-medium text-gray-700">
+                Date de délivrance <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="dateDelivrancePermis"
+                type="date"
+                name="dateDelivrancePermis"
+                value={formData.dateDelivrancePermis}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.dateDelivrancePermis ? "border-red-500" : ""}`}
+                aria-required="true"
+              />
+              {errors.dateDelivrancePermis && <p id="dateDelivrancePermis-error" className="text-red-500 text-xs mt-1">{errors.dateDelivrancePermis}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Numéro de permis</label>
-          <input type="text" name="numeroPermis" value={formData.numeroPermis} onChange={handleChange} className={inputClassName} placeholder="Ex: 12AB34567" />
-          {errors.numeroPermis && <p className="text-red-500 text-xs mt-1">{errors.numeroPermis}</p>}
-        </div>
+            {/* Préfecture */}
+            <div>
+              <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700">
+                Préfecture <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <input
+                id="prefecture"
+                type="text"
+                name="prefecture"
+                value={formData.prefecture}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.prefecture ? "border-red-500" : ""}`}
+                placeholder="Ex: Paris"
+                aria-required="true"
+              />
+              {errors.prefecture && <p id="prefecture-error" className="text-red-500 text-xs mt-1">{errors.prefecture}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Date de délivrance</label>
-          <input type="date" name="dateDelivrancePermis" value={formData.dateDelivrancePermis} onChange={handleChange} className={inputClassName} />
-          {errors.dateDelivrancePermis && <p className="text-red-500 text-xs mt-1">{errors.dateDelivrancePermis}</p>}
-        </div>
+            {/* État du permis */}
+            <div>
+              <label htmlFor="etatPermis" className="block text-sm font-medium text-gray-700">
+                État du permis <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <select
+                id="etatPermis"
+                name="etatPermis"
+                value={formData.etatPermis}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.etatPermis ? "border-red-500" : ""}`}
+                aria-required="true"
+              >
+                <option value="">Sélectionnez l'état</option>
+                <option value="Valide">Valide</option>
+                <option value="Invalide">Invalide</option>
+              </select>
+              {errors.etatPermis && <p id="etatPermis-error" className="text-red-500 text-xs mt-1">{errors.etatPermis}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Préfecture de délivrance</label>
-          <input type="text" name="prefecture" value={formData.prefecture} onChange={handleChange} className={inputClassName} placeholder="Ex: Paris" />
-          {errors.prefecture && <p className="text-red-500 text-xs mt-1">{errors.prefecture}</p>}
-        </div>
+            {/* Cas de stage */}
+            <div>
+              <label htmlFor="casStage" className="block text-sm font-medium text-gray-700">
+                Cas de stage <span aria-hidden="true" className="text-red-500">*</span>
+              </label>
+              <select
+                id="casStage"
+                name="casStage"
+                value={formData.casStage}
+                onChange={handleChange}
+                className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`}
+                aria-required="true"
+              >
+                <option value="">Sélectionnez un cas</option>
+                {Array.isArray(casStageData) && casStageData.length > 0 ? (
+                  casStageData.map((cas, index) => (
+                    <option key={index} value={cas.description}>
+                      {cas.type} - {cas.description}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Chargement des cas de stage...</option>
+                )}
+              </select>
+              {errors.casStage && <p id="casStage-error" className="text-red-500 text-xs mt-1">{errors.casStage}</p>}
+            </div>
+          </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">État du permis</label>
-          <select name="etatPermis" value={formData.etatPermis} onChange={handleChange} className={inputClassName}>
-            <option value="">Sélectionnez l'état</option>
-            <option value="Valide">Valide</option>
-            <option value="Invalide">Invalide</option>
-          </select>
-          {errors.etatPermis && <p className="text-red-500 text-xs mt-1">{errors.etatPermis}</p>}
-        </div>
+        {/* SECTION : Téléchargements */}
+        <fieldset className="border p-4 rounded" aria-labelledby="downloads-legend">
+          <legend id="downloads-legend" className="text-lg font-semibold text-indigo-600 mb-4">
+            Téléchargements
+          </legend>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Scan du Permis de Conduire Recto */}
+            <div>
+              <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
+                Scan du Permis de Conduire recto
+              </label>
+              <input
+                id="scanPermisRecto"
+                type="file"
+                name="scanPermisRecto"
+                onChange={handleFileChange}
+                accept="image/*,application/pdf"
+                className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`}
+              />
+              {errors.scanPermisRecto && <p id="scanPermisRecto-error" className="text-red-500 text-xs mt-1">{errors.scanPermisRecto}</p>}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Cas de stage</label>
-          <select name="casStage" value={formData.casStage} onChange={handleChange} className={inputClassName}>
-            <option value="">Sélectionnez un cas</option>
-            <option value="Cas 1">Cas 1 (Volontaire)</option>
-            <option value="Cas 2">Cas 2 (Obligatoire)</option>
-          </select>
-          {errors.casStage && <p className="text-red-500 text-xs mt-1">{errors.casStage}</p>}
-        </div>
+            {/* Scan du Permis de Conduire Verso */}
+            <div>
+              <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
+                Scan du Permis de Conduire verso
+              </label>
+              <input
+                id="scanPermisVerso"
+                type="file"
+                name="scanPermisVerso"
+                onChange={handleFileChange}
+                accept="image/*,application/pdf"
+                className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`}
+              />
+              {errors.scanPermisVerso && <p id="scanPermisVerso-error" className="text-red-500 text-xs mt-1">{errors.scanPermisVerso}</p>}
+            </div>
 
+            {/* Scan de la Pièce d'Identité Recto */}
+            <div>
+              <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
+                Scan de la Pièce d'Identité recto
+              </label>
+              <input
+                id="scanIdentiteRecto"
+                type="file"
+                name="scanIdentiteRecto"
+                onChange={handleFileChange}
+                accept="image/*,application/pdf"
+                className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`}
+              />
+              {errors.scanIdentiteRecto && <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>}
+            </div>
+
+            {/* Scan de la Pièce d'Identité Verso */}
+            <div>
+              <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
+                Scan de la Pièce d'Identité verso
+              </label>
+              <input
+                id="scanIdentiteVerso"
+                type="file"
+                name="scanIdentiteVerso"
+                onChange={handleFileChange}
+                accept="image/*,application/pdf"
+                className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`}
+              />
+              {errors.scanIdentiteVerso && <p id="scanIdentiteVerso-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteVerso}</p>}
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Bouton de soumission */}
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Scan du permis (Optionnel)</label>
-          <input
-            type="file"
-            name="scanPermis"
-            accept="image/*,application/pdf"
-            onChange={(e) => console.log("Fichier sélectionné :", e.target.files?.[0])}
-            className={inputClassName}
-          />
-        </div>
-
-        <div className="col-span-2">
-          <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-md">
-            Enregistrer et Continuer
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-sm text-white py-3 px-6 rounded-lg shadow-xl hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            {isSubmitting ? "Envoi en cours..." : "Enregistrer et Continuer"}
           </button>
         </div>
       </form>

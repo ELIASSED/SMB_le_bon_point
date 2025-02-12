@@ -1,58 +1,58 @@
-// components/Form/CheckoutForm.tsx
-"use client";
+import React, { useState } from "react";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-import React from "react";
-import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
-
-interface CheckoutFormProps {
-  clientSecret: string;
-  onPaymentSuccess: () => void;
-}
-
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSuccess }) => {
+export default function CheckoutForm({ clientSecret }: { clientSecret: string }) {
   const stripe = useStripe();
   const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!stripe || !elements || !clientSecret) {
+    if (isProcessing) return;
+  
+    setIsProcessing(true);
+    setError(null);
+  
+    const cardElement = elements?.getElement(CardElement);
+    if (!stripe || !cardElement) {
+      setError("Stripe n'est pas encore chargé.");
+      setIsProcessing(false);
       return;
     }
-
-    const card = elements.getElement(CardElement);
-    if (!card) {
-      return;
-    }
-
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+  
+    const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
       payment_method: {
-        card: card,
+        card: cardElement,
       },
     });
-
-    if (error) {
-      console.error("Erreur de paiement :", error.message);
-      alert(`Erreur de paiement : ${error.message}`);
-    } else if (paymentIntent?.status === "succeeded") {
-      onPaymentSuccess();
+  
+    if (paymentError) {
+      console.error("Erreur lors du paiement :", paymentError);
+      setError(paymentError.message || "Erreur lors du paiement.");
+      setIsProcessing(false);
+      return;
     }
+  
+    console.log("Paiement réussi :", paymentIntent);
+  
+    setIsProcessing(false);
+    onPaymentSuccess(); // ← Ici, la fonction doit être bien exécutée
   };
+  
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border p-4 rounded-lg">
-        <CardElement options={{ hidePostalCode: true }} />
-      </div>
-      <button
-        type="submit"
-        disabled={!stripe || !clientSecret}
-        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors w-full"
-      >
-        Payer
+    <form onSubmit={handleSubmit}>
+      <CardElement />
+      {error && <div className="error">{error}</div>}
+      <button type="submit" disabled={isProcessing || !stripe}>
+        {isProcessing ? "Traitement en cours..." : "Payer"}
       </button>
     </form>
   );
-};
+}
 
-export default CheckoutForm;
+onPaymentSuccess();
+console.log("onPaymentSuccess exécuté !");
+
+

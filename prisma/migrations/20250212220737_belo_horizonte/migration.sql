@@ -135,10 +135,10 @@ CREATE UNIQUE INDEX "Instructor_email_key" ON "Instructor"("email");
 CREATE UNIQUE INDEX "Psychologue_email_key" ON "Psychologue"("email");
 
 -- AddForeignKey
-ALTER TABLE "Relance" ADD CONSTRAINT "Relance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Relance" ADD CONSTRAINT "Relance_lastSessionId_fkey" FOREIGN KEY ("lastSessionId") REFERENCES "Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Relance" ADD CONSTRAINT "Relance_lastSessionId_fkey" FOREIGN KEY ("lastSessionId") REFERENCES "Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Relance" ADD CONSTRAINT "Relance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SessionUsers" ADD CONSTRAINT "SessionUsers_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
