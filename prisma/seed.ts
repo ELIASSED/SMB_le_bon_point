@@ -5,7 +5,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Suppression des données existantes dans l'ordre (pour respecter les contraintes relationnelles)
+  console.log("📢 Suppression des anciennes données...");
+
+  // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
   await prisma.payment.deleteMany();
   await prisma.relance.deleteMany();
   await prisma.sessionUsers.deleteMany();
@@ -13,6 +15,8 @@ async function main() {
   await prisma.psychologue.deleteMany();
   await prisma.instructor.deleteMany();
   await prisma.user.deleteMany();
+
+  console.log("✅ Anciennes données supprimées !");
 
   // Création d'un instructeur
   const instructor = await prisma.instructor.create({
@@ -36,20 +40,36 @@ async function main() {
     },
   });
 
-  // Création d'une session
-  const session = await prisma.session.create({
-    data: {
-      numeroStageAnts: 'STAGE001',
-      price: 200.0,
-      description: 'Session de formation initiale',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 86400000), // 1 jour plus tard
-      location: 'Paris',
-      capacity: 20,
-      instructorId: instructor.id,
-      psychologueId: psychologue.id,
-    },
-  });
+  console.log("✅ Instructeur et psychologue créés !");
+
+  // Création de 100 sessions avec des dates différentes
+  console.log("📢 Génération de 100 sessions...");
+
+  const sessions = [];
+  for (let i = 0; i < 100; i++) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + i * 3); // Chaque session commence 3 jours après la précédente
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 1); // 1 jour après
+
+    const session = await prisma.session.create({
+      data: {
+        numeroStageAnts: `STAGE${i + 1}`,
+        price: 200.0,
+        description: `Session de formation n°${i + 1}`,
+        startDate,
+        endDate,
+        location: 'Paris',
+        capacity: 20,
+        instructorId: instructor.id,
+        psychologueId: psychologue.id,
+      },
+    });
+
+    sessions.push(session);
+  }
+
+  console.log("✅ 100 sessions créées avec succès !");
 
   // Création d'un utilisateur
   const user = await prisma.user.create({
@@ -65,32 +85,33 @@ async function main() {
       nationalite: 'Française',
       dateNaissance: new Date('1990-01-01'),
       codePostalNaissance: '75001',
-      // Suivi des relances
       relanceCount: 0,
       lastRelanceAt: null,
-      // Scans d'images (optionnels)
       id_recto: null,
       id_verso: null,
       permis_recto: null,
       permis_verso: null,
-      // Infos provenant de SessionUsers
       numeroPermis: 'P123456',
       dateDelivrancePermis: new Date('2020-01-01'),
       prefecture: 'Paris',
       etatPermis: 'Valide',
       casStage: 'N/A',
-      // Statut de paiement global
       isPaid: false,
     },
   });
 
-  // Création d'une inscription (SessionUsers) liant l'utilisateur à la session
+  console.log("✅ Utilisateur créé !");
+
+  // Inscription de l'utilisateur à une session aléatoire parmi les 100
+  const randomSession = sessions[Math.floor(Math.random() * sessions.length)];
   const sessionUser = await prisma.sessionUsers.create({
     data: {
-      sessionId: session.id,
+      sessionId: randomSession.id,
       userId: user.id,
     },
   });
+
+  console.log(`✅ L'utilisateur a été inscrit à la session ${randomSession.numeroStageAnts}`);
 
   // Création d'un paiement associé à l'inscription
   const payment = await prisma.payment.create({
@@ -101,6 +122,8 @@ async function main() {
     },
   });
 
+  console.log("✅ Paiement enregistré !");
+
   // Création d'une relance pour l'utilisateur (en lien avec la session)
   const relance = await prisma.relance.create({
     data: {
@@ -109,18 +132,19 @@ async function main() {
       lastName: user.nom,
       phone: user.telephone,
       userId: user.id,
-      lastSessionId: session.id, // Champ optionnel renseigné ici
+      lastSessionId: randomSession.id, // Champ optionnel renseigné ici
       profession: 'Ingénieur',
     },
   });
 
-  console.log('Base de données semée avec succès !');
-  console.log({ instructor, psychologue, session, user, sessionUser, payment, relance });
+  console.log("✅ Relance créée !");
+
+  console.log("🎉 Base de données semée avec succès !");
 }
 
 main()
   .catch((error) => {
-    console.error('Erreur lors du seed : ', error);
+    console.error('❌ Erreur lors du seed : ', error);
     process.exit(1);
   })
   .finally(async () => {

@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Stage } from "../types";
+import { Stage } from "./types";
 import { formatDateWithDay } from "../utils";
 
 interface SelectedStageInfoProps {

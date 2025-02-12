@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPaymentIntent, registerUser, sendConfirmationEmail } from "../../lib/api";
-import { Stage, RegistrationInfo } from "../types";
+import { Stage, RegistrationInfo } from "./types";
 import ProgressBar from "./ProgressBar";
 import StageSelectionStep from "./Steps/StageSelectionStep";
 import PersonalInfoStep from "./Steps/PersonalInfoStep";
@@ -20,12 +20,19 @@ export default function Carousel() {
 
   const router = useRouter();
 
-  const nextStep = () => setCurrentStep(prev => prev + 1);
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+  const nextStep = () => {
+    console.log("Passage au step suivant, currentStep =", currentStep);
+    setCurrentStep((prev) => prev + 1);
+  };
+
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
 
   // Étape 1 : Sélection du stage
   const handleStageSelection = async (stage: Stage) => {
     try {
+      console.log("Stage sélectionné :", stage);
       setSelectedStage(stage);
       const paymentIntent = await createPaymentIntent(stage);
       setClientSecret(paymentIntent.clientSecret);
@@ -36,22 +43,22 @@ export default function Carousel() {
     }
   };
 
-  // Étape 2 : Soumission des infos d'inscription
-  const handleRegistrationSubmit = (info: RegistrationInfo) => {
-    console.log("Données d'inscription :", info);
-    setRegistrationInfo(info);
+  // Étape 2 : Soumission des informations d'inscription
+  const handlePersonalInfoSubmit = (data: FormData) => {
+    console.log("Données step2:", Object.fromEntries(data.entries()));
+    setRegistrationInfo(Object.fromEntries(data.entries()) as unknown as RegistrationInfo);
     nextStep();
   };
 
-  // Étape 3 : Paiement réussi, finalisation de l'inscription
+  // Étape 3 : Paiement et enregistrement final
   const handlePaymentSuccess = async () => {
-    if (!selectedStage || !registrationInfo) return;
+    if (!selectedStage || !registrationInfo) {
+      console.error("Stage ou informations d'inscription manquants.");
+      return;
+    }
     try {
       setIsSubmitting(true);
-      const registrationData = {
-        stageId: selectedStage.id,
-        userData: registrationInfo,
-      };
+      const registrationData = { stageId: selectedStage.id, userData: registrationInfo };
       await registerUser(registrationData);
       await sendConfirmationEmail({
         to: registrationInfo.email,
@@ -75,21 +82,18 @@ export default function Carousel() {
     },
     {
       title: "Formulaire d'inscription",
-      content: (
-        <PersonalInfoStep
-          selectedStage={selectedStage!}
-          onSubmit={handleRegistrationSubmit}
-        />
+      content: selectedStage ? (
+        <PersonalInfoStep selectedStage={selectedStage} onSubmit={handlePersonalInfoSubmit} />
+      ) : (
+        <p>Veuillez sélectionner un stage avant de continuer.</p>
       ),
     },
     {
       title: "Paiement",
-      content: (
-        <PaymentStep
-          selectedStage={selectedStage!}
-          clientSecret={clientSecret!}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
+      content: selectedStage && clientSecret ? (
+        <PaymentStep selectedStage={selectedStage} clientSecret={clientSecret} onPaymentSuccess={handlePaymentSuccess} />
+      ) : (
+        <p>Informations de paiement non disponibles.</p>
       ),
     },
   ];
