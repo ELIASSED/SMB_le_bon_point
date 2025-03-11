@@ -1,4 +1,3 @@
-// components/Carousel/Steps/PersonalInfoStep.tsx
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
@@ -43,25 +42,27 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     scanPermisRecto: null,
     scanPermisVerso: null,
     commentaire: "",
+    // Ajout d'une case à cocher pour les conditions
+    acceptConditions: false,
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  // Suggestions d'adresse
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
-
-  // Nationalités chargées depuis le JSON
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
 
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -124,12 +125,17 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       "nationalite",
       "dateNaissance",
       "codePostalNaissance",
+      "acceptConditions", // Ajouté comme requis
     ];
     requiredPersonal.forEach((field) => {
-      if (!formData[field as keyof RegistrationInfo]?.toString().trim()) {
+      const value = formData[field as keyof RegistrationInfo];
+      if (field === "acceptConditions" && !value) {
+        newErrors[field] = "Vous devez accepter les conditions.";
+      } else if (!value?.toString().trim()) {
         newErrors[field] = "Ce champ est requis.";
       }
     });
+
     if (formData.email !== formData.confirmationEmail) {
       newErrors.confirmationEmail = "Les emails ne correspondent pas.";
     }
@@ -151,18 +157,12 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     }
 
     const allowedFileTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (formData.scanPermisRecto && !allowedFileTypes.includes(formData.scanPermisRecto.type)) {
-      newErrors.scanPermisRecto = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
-    }
-    if (formData.scanPermisVerso && !allowedFileTypes.includes(formData.scanPermisVerso.type)) {
-      newErrors.scanPermisVerso = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
-    }
-    if (formData.scanIdentiteRecto && !allowedFileTypes.includes(formData.scanIdentiteRecto.type)) {
-      newErrors.scanIdentiteRecto = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
-    }
-    if (formData.scanIdentiteVerso && !allowedFileTypes.includes(formData.scanIdentiteVerso.type)) {
-      newErrors.scanIdentiteVerso = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
-    }
+    ["scanPermisRecto", "scanPermisVerso", "scanIdentiteRecto", "scanIdentiteVerso"].forEach((field) => {
+      const file = formData[field as keyof RegistrationInfo] as File | null;
+      if (file && !allowedFileTypes.includes(file.type)) {
+        newErrors[field] = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -181,20 +181,17 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
   return (
     <div className="px-4 py-6 bg-gray-50 min-h-screen">
-      {/* Affichage du stage sélectionné */}
       <section aria-labelledby="selected-stage-heading" className="mb-6 p-4 border rounded bg-white shadow">
         <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900 mb-2">Stage Sélectionné</h2>
         <SelectedStageInfo selectedStage={selectedStage} />
       </section>
 
       <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 rounded-lg shadow" encType="multipart/form-data" noValidate>
-        {/* SECTION : Informations Personnelles */}
         <fieldset className="border p-4 rounded" aria-labelledby="personal-info-legend">
           <legend id="personal-info-legend" className="text-xl font-bold text-gray-800 mb-4">
             Informations Personnelles
           </legend>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Civilité */}
             <div>
               <label htmlFor="civilite" className="block text-sm font-medium text-gray-700">
                 Civilité <span aria-hidden="true" className="text-red-500">*</span>
@@ -214,7 +211,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.civilite && <p id="civilite-error" className="text-red-500 text-xs mt-1">{errors.civilite}</p>}
             </div>
 
-            {/* Nom */}
             <div>
               <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
                 Nom <span aria-hidden="true" className="text-red-500">*</span>
@@ -232,7 +228,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.nom && <p id="nom-error" className="text-red-500 text-xs mt-1">{errors.nom}</p>}
             </div>
 
-            {/* Prénom */}
             <div>
               <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">
                 Prénom <span aria-hidden="true" className="text-red-500">*</span>
@@ -250,7 +245,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.prenom && <p id="prenom-error" className="text-red-500 text-xs mt-1">{errors.prenom}</p>}
             </div>
 
-            {/* Prénom 1 (Optionnel) */}
             <div>
               <label htmlFor="prenom1" className="block text-sm font-medium text-gray-700">Prénom 1 (Optionnel)</label>
               <input
@@ -264,7 +258,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               />
             </div>
 
-            {/* Prénom 2 (Optionnel) */}
             <div>
               <label htmlFor="prenom2" className="block text-sm font-medium text-gray-700">Prénom 2 (Optionnel)</label>
               <input
@@ -278,7 +271,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               />
             </div>
 
-            {/* Adresse avec suggestions */}
             <div className="relative">
               <label htmlFor="adresse" className="block text-sm font-medium text-gray-700">
                 Adresse <span aria-hidden="true" className="text-red-500">*</span>
@@ -311,7 +303,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.adresse && <p id="adresse-error" className="text-red-500 text-xs mt-1">{errors.adresse}</p>}
             </div>
 
-            {/* Code Postal */}
             <div>
               <label htmlFor="codePostal" className="block text-sm font-medium text-gray-700">
                 Code Postal <span aria-hidden="true" className="text-red-500">*</span>
@@ -329,7 +320,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.codePostal && <p id="codePostal-error" className="text-red-500 text-xs mt-1">{errors.codePostal}</p>}
             </div>
 
-            {/* Ville */}
             <div>
               <label htmlFor="ville" className="block text-sm font-medium text-gray-700">
                 Ville <span aria-hidden="true" className="text-red-500">*</span>
@@ -347,7 +337,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.ville && <p id="ville-error" className="text-red-500 text-xs mt-1">{errors.ville}</p>}
             </div>
 
-            {/* Téléphone */}
             <div>
               <label htmlFor="telephone" className="block text-sm font-medium text-gray-700">
                 Téléphone <span aria-hidden="true" className="text-red-500">*</span>
@@ -366,7 +355,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.telephone && <p id="telephone-error" className="text-red-500 text-xs mt-1">{errors.telephone}</p>}
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email <span aria-hidden="true" className="text-red-500">*</span>
@@ -384,7 +372,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.email && <p id="email-error" className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
-            {/* Confirmation Email */}
             <div>
               <label htmlFor="confirmationEmail" className="block text-sm font-medium text-gray-700">
                 Confirmation Email <span aria-hidden="true" className="text-red-500">*</span>
@@ -402,7 +389,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.confirmationEmail && <p id="confirmationEmail-error" className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
             </div>
 
-            {/* Nationalité (Dropdown) */}
             <div>
               <label htmlFor="nationalite" className="block text-sm font-medium text-gray-700">
                 Nationalité <span aria-hidden="true" className="text-red-500">*</span>
@@ -416,20 +402,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 aria-required="true"
               >
                 <option value="">-- Sélectionnez une nationalité --</option>
-                {nationalities && nationalities.length > 0 ? (
-                  nationalities.map((nat) => (
-                    <option key={nat.code} value={nat.name}>
-                      {nat.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Chargement des nationalités...</option>
-                )}
+                {nationalities.map((nat) => (
+                  <option key={nat.code} value={nat.name}>
+                    {nat.name}
+                  </option>
+                ))}
               </select>
               {errors.nationalite && <p id="nationalite-error" className="text-red-500 text-xs mt-1">{errors.nationalite}</p>}
             </div>
 
-            {/* Date de naissance */}
             <div>
               <label htmlFor="dateNaissance" className="block text-sm font-medium text-gray-700">
                 Date de naissance <span aria-hidden="true" className="text-red-500">*</span>
@@ -446,7 +427,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.dateNaissance && <p id="dateNaissance-error" className="text-red-500 text-xs mt-1">{errors.dateNaissance}</p>}
             </div>
 
-            {/* Lieu de naissance (Code Postal) */}
             <div>
               <label htmlFor="codePostalNaissance" className="block text-sm font-medium text-gray-700">
                 Lieu de naissance (Code Postal) <span aria-hidden="true" className="text-red-500">*</span>
@@ -466,13 +446,11 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           </div>
         </fieldset>
 
-        {/* SECTION : Informations sur le Permis de Conduire */}
         <fieldset className="border p-4 rounded" aria-labelledby="driving-license-legend">
           <legend id="driving-license-legend" className="text-xl font-bold text-gray-800 mb-4">
             Informations sur le Permis de Conduire
           </legend>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Numéro de permis */}
             <div>
               <label htmlFor="numeroPermis" className="block text-sm font-medium text-gray-700">
                 Numéro de permis <span aria-hidden="true" className="text-red-500">*</span>
@@ -490,7 +468,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.numeroPermis && <p id="numeroPermis-error" className="text-red-500 text-xs mt-1">{errors.numeroPermis}</p>}
             </div>
 
-            {/* Date de délivrance */}
             <div>
               <label htmlFor="dateDelivrancePermis" className="block text-sm font-medium text-gray-700">
                 Date de délivrance <span aria-hidden="true" className="text-red-500">*</span>
@@ -507,7 +484,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.dateDelivrancePermis && <p id="dateDelivrancePermis-error" className="text-red-500 text-xs mt-1">{errors.dateDelivrancePermis}</p>}
             </div>
 
-            {/* Préfecture */}
             <div>
               <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700">
                 Préfecture <span aria-hidden="true" className="text-red-500">*</span>
@@ -525,7 +501,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.prefecture && <p id="prefecture-error" className="text-red-500 text-xs mt-1">{errors.prefecture}</p>}
             </div>
 
-            {/* État du permis */}
             <div>
               <label htmlFor="etatPermis" className="block text-sm font-medium text-gray-700">
                 État du permis <span aria-hidden="true" className="text-red-500">*</span>
@@ -545,7 +520,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.etatPermis && <p id="etatPermis-error" className="text-red-500 text-xs mt-1">{errors.etatPermis}</p>}
             </div>
 
-            {/* Cas de stage */}
             <div>
               <label htmlFor="casStage" className="block text-sm font-medium text-gray-700">
                 Cas de stage <span aria-hidden="true" className="text-red-500">*</span>
@@ -559,28 +533,22 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 aria-required="true"
               >
                 <option value="">Sélectionnez un cas</option>
-                {Array.isArray(casStageData) && casStageData.length > 0 ? (
-                  casStageData.map((cas, index) => (
-                    <option key={index} value={cas.description}>
-                      {cas.type} - {cas.description}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Chargement des cas de stage...</option>
-                )}
+                {casStageData.map((cas, index) => (
+                  <option key={index} value={cas.description}>
+                    {cas.type} - {cas.description}
+                  </option>
+                ))}
               </select>
               {errors.casStage && <p id="casStage-error" className="text-red-500 text-xs mt-1">{errors.casStage}</p>}
             </div>
           </div>
         </fieldset>
 
-        {/* SECTION : Téléchargements */}
         <fieldset className="border p-4 rounded" aria-labelledby="downloads-legend">
           <legend id="downloads-legend" className="text-lg font-semibold text-indigo-600 mb-4">
             Téléchargements
           </legend>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Scan du Permis de Conduire Recto */}
             <div>
               <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
                 Scan du Permis de Conduire recto
@@ -596,10 +564,9 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.scanPermisRecto && <p id="scanPermisRecto-error" className="text-red-500 text-xs mt-1">{errors.scanPermisRecto}</p>}
             </div>
 
-            {/* Scan du Permis de Conduire Verso */}
             <div>
               <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire verso
+                Scan du Perm byis de Conduire verso
               </label>
               <input
                 id="scanPermisVerso"
@@ -612,7 +579,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.scanPermisVerso && <p id="scanPermisVerso-error" className="text-red-500 text-xs mt-1">{errors.scanPermisVerso}</p>}
             </div>
 
-            {/* Scan de la Pièce d'Identité Recto */}
             <div>
               <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
                 Scan de la Pièce d'Identité recto
@@ -628,7 +594,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               {errors.scanIdentiteRecto && <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>}
             </div>
 
-            {/* Scan de la Pièce d'Identité Verso */}
             <div>
               <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
                 Scan de la Pièce d'Identité verso
@@ -646,7 +611,23 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           </div>
         </fieldset>
 
-        {/* Bouton de soumission */}
+        {/* Ajout de la case à cocher pour les conditions */}
+        <div className="mt-4">
+          <label htmlFor="acceptConditions" className="flex items-center text-sm font-medium text-gray-700">
+            <input
+              id="acceptConditions"
+              type="checkbox"
+              name="acceptConditions"
+              checked={formData.acceptConditions}
+              onChange={handleChange}
+              className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`}
+              aria-required="true"
+            />
+            J'accepte les conditions générales d'utilisation <span aria-hidden="true" className="text-red-500">*</span>
+          </label>
+          {errors.acceptConditions && <p id="acceptConditions-error" className="text-red-500 text-xs mt-1">{errors.acceptConditions}</p>}
+        </div>
+
         <div className="col-span-2">
           <button
             type="submit"

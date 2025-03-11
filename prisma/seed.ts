@@ -85,18 +85,12 @@ async function main() {
       nationalite: 'Française',
       dateNaissance: new Date('1990-01-01'),
       codePostalNaissance: '75001',
-      relanceCount: 0,
-      lastRelanceAt: null,
-      id_recto: null,
-      id_verso: null,
-      permis_recto: null,
-      permis_verso: null,
       numeroPermis: 'P123456',
       dateDelivrancePermis: new Date('2020-01-01'),
       prefecture: 'Paris',
       etatPermis: 'Valide',
       casStage: 'N/A',
-      isPaid: false,
+      // Les champs optionnels comme id_recto, id_verso, permis_recto, permis_verso sont déjà à null par défaut
     },
   });
 
@@ -108,6 +102,7 @@ async function main() {
     data: {
       sessionId: randomSession.id,
       userId: user.id,
+      isPaid: false, // Champ correctement placé dans SessionUsers selon le schéma
     },
   });
 
@@ -132,8 +127,8 @@ async function main() {
       lastName: user.nom,
       phone: user.telephone,
       userId: user.id,
-      lastSessionId: randomSession.id, // Champ optionnel renseigné ici
-      profession: 'Ingénieur',
+      lastSessionId: randomSession.id, // Champ optionnel mais renseigné ici
+      profession: 'Ingénieur', // Champ optionnel
     },
   });
 
