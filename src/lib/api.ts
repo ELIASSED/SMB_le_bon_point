@@ -20,18 +20,20 @@ export async function fetchStages() {
     }
     return response.json();
   }
+
   
-  export async function registerUser(data: { stageId: number; userData: RegistrationInfo; }) {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      throw new Error("Erreur lors de l'inscription");
-    }
-    return response.json();
+export async function registerUser(data: { stageId: number; userData: any }) {
+  const response = await fetch("/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "Erreur lors de l'inscription");
   }
+  return result;
+}
   
   export async function sendConfirmationEmail(data: { to: string; subject: string; text: string; html: string; }) {
     const response = await fetch("/api/send-mail", {

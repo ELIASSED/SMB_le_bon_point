@@ -31,8 +31,6 @@ CREATE TABLE "User" (
     "dateNaissance" TIMESTAMP(3) NOT NULL,
     "codePostalNaissance" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "relanceCount" INTEGER NOT NULL DEFAULT 0,
-    "lastRelanceAt" TIMESTAMP(3),
     "id_recto" TEXT,
     "id_verso" TEXT,
     "permis_recto" TEXT,
@@ -42,7 +40,6 @@ CREATE TABLE "User" (
     "prefecture" TEXT NOT NULL,
     "etatPermis" TEXT NOT NULL,
     "casStage" TEXT NOT NULL,
-    "isPaid" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -52,9 +49,10 @@ CREATE TABLE "SessionUsers" (
     "id" SERIAL NOT NULL,
     "sessionId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
+    "isPaid" BOOLEAN NOT NULL DEFAULT false,
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "isArchived" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "SessionUsers_pkey" PRIMARY KEY ("id")
 );

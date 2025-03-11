@@ -21,7 +21,6 @@ model Relance {
   updatedAt     DateTime @updatedAt
   session       Session? @relation(fields: [lastSessionId], references: [id])
   user          User     @relation(fields: [userId], references: [id])
-
   @@unique([userId, lastSessionId])
 }
 
@@ -41,8 +40,6 @@ model User {
   dateNaissance        DateTime
   codePostalNaissance  String
   createdAt            DateTime       @default(now())
-  relanceCount         Int            @default(0)
-  lastRelanceAt        DateTime?
   id_recto             String?
   id_verso             String?
   permis_recto         String?
@@ -52,7 +49,6 @@ model User {
   prefecture           String
   etatPermis           String
   casStage             String
-  isPaid               Boolean        @default(false)
   relances             Relance[]
   sessionUsers         SessionUsers[]
 }
@@ -61,13 +57,13 @@ model SessionUsers {
   id         Int       @id @default(autoincrement())
   sessionId  Int
   userId     Int
+  isPaid     Boolean   @default(false) // Déplacé ici depuis User
+  isArchived Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  isArchived Boolean   @default(false)
   payments   Payment[]
   session    Session   @relation(fields: [sessionId], references: [id])
   user       User      @relation(fields: [userId], references: [id])
-
   @@unique([sessionId, userId])
 }
 

@@ -1,4 +1,3 @@
-// components/Carousel/Carousel.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -23,13 +22,14 @@ export default function Carousel() {
   const nextStep = () => {
     console.log("Passage au step suivant, currentStep =", currentStep);
     setCurrentStep((prev) => prev + 1);
+    setError(null); // Réinitialiser l'erreur à chaque étape
   };
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
+    setError(null);
   };
 
-  // Étape 1 : Sélection du stage
   const handleStageSelection = async (stage: Stage) => {
     try {
       console.log("Stage sélectionné :", stage);
@@ -43,23 +43,33 @@ export default function Carousel() {
     }
   };
 
-  // Étape 2 : Soumission des informations d'inscription
   const handlePersonalInfoSubmit = (data: FormData) => {
-    console.log("Données step2:", Object.fromEntries(data.entries()));
-    setRegistrationInfo(Object.fromEntries(data.entries()) as unknown as RegistrationInfo);
+    const formEntries = Object.fromEntries(data.entries());
+    formEntries.email = formEntries.email.toLowerCase().trim();
+    formEntries.confirmationEmail = formEntries.confirmationEmail.toLowerCase().trim();
+    console.log("Données step2 normalisées:", formEntries);
+    setRegistrationInfo(formEntries as unknown as RegistrationInfo);
     nextStep();
   };
 
-  // Étape 3 : Paiement et enregistrement final
   const handlePaymentSuccess = async () => {
     if (!selectedStage || !registrationInfo) {
       console.error("Stage ou informations d'inscription manquants.");
+      setError("Certaines informations nécessaires sont manquantes. Veuillez revenir en arrière et vérifier.");
       return;
     }
     try {
       setIsSubmitting(true);
+      setError(null);
       const registrationData = { stageId: selectedStage.id, userData: registrationInfo };
-      await registerUser(registrationData);
+      console.log("Envoi à l'API :", registrationData);
+      const response = await registerUser(registrationData);
+
+      if (response.error) {
+        setError(response.error); // Afficher le message d'erreur exact du backend
+        return;
+      }
+
       await sendConfirmationEmail({
         to: registrationInfo.email,
         subject: "Confirmation d'inscription",
@@ -69,7 +79,7 @@ export default function Carousel() {
       router.push("/success");
     } catch (err: any) {
       console.error("Erreur lors de l'enregistrement :", err.message);
-      setError("L'inscription a échoué. Veuillez réessayer.");
+      setError(err.message || "Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
     }
@@ -102,19 +112,27 @@ export default function Carousel() {
     <div className="carousel-container max-w-4xl mx-auto">
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       <h1 className="text-2xl font-bold mb-4">{steps[currentStep].title}</h1>
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      {error && (
+        <div
+          className="text-red-500 text-center mb-4 p-3 bg-red-100 border border-red-400 rounded"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
       <div className="step-content">{steps[currentStep].content}</div>
       <div className="navigation mt-6 flex justify-between">
         {currentStep > 0 && (
           <button
             onClick={prevStep}
             className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            disabled={isSubmitting}
           >
             Précédent
           </button>
         )}
       </div>
-      {isSubmitting && <p className="text-center mt-4">Envoi en cours...</p>}
+      {isSubmitting && <p className="text-center mt-4">Inscription en cours...</p>}
     </div>
   );
 }
