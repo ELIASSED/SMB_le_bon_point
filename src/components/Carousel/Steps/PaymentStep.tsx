@@ -1,15 +1,16 @@
+// components/Carousel/PaymentStep.tsx
 "use client";
-
 import React, { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Stage } from "../types";
 import { formatDateWithDay } from "../utils";
 
+// Props pour PaymentStep
 interface PaymentStepProps {
   selectedStage: Stage | null;
   clientSecret: string | null;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (paymentIntentId: string) => void; // Signature corrigée
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
@@ -58,9 +59,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ selectedStage, clientSecret, 
   );
 };
 
+// Props pour CheckoutForm
 interface CheckoutFormProps {
   clientSecret: string;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (paymentIntentId: string) => void; // Signature corrigée
 }
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSuccess }) => {
@@ -72,32 +74,41 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSucc
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (isProcessing || !stripe || !elements) return;
+    if (isProcessing) return;
 
     setIsProcessing(true);
     setError(null);
 
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      console.error("CardElement non trouvé.");
-      setError("Erreur avec les informations de paiement.");
+    const cardElement = elements?.getElement(CardElement);
+    if (!stripe || !cardElement) {
+      setError("Stripe n'est pas encore chargé.");
       setIsProcessing(false);
       return;
     }
 
     console.log("Tentative de confirmation du paiement avec clientSecret :", clientSecret);
+
     const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement },
+      payment_method: {
+        card: cardElement,
+      },
     });
 
     if (paymentError) {
       console.error("Erreur lors de la confirmation du paiement :", paymentError);
       setError(paymentError.message || "Erreur lors du paiement.");
       setIsProcessing(false);
-    } else {
-      console.log("Paiement réussi :", paymentIntent);
+      return;
+    }
+
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      console.log("Paiement réussi, paymentIntentId :", paymentIntent.id);
       setIsProcessing(false);
-      onPaymentSuccess();
+      onPaymentSuccess(paymentIntent.id); // Passer paymentIntentId
+    } else {
+      console.error("Paiement non réussi :", paymentIntent?.status);
+      setError("Le paiement n'a pas été complété avec succès.");
+      setIsProcessing(false);
     }
   };
 
