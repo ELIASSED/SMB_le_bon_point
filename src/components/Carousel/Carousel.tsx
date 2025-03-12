@@ -16,13 +16,14 @@ export default function Carousel() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(null);
 
   const router = useRouter();
 
   const nextStep = () => {
-    console.log("Passage au step suivant, currentStep =", currentStep);
     setCurrentStep((prev) => prev + 1);
-    setError(null); // Réinitialiser l'erreur à chaque étape
+    setError(null);
   };
 
   const prevStep = () => {
@@ -34,8 +35,11 @@ export default function Carousel() {
     try {
       console.log("Stage sélectionné :", stage);
       setSelectedStage(stage);
+      setSessionId(stage.id); // Assigner sessionId ici
+      console.log("sessionId défini :", stage.id);
       const paymentIntent = await createPaymentIntent(stage);
       setClientSecret(paymentIntent.clientSecret);
+      console.log("clientSecret défini :", paymentIntent.clientSecret);
       nextStep();
     } catch (err: any) {
       console.error("Erreur lors de la sélection du stage :", err.message);
@@ -43,43 +47,76 @@ export default function Carousel() {
     }
   };
 
-  const handlePersonalInfoSubmit = (data: FormData) => {
-    const formEntries = Object.fromEntries(data.entries());
-    formEntries.email = formEntries.email.toLowerCase().trim();
-    formEntries.confirmationEmail = formEntries.confirmationEmail.toLowerCase().trim();
-    console.log("Données step2 normalisées:", formEntries);
-    setRegistrationInfo(formEntries as unknown as RegistrationInfo);
-    nextStep();
+  const handlePersonalInfoSubmit = async (data: FormData) => {
+    try {
+      const formEntries = Object.fromEntries(data.entries());
+      formEntries.email = formEntries.email.toLowerCase().trim();
+      formEntries.confirmationEmail = formEntries.confirmationEmail.toLowerCase().trim();
+      console.log("Données step2 normalisées:", formEntries);
+      setRegistrationInfo(formEntries as unknown as RegistrationInfo);
+
+      if (!selectedStage) {
+        setError("Aucun stage sélectionné.");
+        return;
+      }
+
+      const registrationData = { stageId: selectedStage.id, userData: formEntries };
+      const response = await registerUser(registrationData);
+
+      if (response.error) {
+        setError(response.error);
+        return;
+      }
+
+      setUserId(response.user.id); // Assigner userId ici
+      console.log("userId défini :", response.user.id);
+      nextStep(); // Passe à l'étape de paiement
+    } catch (err: any) {
+      console.error("Erreur lors de l'enregistrement initial :", err.message);
+      setError(err.message || "Erreur lors de l'enregistrement des informations. Veuillez réessayer.");
+    }
   };
 
-  const handlePaymentSuccess = async () => {
-    if (!selectedStage || !registrationInfo) {
-      console.error("Stage ou informations d'inscription manquants.");
-      setError("Certaines informations nécessaires sont manquantes. Veuillez revenir en arrière et vérifier.");
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    console.log("handlePaymentSuccess appelé avec paymentIntentId :", paymentIntentId);
+    if (!selectedStage || !registrationInfo || !sessionId || !userId || !paymentIntentId) {
+      console.error("Données manquantes pour finaliser le paiement :", {
+        selectedStage,
+        registrationInfo,
+        sessionId,
+        userId,
+        paymentIntentId,
+      });
+      setError("Informations manquantes. Veuillez revenir en arrière et vérifier.");
       return;
     }
     try {
       setIsSubmitting(true);
       setError(null);
-      const registrationData = { stageId: selectedStage.id, userData: registrationInfo };
-      console.log("Envoi à l'API :", registrationData);
-      const response = await registerUser(registrationData);
-
-      if (response.error) {
-        setError(response.error); // Afficher le message d'erreur exact du backend
-        return;
-      }
-
-      await sendConfirmationEmail({
-        to: registrationInfo.email,
-        subject: "Confirmation d'inscription",
-        text: `Votre inscription au stage ${selectedStage.description} est confirmée.`,
-        html: `<p>Merci pour votre inscription au stage ${selectedStage.description}.</p>`,
+  
+      console.log("Envoi à /api/confirm-payment :", { sessionId, userId, paymentIntentId });
+  
+      const updateResponse = await fetch("/api/confirm-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, userId, paymentIntentId }),
       });
-      router.push("/success");
+  
+      const updateResult = await updateResponse.json();
+      console.log("Réponse de /api/confirm-payment :", updateResult);
+  
+      if (!updateResponse.ok) {
+        throw new Error(updateResult.error || "Erreur lors de la mise à jour du paiement.");
+      }
+  
+      if (!updateResult.sessionUser.isPaid) {
+        throw new Error("Le statut de paiement n'a pas été mis à jour correctement.");
+      }
+  
+      // ... (email et redirection)
     } catch (err: any) {
-      console.error("Erreur lors de l'enregistrement :", err.message);
-      setError(err.message || "Une erreur est survenue lors de l'inscription. Veuillez réessayer.");
+      console.error("Erreur dans handlePaymentSuccess :", err.message);
+      setError(err.message || "Le paiement a réussi, mais une erreur est survenue. Contactez-nous.");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +130,12 @@ export default function Carousel() {
     {
       title: "Formulaire d'inscription",
       content: selectedStage ? (
-        <PersonalInfoStep selectedStage={selectedStage} onSubmit={handlePersonalInfoSubmit} />
+        <PersonalInfoStep
+          selectedStage={selectedStage}
+          onSubmit={handlePersonalInfoSubmit}
+          setRegistrationInfo={setRegistrationInfo}
+          nextStep={nextStep}
+        />
       ) : (
         <p>Veuillez sélectionner un stage avant de continuer.</p>
       ),
@@ -113,10 +155,7 @@ export default function Carousel() {
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       <h1 className="text-2xl font-bold mb-4">{steps[currentStep].title}</h1>
       {error && (
-        <div
-          className="text-red-500 text-center mb-4 p-3 bg-red-100 border border-red-400 rounded"
-          role="alert"
-        >
+        <div className="text-red-500 text-center mb-4 p-3 bg-red-100 border border-red-400 rounded" role="alert">
           {error}
         </div>
       )}
@@ -132,7 +171,7 @@ export default function Carousel() {
           </button>
         )}
       </div>
-      {isSubmitting && <p className="text-center mt-4">Inscription en cours...</p>}
+      {isSubmitting && <p className="text-center mt-4">Traitement en cours...</p>}
     </div>
   );
 }
