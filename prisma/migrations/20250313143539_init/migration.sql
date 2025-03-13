@@ -51,6 +51,7 @@ CREATE TABLE "SessionUsers" (
     "userId" INTEGER NOT NULL,
     "isPaid" BOOLEAN NOT NULL DEFAULT false,
     "isArchived" BOOLEAN NOT NULL DEFAULT false,
+    "paymentIntentId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -122,6 +123,9 @@ CREATE UNIQUE INDEX "Relance_userId_lastSessionId_key" ON "Relance"("userId", "l
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SessionUsers_paymentIntentId_key" ON "SessionUsers"("paymentIntentId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SessionUsers_sessionId_userId_key" ON "SessionUsers"("sessionId", "userId");

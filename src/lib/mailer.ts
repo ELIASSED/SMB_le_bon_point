@@ -1,23 +1,41 @@
+// lib/mailer.ts
 import nodemailer from "nodemailer";
+import { env } from "./env";
 
-export const sendEmail = async (to: string, subject: string, text: string, html: string) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  
+export async function sendEmail(to: string, subject: string, text: string, html: string) {
+  try {
+    console.log("Configuration de Nodemailer avec :", {
+      service: "gmail",
+      user: env.EMAIL_USER,
+    });
 
-  const mailOptions = {
-    from: `"Stage Permis" <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    text,
-    html,
-  };
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASS,
+      },
+    });
 
-  return transporter.sendMail(mailOptions);
-};
+    const mailOptions = {
+      from: env.EMAIL_USER,
+      to,
+      subject,
+      text,
+      html,
+    };
+
+    console.log("Envoi de l'email avec options :", {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+    });
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Email envoyé avec succès :", result);
+    return result;
+  } catch (error: any) {
+    console.error("Erreur dans sendEmail :", error.message, error.stack);
+    throw error;
+  }
+}

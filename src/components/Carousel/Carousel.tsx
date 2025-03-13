@@ -1,13 +1,15 @@
+// components/Carousel/Carousel.tsx
 "use client";
-
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPaymentIntent, registerUser, sendConfirmationEmail } from "../../lib/api";
+import { generateConfirmationEmail } from "../../lib/emailUtils";
+import { formatDateWithDay } from "../utils"; // Ajout de l'importation
 import { Stage, RegistrationInfo } from "./types";
-import ProgressBar from "./ProgressBar";
 import StageSelectionStep from "./Steps/StageSelectionStep";
 import PersonalInfoStep from "./Steps/PersonalInfoStep";
 import PaymentStep from "./Steps/PaymentStep";
+import ProgressBar from "./ProgressBar";
+import { createPaymentIntent, registerUser } from "../../lib/api";
 
 export default function Carousel() {
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -35,8 +37,9 @@ export default function Carousel() {
     try {
       console.log("Stage sélectionné :", stage);
       setSelectedStage(stage);
-      setSessionId(stage.id); // Assigner sessionId ici
+      setSessionId(stage.id);
       console.log("sessionId défini :", stage.id);
+
       const paymentIntent = await createPaymentIntent(stage);
       setClientSecret(paymentIntent.clientSecret);
       console.log("clientSecret défini :", paymentIntent.clientSecret);
@@ -49,11 +52,11 @@ export default function Carousel() {
 
   const handlePersonalInfoSubmit = async (data: FormData) => {
     try {
-      const formEntries = Object.fromEntries(data.entries());
+      const formEntries = Object.fromEntries(data.entries()) as unknown as RegistrationInfo;
       formEntries.email = formEntries.email.toLowerCase().trim();
       formEntries.confirmationEmail = formEntries.confirmationEmail.toLowerCase().trim();
-      console.log("Données step2 normalisées:", formEntries);
-      setRegistrationInfo(formEntries as unknown as RegistrationInfo);
+      console.log("Données personnelles normalisées :", formEntries);
+      setRegistrationInfo(formEntries);
 
       if (!selectedStage) {
         setError("Aucun stage sélectionné.");
@@ -68,59 +71,98 @@ export default function Carousel() {
         return;
       }
 
-      setUserId(response.user.id); // Assigner userId ici
+      setUserId(response.user.id);
       console.log("userId défini :", response.user.id);
-      nextStep(); // Passe à l'étape de paiement
+      nextStep();
     } catch (err: any) {
       console.error("Erreur lors de l'enregistrement initial :", err.message);
       setError(err.message || "Erreur lors de l'enregistrement des informations. Veuillez réessayer.");
     }
   };
 
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
-    console.log("handlePaymentSuccess appelé avec paymentIntentId :", paymentIntentId);
-    if (!selectedStage || !registrationInfo || !sessionId || !userId || !paymentIntentId) {
-      console.error("Données manquantes pour finaliser le paiement :", {
-        selectedStage,
-        registrationInfo,
-        sessionId,
-        userId,
-        paymentIntentId,
-      });
-      setError("Informations manquantes. Veuillez revenir en arrière et vérifier.");
-      return;
+const handlePaymentSuccess = async (paymentIntentId: string) => {
+  console.log("handlePaymentSuccess appelé avec paymentIntentId :", paymentIntentId);
+  if (!selectedStage || !registrationInfo || !sessionId || !userId || !paymentIntentId) {
+    console.error("Données manquantes pour finaliser le paiement :", {
+      selectedStage,
+      registrationInfo,
+      sessionId,
+      userId,
+      paymentIntentId,
+    });
+    setError("Informations manquantes. Veuillez revenir en arrière et vérifier.");
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    setError(null);
+
+    console.log("Envoi à /api/confirm-payment :", { sessionId, userId, paymentIntentId });
+    const updateResponse = await fetch("/api/confirm-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, userId, paymentIntentId }),
+    });
+
+    const updateResult = await updateResponse.json();
+    console.log("Réponse de /api/confirm-payment :", updateResult);
+
+    if (!updateResponse.ok) {
+      throw new Error(updateResult.error || "Erreur lors de la mise à jour du paiement.");
     }
+
+    if (!updateResult.sessionUser.isPaid) {
+      throw new Error("Le statut de paiement n'a pas été mis à jour correctement.");
+    }
+
+    console.log("Paiement confirmé, redirection vers /success...");
+    router.push("/success");
+
     try {
-      setIsSubmitting(true);
-      setError(null);
-  
-      console.log("Envoi à /api/confirm-payment :", { sessionId, userId, paymentIntentId });
-  
-      const updateResponse = await fetch("/api/confirm-payment", {
+      const formattedStartDate = formatDateWithDay(selectedStage.startDate);
+      const formattedEndDate = formatDateWithDay(selectedStage.endDate);
+      const emailHTML = generateConfirmationEmail(
+        registrationInfo.prenom,
+        registrationInfo.nom,
+        selectedStage.location,
+        selectedStage.numeroStageAnts,
+        formattedStartDate,
+        formattedEndDate,
+        "support@votre-site.com",
+        "01 23 45 67 89"
+      );
+
+      console.log("Envoi de l'email via /api/send-mail...");
+      const emailResponse = await fetch("/api/send-mail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, userId, paymentIntentId }),
+        body: JSON.stringify({
+          to: registrationInfo.email,
+          subject: "Confirmation de votre inscription au stage",
+          text: `Bonjour ${registrationInfo.prenom} ${registrationInfo.nom}, votre inscription au stage ${
+            selectedStage.description || "Session #" + selectedStage.id
+          } est confirmée.`,
+          html: emailHTML,
+        }),
       });
-  
-      const updateResult = await updateResponse.json();
-      console.log("Réponse de /api/confirm-payment :", updateResult);
-  
-      if (!updateResponse.ok) {
-        throw new Error(updateResult.error || "Erreur lors de la mise à jour du paiement.");
+
+      const emailResult = await emailResponse.json();
+      console.log("Réponse de /api/send-mail :", emailResult);
+
+      if (!emailResponse.ok) {
+        console.error("Échec de l'envoi de l'email :", emailResult.error);
       }
-  
-      if (!updateResult.sessionUser.isPaid) {
-        throw new Error("Le statut de paiement n'a pas été mis à jour correctement.");
-      }
-  
-      // ... (email et redirection)
-    } catch (err: any) {
-      console.error("Erreur dans handlePaymentSuccess :", err.message);
-      setError(err.message || "Le paiement a réussi, mais une erreur est survenue. Contactez-nous.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (emailError: any) {
+      console.error("Erreur lors de l'envoi de l'email (non bloquant) :", emailError.message);
     }
-  };
+  } catch (err: any) {
+    console.error("Erreur dans handlePaymentSuccess :", err.message);
+    setError(err.message || "Une erreur est survenue après le paiement. Contactez-nous.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const steps = [
     {

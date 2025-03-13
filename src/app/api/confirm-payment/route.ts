@@ -1,3 +1,4 @@
+// api/confirm-payment.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import Stripe from "stripe";
@@ -20,7 +21,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vérifier l'inscription
     const sessionUser = await prisma.sessionUsers.findUnique({
       where: {
         sessionId_userId: { sessionId, userId },
@@ -43,7 +43,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vérifier la session et la capacité
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
     });
@@ -64,7 +63,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vérifier le paiement avec Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== "succeeded") {
       console.log("Paiement non réussi :", paymentIntent.status);
@@ -74,7 +72,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Mettre à jour isPaid et décrémenter la capacité dans une transaction
     const updatedSessionUser = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.sessionUsers.update({
         where: {
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
         },
         data: {
           isPaid: true,
-          paymentIntentId,
+          paymentIntentId, // Maintenant valide après migration
         },
       });
 
