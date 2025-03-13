@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Stage, AddressSuggestion, RegistrationInfo } from "../../types";
@@ -6,15 +7,20 @@ import SelectedStageInfo from "../SelectedStageInfo";
 import { fetchAddressSuggestions } from "../utils";
 import nationalitiesData from "../nationalite.json";
 import casStageData from "../cas_stage.json";
+import prefecturesData from "../prefectures.json"; // Import du JSON des préfectures
 
 interface PersonalInfoStepProps {
   selectedStage: Stage;
   onSubmit: (data: FormData) => void;
 }
 
+interface Prefecture {
+  codePostal: string;
+  prefecture: string;
+}
+
 export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalInfoStepProps) {
   const [formData, setFormData] = useState<RegistrationInfo>({
-    // Informations personnelles
     civilite: "",
     nom: "",
     prenom: "",
@@ -30,19 +36,16 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     dateNaissance: "",
     lieuNaissance: "",
     codePostalNaissance: "",
-    // Informations sur le permis
     numeroPermis: "",
     dateDelivrancePermis: "",
     prefecture: "",
     etatPermis: "",
     casStage: "",
-    // Fichiers et commentaire (optionnels)
     scanIdentiteRecto: null,
     scanIdentiteVerso: null,
     scanPermisRecto: null,
     scanPermisVerso: null,
     commentaire: "",
-    // Ajout d'une case à cocher pour les conditions
     acceptConditions: false,
   });
 
@@ -52,6 +55,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
+  const [filteredPrefectures, setFilteredPrefectures] = useState<Prefecture[]>(prefecturesData);
 
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
@@ -64,6 +68,14 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+
+    // Filtrer les préfectures en fonction du code postal
+    if (name === "codePostal") {
+      const filtered = prefecturesData.filter((pref) =>
+        pref.codePostal.startsWith(value)
+      );
+      setFilteredPrefectures(filtered.length > 0 ? filtered : prefecturesData);
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +113,12 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       ville: suggestion.properties.city || prev.ville,
     }));
     setShowSuggestions(false);
+
+    // Mise à jour des préfectures en fonction du code postal sélectionné
+    const filtered = prefecturesData.filter((pref) =>
+      pref.codePostal.startsWith(suggestion.properties.postcode || "")
+    );
+    setFilteredPrefectures(filtered.length > 0 ? filtered : prefecturesData);
   };
 
   useEffect(() => {
@@ -125,7 +143,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       "nationalite",
       "dateNaissance",
       "codePostalNaissance",
-      "acceptConditions", // Ajouté comme requis
+      "acceptConditions",
     ];
     requiredPersonal.forEach((field) => {
       const value = formData[field as keyof RegistrationInfo];
@@ -429,7 +447,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="codePostalNaissance" className="block text-sm font-medium text-gray-700">
-                Lieu de naissance (Code Postal) <span aria-hidden="true" className="text-red-500">*</span>
+                Lieu de naissance <span aria-hidden="true" className="text-red-500">*</span>
               </label>
               <input
                 id="codePostalNaissance"
@@ -438,7 +456,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 value={formData.codePostalNaissance}
                 onChange={handleChange}
                 className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`}
-                placeholder="Ex: 75001"
+                placeholder="Ville, Pays"
                 aria-required="true"
               />
               {errors.codePostalNaissance && <p id="codePostalNaissance-error" className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
@@ -488,16 +506,21 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
               <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700">
                 Préfecture <span aria-hidden="true" className="text-red-500">*</span>
               </label>
-              <input
+              <select
                 id="prefecture"
-                type="text"
                 name="prefecture"
                 value={formData.prefecture}
                 onChange={handleChange}
                 className={`${inputClassName} ${errors.prefecture ? "border-red-500" : ""}`}
-                placeholder="Ex: Paris"
                 aria-required="true"
-              />
+              >
+                <option value="">Sélectionnez une préfecture</option>
+                {filteredPrefectures.map((pref) => (
+                  <option key={pref.codePostal} value={pref.prefecture}>
+                    {pref.prefecture} ({pref.codePostal})
+                  </option>
+                ))}
+              </select>
               {errors.prefecture && <p id="prefecture-error" className="text-red-500 text-xs mt-1">{errors.prefecture}</p>}
             </div>
 
@@ -551,7 +574,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire recto
+                Permis de Conduire recto
               </label>
               <input
                 id="scanPermisRecto"
@@ -566,7 +589,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
-                Scan du Perm byis de Conduire verso
+                Permis de Conduire verso
               </label>
               <input
                 id="scanPermisVerso"
@@ -581,7 +604,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité recto
+                Pièce d'Identité recto
               </label>
               <input
                 id="scanIdentiteRecto"
@@ -596,7 +619,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité verso
+                Pièce d'Identité verso
               </label>
               <input
                 id="scanIdentiteVerso"

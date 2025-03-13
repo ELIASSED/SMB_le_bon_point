@@ -113,12 +113,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // Décrémenter la capacité
-      await tx.session.update({
-        where: { id: stageId },
-        data: { capacity: { decrement: 1 } },
-      });
-
       return newSessionUser;
     });
 
