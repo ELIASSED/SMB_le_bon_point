@@ -68,10 +68,10 @@ export interface RegistrationInfo {
   etatPermis: string;
   casStage: string;
   // Fichiers et commentaire (optionnels)
-  scanIdentiteRecto: File | null;
-  scanIdentiteVerso: File | null;
-  scanPermisRecto: File | null;
-  scanPermisVerso: File | null;
+  permis_recto?: string;
+  permis_verso?: string;
+  id_recto?: string;
+  id_verso?: string;
   commentaire: string;
 }
 
