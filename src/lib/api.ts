@@ -1,6 +1,5 @@
 import { RegistrationInfo, Stage } from "@/components/Carousel/types";
 
-// lib/api.ts
 export async function fetchStages() {
     const response = await fetch("/api/stage");
     if (!response.ok) {
