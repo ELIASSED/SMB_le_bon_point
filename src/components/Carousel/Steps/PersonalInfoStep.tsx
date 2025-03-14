@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Stage, AddressSuggestion, RegistrationInfo } from "../../types";
@@ -7,16 +6,12 @@ import SelectedStageInfo from "../SelectedStageInfo";
 import { fetchAddressSuggestions } from "../utils";
 import nationalitiesData from "../nationalite.json";
 import casStageData from "../cas_stage.json";
-import prefecturesData from "../prefectures.json"; // Import du JSON des préfectures
+import prefecturesData from "../prefectures.json"; // Import du JSON pour préfectures
+import { supabase } from "@/lib/supabaseClient"; // Import de Supabase
 
 interface PersonalInfoStepProps {
   selectedStage: Stage;
   onSubmit: (data: FormData) => void;
-}
-
-interface Prefecture {
-  codePostal: string;
-  prefecture: string;
 }
 
 export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalInfoStepProps) {
@@ -31,7 +26,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     ville: "",
     telephone: "",
     email: "",
-    confirmationEmail: "",
+    confirmationEmail:"",
     nationalite: "",
     dateNaissance: "",
     lieuNaissance: "",
@@ -45,7 +40,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     scanIdentiteVerso: null,
     scanPermisRecto: null,
     scanPermisVerso: null,
-    commentaire: "",
     acceptConditions: false,
   });
 
@@ -55,7 +49,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
-  const [filteredPrefectures, setFilteredPrefectures] = useState<Prefecture[]>(prefecturesData);
 
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
@@ -68,19 +61,12 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-
-    // Filtrer les préfectures en fonction du code postal
-    if (name === "codePostal") {
-      const filtered = prefecturesData.filter((pref) =>
-        pref.codePostal.startsWith(value)
-      );
-      setFilteredPrefectures(filtered.length > 0 ? filtered : prefecturesData);
-    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     const file = e.target.files?.[0] || null;
+    console.log(`Fichier sélectionné pour ${name} :`, file?.name); // Log pour debug
     setFormData((prev) => ({ ...prev, [name]: file }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -113,12 +99,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       ville: suggestion.properties.city || prev.ville,
     }));
     setShowSuggestions(false);
-
-    // Mise à jour des préfectures en fonction du code postal sélectionné
-    const filtered = prefecturesData.filter((pref) =>
-      pref.codePostal.startsWith(suggestion.properties.postcode || "")
-    );
-    setFilteredPrefectures(filtered.length > 0 ? filtered : prefecturesData);
   };
 
   useEffect(() => {
@@ -126,6 +106,41 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       setNationalities(nationalitiesData.nationalities);
     }
   }, []);
+
+  // Fonction pour uploader les fichiers vers Supabase Storage
+  const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
+    const uploadedPaths: { [key: string]: string } = {};
+    const fileFields = {
+      scanPermisRecto: "permis_recto",
+      scanPermisVerso: "permis_verso",
+      scanIdentiteRecto: "id_recto",
+      scanIdentiteVerso: "id_verso",
+    };
+
+    for (const [field, dbField] of Object.entries(fileFields)) {
+      const file = formData[field as keyof RegistrationInfo] as File | null;
+      if (file) {
+        console.log(`Tentative d'upload pour ${field} :`, file.name);
+        const filePath = `${id}/${dbField}/${Date.now()}_${file.name}`;
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .upload(filePath, file, { upsert: true });
+
+        if (error) {
+          console.error(`Erreur d'upload pour ${field} :`, error.message);
+          throw new Error(`Échec de l'upload de ${field}: ${error.message}`);
+        }
+
+        const { publicUrl } = supabase.storage.from("documents").getPublicUrl(filePath).data;
+        console.log(`URL générée pour ${field} :`, publicUrl);
+        uploadedPaths[field] = publicUrl;
+      } else {
+        console.log(`Aucun fichier pour ${field}`);
+      }
+    }
+
+    return uploadedPaths;
+  };
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
@@ -186,17 +201,41 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Soumission démarrée...");
     if (validate()) {
       setIsSubmitting(true);
-      const formDataObj = new FormData(e.currentTarget);
-      console.log("FormData envoyé :", Object.fromEntries(formDataObj.entries()));
-      onSubmit(formDataObj);
-      setIsSubmitting(false);
+      try {
+        const formDataObj = new FormData(e.currentTarget);
+
+        // Upload des fichiers vers Supabase
+        const uploadedPaths = await uploadFilesToSupabase(formData.email);
+        if (uploadedPaths.scanPermisRecto) formDataObj.set("permis_recto", uploadedPaths.scanPermisRecto);
+        if (uploadedPaths.scanPermisVerso) formDataObj.set("permis_verso", uploadedPaths.scanPermisVerso);
+        if (uploadedPaths.scanIdentiteRecto) formDataObj.set("id_recto", uploadedPaths.scanIdentiteRecto);
+        if (uploadedPaths.scanIdentiteVerso) formDataObj.set("id_verso", uploadedPaths.scanIdentiteVerso);
+
+        // Supprime les champs inutiles
+
+        formDataObj.delete("acceptConditions");
+        formDataObj.delete("scanPermisRecto");
+        formDataObj.delete("scanPermisVerso");
+        formDataObj.delete("scanIdentiteRecto");
+        formDataObj.delete("scanIdentiteVerso");
+
+        console.log("FormData envoyé avec URLs :", Object.fromEntries(formDataObj.entries()));
+        onSubmit(formDataObj);
+      } catch (error: any) {
+        console.error("Erreur lors de la soumission :", error.message);
+        setErrors((prev) => ({ ...prev, submit: error.message }));
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      console.log("Validation échouée :", errors);
     }
   };
-
   return (
     <div className="px-4 py-6 bg-gray-50 min-h-screen">
       <section aria-labelledby="selected-stage-heading" className="mb-6 p-4 border rounded bg-white shadow">
@@ -404,7 +443,9 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 placeholder="Confirmez votre email"
                 aria-required="true"
               />
-              {errors.confirmationEmail && <p id="confirmationEmail-error" className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>}
+              {errors.confirmationEmail && (
+                <p id="confirmationEmail-error" className="text-red-500 text-xs mt-1">{errors.confirmationEmail}</p>
+              )}
             </div>
 
             <div>
@@ -459,7 +500,9 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 placeholder="Ville, Pays"
                 aria-required="true"
               />
-              {errors.codePostalNaissance && <p id="codePostalNaissance-error" className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>}
+              {errors.codePostalNaissance && (
+                <p id="codePostalNaissance-error" className="text-red-500 text-xs mt-1">{errors.codePostalNaissance}</p>
+              )}
             </div>
           </div>
         </fieldset>
@@ -514,8 +557,8 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 className={`${inputClassName} ${errors.prefecture ? "border-red-500" : ""}`}
                 aria-required="true"
               >
-                <option value="">Sélectionnez une préfecture</option>
-                {filteredPrefectures.map((pref) => (
+                <option value="">-- Sélectionnez une préfecture --</option>
+                {prefecturesData.map((pref) => (
                   <option key={pref.codePostal} value={pref.prefecture}>
                     {pref.prefecture} ({pref.codePostal})
                   </option>
@@ -574,7 +617,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
-                Permis de Conduire recto
+                Scan du Permis de Conduire recto
               </label>
               <input
                 id="scanPermisRecto"
@@ -589,7 +632,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
-                Permis de Conduire verso
+                Scan du Permis de Conduire verso
               </label>
               <input
                 id="scanPermisVerso"
@@ -604,7 +647,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
-                Pièce d'Identité recto
+                Scan de la Pièce d'Identité recto
               </label>
               <input
                 id="scanIdentiteRecto"
@@ -614,12 +657,14 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`}
               />
-              {errors.scanIdentiteRecto && <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>}
+              {errors.scanIdentiteRecto && (
+                <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>
+              )}
             </div>
 
             <div>
               <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
-                Pièce d'Identité verso
+                Scan de la Pièce d'Identité verso
               </label>
               <input
                 id="scanIdentiteVerso"
@@ -629,12 +674,13 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`}
               />
-              {errors.scanIdentiteVerso && <p id="scanIdentiteVerso-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteVerso}</p>}
+              {errors.scanIdentiteVerso && (
+                <p id="scanIdentiteVerso-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteVerso}</p>
+              )}
             </div>
           </div>
         </fieldset>
 
-        {/* Ajout de la case à cocher pour les conditions */}
         <div className="mt-4">
           <label htmlFor="acceptConditions" className="flex items-center text-sm font-medium text-gray-700">
             <input
@@ -659,6 +705,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           >
             {isSubmitting ? "Envoi en cours..." : "Enregistrer et Continuer"}
           </button>
+          {errors.submit && <p className="text-red-500 text-xs mt-2 text-center">{errors.submit}</p>}
         </div>
       </form>
     </div>

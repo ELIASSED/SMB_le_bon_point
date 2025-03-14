@@ -68,13 +68,15 @@ const SortOptions: React.FC<SortOptionsProps> = ({ onDataUpdate }) => {
             }`}
             onClick={() => applySort("date-asc")}
           >
-            <input
-              type="radio"
-              name="sortOption"
-              value="date-asc"
-              checked={sortOption === "date-asc"}
-              className="w-4 h-4 hidden"
-            />
+        <input
+  type="radio"
+  name="sortOption"
+  value="date-asc"
+  checked={sortOption === "date-asc"}
+  onChange={() => applySort("date-asc")}
+  className="w-4 h-4 hidden"
+/>
+
             <span>Plus récent</span>
           </label>
 
@@ -84,13 +86,15 @@ const SortOptions: React.FC<SortOptionsProps> = ({ onDataUpdate }) => {
             }`}
             onClick={() => applySort("price-asc")}
           >
-            <input
-              type="radio"
-              name="sortOption"
-              value="price-asc"
-              checked={sortOption === "price-asc"}
-              className="w-4 h-4 hidden"
-            />
+<input
+  type="radio"
+  name="sortOption"
+  value="price-asc"
+  checked={sortOption === "price-asc"}
+  onChange={() => applySort("price-asc")}
+  className="w-4 h-4 hidden"
+/>
+
             <span>Prix croissants</span>
           </label>
 
