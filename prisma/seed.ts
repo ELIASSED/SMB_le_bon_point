@@ -9,7 +9,6 @@ async function main() {
 
   // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
   await prisma.payment.deleteMany();
-  await prisma.relance.deleteMany();
   await prisma.sessionUsers.deleteMany();
   await prisma.session.deleteMany();
   await prisma.psychologue.deleteMany();
@@ -118,21 +117,6 @@ async function main() {
   });
 
   console.log("✅ Paiement enregistré !");
-
-  // Création d'une relance pour l'utilisateur (en lien avec la session)
-  const relance = await prisma.relance.create({
-    data: {
-      email: user.email,
-      firstName: user.prenom,
-      lastName: user.nom,
-      phone: user.telephone,
-      userId: user.id,
-      lastSessionId: randomSession.id, // Champ optionnel mais renseigné ici
-      profession: 'Ingénieur', // Champ optionnel
-    },
-  });
-
-  console.log("✅ Relance créée !");
 
   console.log("🎉 Base de données semée avec succès !");
 }
