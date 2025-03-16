@@ -617,7 +617,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire recto
+                Permis de Conduire recto
               </label>
               <input
                 id="scanPermisRecto"
@@ -626,13 +626,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanPermisRecto && <p id="scanPermisRecto-error" className="text-red-500 text-xs mt-1">{errors.scanPermisRecto}</p>}
             </div>
 
             <div>
               <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire verso
+                Permis de Conduire verso
               </label>
               <input
                 id="scanPermisVerso"
@@ -641,13 +643,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanPermisVerso && <p id="scanPermisVerso-error" className="text-red-500 text-xs mt-1">{errors.scanPermisVerso}</p>}
             </div>
 
             <div>
               <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité recto
+               Pièce d'Identité recto
               </label>
               <input
                 id="scanIdentiteRecto"
@@ -656,6 +660,8 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanIdentiteRecto && (
                 <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>
@@ -664,7 +670,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité verso
+                Pièce d'Identité verso
               </label>
               <input
                 id="scanIdentiteVerso"
@@ -673,6 +679,8 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanIdentiteVerso && (
                 <p id="scanIdentiteVerso-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteVerso}</p>
