@@ -129,8 +129,8 @@ const handlePaymentSuccess = async (paymentIntentId: string) => {
         selectedStage.numeroStageAnts,
         formattedStartDate,
         formattedEndDate,
-        "support@votre-site.com",
-        "01 23 45 67 89"
+        "smblebonpoint@gmail.com",
+        "06 19 77 47 82"
       );
 
       console.log("Envoi de l'email via /api/send-mail...");

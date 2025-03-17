@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { Stage, AddressSuggestion, RegistrationInfo } from "../../types";
+import { Stage, AddressSuggestion, RegistrationInfo } from "../types";
 import SelectedStageInfo from "../SelectedStageInfo";
 import { fetchAddressSuggestions } from "../utils";
 import nationalitiesData from "../nationalite.json";
