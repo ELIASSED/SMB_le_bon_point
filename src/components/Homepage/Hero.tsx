@@ -26,7 +26,7 @@ export default function Hero() {
                 Récupérez Vos Points à Saint-Maur-des-Fossés
               </h1>
               <p className="text-lg font-bold text-teal">
-                Participez à nos stages agréés et reprenez confiance au volant.
+                Site en construction, ceci est une demo
               </p>
               <button
                 type="button"
