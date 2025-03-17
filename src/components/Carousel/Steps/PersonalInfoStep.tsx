@@ -1,20 +1,27 @@
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { Stage, AddressSuggestion, RegistrationInfo } from "../../types";
+import { Stage, AddressSuggestion, RegistrationInfo } from "../types";
 import SelectedStageInfo from "../SelectedStageInfo";
 import { fetchAddressSuggestions } from "../utils";
 import nationalitiesData from "../nationalite.json";
 import casStageData from "../cas_stage.json";
-import prefecturesData from "../prefectures.json"; // Import du JSON pour préfectures
-import { supabase } from "@/lib/supabaseClient"; // Import de Supabase
+import prefecturesData from "../prefectures.json";
+import { supabase } from "@/lib/supabaseClient";
 
 interface PersonalInfoStepProps {
   selectedStage: Stage;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData) => Promise<void>;
+  setRegistrationInfo: React.Dispatch<React.SetStateAction<RegistrationInfo | null>>;
+  nextStep: () => void;
 }
 
-export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalInfoStepProps) {
+export default function PersonalInfoStep({
+  selectedStage,
+  onSubmit,
+  setRegistrationInfo,
+  nextStep,
+}: PersonalInfoStepProps) {
   const [formData, setFormData] = useState<RegistrationInfo>({
     civilite: "",
     nom: "",
@@ -26,7 +33,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     ville: "",
     telephone: "",
     email: "",
-    confirmationEmail:"",
+    confirmationEmail: "",
     nationalite: "",
     dateNaissance: "",
     lieuNaissance: "",
@@ -53,10 +60,21 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500";
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    if (nationalitiesData?.nationalities) {
+      setNationalities(nationalitiesData.nationalities);
+    }
+  }, []);
+
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+      setFormData((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -66,7 +84,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     const file = e.target.files?.[0] || null;
-    console.log(`Fichier sélectionné pour ${name} :`, file?.name); // Log pour debug
+    console.log(`Fichier sélectionné pour ${name}:`, file?.name);
     setFormData((prev) => ({ ...prev, [name]: file }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -81,7 +99,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
         const suggestions = await fetchAddressSuggestions(value);
         setAddressSuggestions(suggestions);
       } catch (error) {
-        console.error("Erreur lors de la récupération des suggestions d'adresse :", error);
+        console.error("Erreur lors de la récupération des suggestions d'adresse:", error);
       } finally {
         setIsLoadingAddress(false);
       }
@@ -101,13 +119,6 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     setShowSuggestions(false);
   };
 
-  useEffect(() => {
-    if (nationalitiesData?.nationalities) {
-      setNationalities(nationalitiesData.nationalities);
-    }
-  }, []);
-
-  // Fonction pour uploader les fichiers vers Supabase Storage
   const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
     const uploadedPaths: { [key: string]: string } = {};
     const fileFields = {
@@ -120,22 +131,18 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
     for (const [field, dbField] of Object.entries(fileFields)) {
       const file = formData[field as keyof RegistrationInfo] as File | null;
       if (file) {
-        console.log(`Tentative d'upload pour ${field} :`, file.name);
         const filePath = `${id}/${dbField}/${Date.now()}_${file.name}`;
         const { data, error } = await supabase.storage
           .from("documents")
           .upload(filePath, file, { upsert: true });
 
         if (error) {
-          console.error(`Erreur d'upload pour ${field} :`, error.message);
+          console.error(`Erreur d'upload pour ${field}:`, error.message);
           throw new Error(`Échec de l'upload de ${field}: ${error.message}`);
         }
 
         const { publicUrl } = supabase.storage.from("documents").getPublicUrl(filePath).data;
-        console.log(`URL générée pour ${field} :`, publicUrl);
         uploadedPaths[field] = publicUrl;
-      } else {
-        console.log(`Aucun fichier pour ${field}`);
       }
     }
 
@@ -145,7 +152,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
-    const requiredPersonal = [
+    const requiredFields = [
       "civilite",
       "nom",
       "prenom",
@@ -158,9 +165,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       "nationalite",
       "dateNaissance",
       "codePostalNaissance",
+      "numeroPermis",
+      "dateDelivrancePermis",
+      "prefecture",
+      "etatPermis",
+      "casStage",
       "acceptConditions",
     ];
-    requiredPersonal.forEach((field) => {
+
+    requiredFields.forEach((field) => {
       const value = formData[field as keyof RegistrationInfo];
       if (field === "acceptConditions" && !value) {
         newErrors[field] = "Vous devez accepter les conditions.";
@@ -173,20 +186,14 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
       newErrors.confirmationEmail = "Les emails ne correspondent pas.";
     }
 
-    const requiredLicense = ["numeroPermis", "dateDelivrancePermis", "prefecture", "etatPermis", "casStage"];
-    requiredLicense.forEach((field) => {
-      if (!formData[field as keyof RegistrationInfo]?.toString().trim()) {
-        newErrors[field] = "Ce champ est requis.";
-      }
-    });
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       newErrors.email = "Format d'email invalide.";
     }
+
     const phoneRegex = /^[0-9]{10}$/;
     if (formData.telephone && !phoneRegex.test(formData.telephone)) {
-      newErrors.telephone = "Format de téléphone invalide.";
+      newErrors.telephone = "Format de téléphone invalide (10 chiffres).";
     }
 
     const allowedFileTypes = ["image/jpeg", "image/png", "application/pdf"];
@@ -203,39 +210,44 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Soumission démarrée...");
-    if (validate()) {
-      setIsSubmitting(true);
-      try {
-        const formDataObj = new FormData(e.currentTarget);
+    if (!validate()) {
+      console.log("Validation échouée:", errors);
+      return;
+    }
 
-        // Upload des fichiers vers Supabase
-        const uploadedPaths = await uploadFilesToSupabase(formData.email);
-        if (uploadedPaths.scanPermisRecto) formDataObj.set("permis_recto", uploadedPaths.scanPermisRecto);
-        if (uploadedPaths.scanPermisVerso) formDataObj.set("permis_verso", uploadedPaths.scanPermisVerso);
-        if (uploadedPaths.scanIdentiteRecto) formDataObj.set("id_recto", uploadedPaths.scanIdentiteRecto);
-        if (uploadedPaths.scanIdentiteVerso) formDataObj.set("id_verso", uploadedPaths.scanIdentiteVerso);
+    setIsSubmitting(true);
+    try {
+      const formDataObj = new FormData(e.currentTarget);
+      const uploadedPaths = await uploadFilesToSupabase(formData.email);
 
-        // Supprime les champs inutiles
+      // Remplacer les champs de fichiers par leurs URLs
+      if (uploadedPaths.scanPermisRecto) formDataObj.set("permis_recto", uploadedPaths.scanPermisRecto);
+      if (uploadedPaths.scanPermisVerso) formDataObj.set("permis_verso", uploadedPaths.scanPermisVerso);
+      if (uploadedPaths.scanIdentiteRecto) formDataObj.set("id_recto", uploadedPaths.scanIdentiteRecto);
+      if (uploadedPaths.scanIdentiteVerso) formDataObj.set("id_verso", uploadedPaths.scanIdentiteVerso);
 
-        formDataObj.delete("acceptConditions");
-        formDataObj.delete("scanPermisRecto");
-        formDataObj.delete("scanPermisVerso");
-        formDataObj.delete("scanIdentiteRecto");
-        formDataObj.delete("scanIdentiteVerso");
+      // Supprimer les champs de fichiers originaux et acceptConditions
+      formDataObj.delete("scanPermisRecto");
+      formDataObj.delete("scanPermisVerso");
+      formDataObj.delete("scanIdentiteRecto");
+      formDataObj.delete("scanIdentiteVerso");
+      formDataObj.delete("acceptConditions");
 
-        console.log("FormData envoyé avec URLs :", Object.fromEntries(formDataObj.entries()));
-        onSubmit(formDataObj);
-      } catch (error: any) {
-        console.error("Erreur lors de la soumission :", error.message);
-        setErrors((prev) => ({ ...prev, submit: error.message }));
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      console.log("Validation échouée :", errors);
+      // Mettre à jour l'état global via setRegistrationInfo
+      const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
+      setRegistrationInfo(registrationData);
+
+      // Appeler onSubmit et passer à l'étape suivante
+      await onSubmit(formDataObj);
+      nextStep();
+    } catch (error: any) {
+      console.error("Erreur lors de la soumission:", error.message);
+      setErrors((prev) => ({ ...prev, submit: error.message || "Erreur lors de l'envoi des données." }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  
   return (
     <div className="px-4 py-6 bg-gray-50 min-h-screen">
       <section aria-labelledby="selected-stage-heading" className="mb-6 p-4 border rounded bg-white shadow">
@@ -617,7 +629,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="scanPermisRecto" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire recto
+                Permis de Conduire recto
               </label>
               <input
                 id="scanPermisRecto"
@@ -626,13 +638,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanPermisRecto && <p id="scanPermisRecto-error" className="text-red-500 text-xs mt-1">{errors.scanPermisRecto}</p>}
             </div>
 
             <div>
               <label htmlFor="scanPermisVerso" className="block text-sm font-medium text-gray-700">
-                Scan du Permis de Conduire verso
+                Permis de Conduire verso
               </label>
               <input
                 id="scanPermisVerso"
@@ -641,13 +655,15 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanPermisVerso && <p id="scanPermisVerso-error" className="text-red-500 text-xs mt-1">{errors.scanPermisVerso}</p>}
             </div>
 
             <div>
               <label htmlFor="scanIdentiteRecto" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité recto
+               Pièce d'Identité recto
               </label>
               <input
                 id="scanIdentiteRecto"
@@ -656,6 +672,8 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanIdentiteRecto && (
                 <p id="scanIdentiteRecto-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteRecto}</p>
@@ -664,7 +682,7 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
 
             <div>
               <label htmlFor="scanIdentiteVerso" className="block text-sm font-medium text-gray-700">
-                Scan de la Pièce d'Identité verso
+                Pièce d'Identité verso
               </label>
               <input
                 id="scanIdentiteVerso"
@@ -673,6 +691,8 @@ export default function PersonalInfoStep({ selectedStage, onSubmit }: PersonalIn
                 onChange={handleFileChange}
                 accept="image/*,application/pdf"
                 className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`}
+                aria-required="true"
+
               />
               {errors.scanIdentiteVerso && (
                 <p id="scanIdentiteVerso-error" className="text-red-500 text-xs mt-1">{errors.scanIdentiteVerso}</p>
