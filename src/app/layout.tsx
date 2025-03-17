@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export const metadata = {
-  title: 'Sécurité Routière',
+  title: ' Stages de Récupération de Points',
   description: 'Site inspiré de l’identité visuelle de la Sécurité Routière.',
 };
 
