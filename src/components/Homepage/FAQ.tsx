@@ -1,5 +1,5 @@
 /* src/components/FAQ.tsx */
-
+'use client'
 import { useState } from 'react';
 
 interface FAQItem {
@@ -56,7 +56,7 @@ export default function FAQ() {
         {faqData.map((item, index) => (
           <div key={index} className="border rounded-lg shadow-sm">
             <button
-              className="w-full flex justify-between items-center p-4 text-left bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full flex justify-between items-center p-4 text-left bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow"
               onClick={() => toggleAccordion(index)}
               aria-expanded={activeIndex === index}
             >

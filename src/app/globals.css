@@ -1,75 +1,70 @@
-/* src/app/globals.css */
+/* globals.css - Mise à jour pour la responsivité */
 
-/* Import des polices Google */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Merriweather:wght@400;700&display=swap');
 
-/* Import de Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Styles personnalisés */
 @layer base {
   html, body {
-    font-family: 'Inter', sans-serif;
-    background-color: theme('colors.light');
-    color: theme('colors.dark');
+    @apply bg-gray-200 text-gray-dark font-sans;
     line-height: 1.6;
     scroll-behavior: smooth;
   }
 
   a {
-    @apply text-primary ;
+    @apply text-teal;
   }
 
-  a:hover {
-    @apply text-secondary;
-  }
-
+ 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif text-primary;
+    @apply font-serif text-teal;
   }
 
   p {
     @apply mb-4;
   }
 
-  .btn-primary {
-    @apply bg-primary text-white font-semibold py-2 px-4 rounded shadow hover:bg-secondary transition duration-300;
-  }
 
-  .btn-secondary {
-    @apply bg-secondary text-white font-semibold py-2 px-4 rounded shadow hover:bg-primary transition duration-300;
-  }
-
-  /* Personnalisation de react-calendar */
   .react-calendar {
     @apply bg-white rounded-lg shadow-lg p-4;
   }
 
   .react-calendar__tile {
-    @apply text-dark hover:bg-primary hover:text-white;
+    @apply text-gray-dark hover:bg-teal hover:text-white;
   }
 
   .react-calendar__tile--now {
-    @apply bg-accent text-white;
+    @apply bg-yellow text-white;
   }
 
   .react-calendar__tile--active {
-    @apply bg-success text-white;
+    @apply bg-teal text-white;
   }
 
-  /* Boutons */
   .btn {
     @apply inline-block font-semibold text-center rounded transition duration-300;
   }
 
-  .btn:hover {
-    @apply opacity-90;
+
+  .card:hover {
+    @apply transform scale-105 shadow-xl transition duration-300;
   }
 
-  /* Animations pour les Cartes */
-  .card:hover {
-    @apply transform scale-105 shadow-xl;
+  /* Responsiveness */
+  .responsive-text {
+    @apply text-sm md:text-base lg:text-lg;
+    font-weight: 400;
+    @screen md {
+      font-weight: 600;
+    }
+    @screen lg {
+      font-weight: 700;
+    }
+  }
+
+  .responsive-padding {
+    @apply p-2 md:p-4 lg:p-6;
   }
 }

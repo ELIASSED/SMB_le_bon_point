@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 import React from 'react';
 import Image from 'next/image';
@@ -36,4 +37,13 @@ export default function MaintenancePage() {
       </div>
     </div>
   );
+=======
+// pages/stage.tsx
+
+import React from 'react';
+import Carousel from '../../components/Carousel/Carousel';
+
+export default function StagePage() {
+  return <Carousel />;
+>>>>>>> temp-branch
 }

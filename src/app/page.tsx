@@ -4,12 +4,19 @@
 
 import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
+<<<<<<< HEAD
 import Hero from '../components/Hero';
 import ExperiencedTrainers from '../components/ExperiencedTrainers';
 import PointRecovery from '../components/PointRecovery';
 import PrefectureApproval from '../components/PrefectureApproval';
 import SecureBooking from '../components/SecureBooking';
 import FAQ from '../components/FAQ';
+=======
+import Hero from '../components/Homepage/Hero';
+import FAQ from '../components/Homepage/FAQ';
+import ExternalLinkButton from '../components/ExternalLinkButton';
+import FeaturesGrid from '../components/Homepage/FeatureGrid';
+>>>>>>> temp-branch
 
 export default function HomePage() {
   return (
@@ -27,20 +34,18 @@ export default function HomePage() {
 
         <h2 className="text-2xl font-semibold mb-2 text-black">Pourquoi choisir notre centre à Saint-Maur-des-Fossés ?</h2>
 
-        <PrefectureApproval />
-        <br />
-        <ExperiencedTrainers />
-        <br />
-        <PointRecovery />
-        <br />
-        <SecureBooking />
+       <FeaturesGrid/>
         <br />
 
         <p className="mb-6 text-gray-700">
           Notre centre est situé au cœur de Saint-Maur, facilement accessible en transport en commun ou en voiture. Les sessions ont lieu régulièrement, et les places sont limitées (maximum 20 participants).
         </p>
 
+<<<<<<< HEAD
         <BookingButton  />
+=======
+        <BookingButton />
+>>>>>>> temp-branch
 
         <h2 className="text-2xl font-semibold mt-8 mb-2 text-black">Informations pratiques</h2>
         <p className="mb-2 text-gray-700">
@@ -56,6 +61,7 @@ export default function HomePage() {
           À l’issue du stage, une attestation vous sera remise, permettant la récupération de points sur votre permis (sous réserve d’éligibilité).
         </p>
       </div>
+      <ExternalLinkButton />
       <FAQ />
     </>
   );

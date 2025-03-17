@@ -13,10 +13,16 @@ export default function BookingButton() {
   return (
     <button 
       onClick={handleClick}
+<<<<<<< HEAD
       className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded"
+=======
+      className={`
+        bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded
+      `}
+>>>>>>> temp-branch
       id="reservation"
     >
       Réserver un stage
     </button>
   );
-}
+} 

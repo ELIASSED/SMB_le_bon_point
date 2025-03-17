@@ -1,120 +1,131 @@
-const { PrismaClient } = require('@prisma/client');
+// prisma/seed.ts
+
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  // Insertion de données pour les utilisateurs (User)
-  await prisma.user.createMany({
-    data: [
-      { email: "user1@example.com", firstName: "Jean", lastName: "Dupont", phone: "0600000001" },
-      { email: "user2@example.com", firstName: "Marie", lastName: "Durand", phone: "0600000002" },
-    ],
-  });
-  console.log("Utilisateurs ajoutés avec succès.");
+  console.log("📢 Suppression des anciennes données...");
 
-  // Insertion de données pour les instructeurs (Instructor)
-  await prisma.instructor.createMany({
-    data: [
-      { email: "instructor1@example.com", firstName: "Paul", lastName: "Martin" },
-      { email: "instructor2@example.com", firstName: "Laura", lastName: "Bernard" },
-    ],
-  });
-  console.log("Instructeurs ajoutés avec succès.");
+  // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
+  await prisma.payment.deleteMany();
+  await prisma.sessionUsers.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.psychologue.deleteMany();
+  await prisma.instructor.deleteMany();
+  await prisma.user.deleteMany();
 
-  // Insertion de données pour les sessions (Session)
-  await prisma.session.createMany({
-    data: [
-      {
-        numeroStagePrefecture: "Stage 1 - 22-23 Décembre 2024",
-        description: "Stage de récupération de points",
-        startDate: new Date("2024-12-22"),
-        endDate: new Date("2024-12-23"),
-        location: "saint maur",
-        capacity: 2,
-        instructorId: 1, // Assurez-vous que cet ID existe
-      },
-      {
-        numeroStagePrefecture: "Stage 2 - 29-30 Décembre 2024",
-        description: "Stage de sensibilisation",
-        startDate: new Date("2024-12-29"),
-        endDate: new Date("2024-12-30"),
-        location: "saint maur",
-        capacity: 15,
-        instructorId: 2, // Assurez-vous que cet ID existe
-      },{
-        numeroStagePrefecture: "Stage 3 - 05-06 Janvier 2025",
-        description: "Stage de récupération de points",
-        startDate: new Date("2025-01-05"),
-        endDate: new Date("2025-01-06"),
-        location: "saint maur",
-        capacity: 11,
-        instructorId: 1, // Assurez-vous que cet ID existe
-      },
-      {
-        numeroStagePrefecture: "Stage 4 - 15-16 Janvier 2025",
-        description: "Stage de sensibilisation",
-        startDate: new Date("2025-01-15"),
-        endDate: new Date("2025-01-16"),
-        location: "saint maur",
+  console.log("✅ Anciennes données supprimées !");
+
+  // Création d'un instructeur
+  const instructor = await prisma.instructor.create({
+    data: {
+      email: 'instructor@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      numeroAutorisationPrefectorale: 'AUTH123456',
+      phone: '0123456789',
+    },
+  });
+
+  // Création d'un psychologue
+  const psychologue = await prisma.psychologue.create({
+    data: {
+      email: 'psychologue@example.com',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      numeroAutorisationPrefectorale: 'AUTH654321',
+      phone: '0987654321',
+    },
+  });
+
+  console.log("✅ Instructeur et psychologue créés !");
+
+  // Création de 100 sessions avec des dates différentes
+  console.log("📢 Génération de 100 sessions...");
+
+  const sessions = [];
+  for (let i = 0; i < 100; i++) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + i * 3); // Chaque session commence 3 jours après la précédente
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 1); // 1 jour après
+
+    const session = await prisma.session.create({
+      data: {
+        numeroStageAnts: `STAGE${i + 1}`,
+        price: 200.0,
+        description: `Session de formation n°${i + 1}`,
+        startDate,
+        endDate,
+        location: 'Paris',
         capacity: 20,
-        instructorId: 2, // Assurez-vous que cet ID existe
-      }
-    ],
-  });
-  console.log("Sessions ajoutées avec succès.");
-
-  // Insertion de données pour les inscriptions (Inscription)
-  await prisma.inscription.createMany({
-    data: [
-      {
-        civilite:"Monsieur",
-        nom: "Dupont",
-        prenom: "Jean",
-        adresse: "123 Rue de Paris",
-        codePostal: "75000",
-        ville: "Paris",
-        telephone: "0600000001",
-        email: "jean.dupont@example.com",
-        stage: "Stage 1 - 22-23 Décembre 2024",
-        nationalite: "Française",
-        dateNaissance: new Date("1985-05-10"),
-        idCard: "base64EncodedIdCard1",
-        permis: "base64EncodedPermis1",
+        instructorId: instructor.id,
+        psychologueId: psychologue.id,
       },
-      {
-        civilite:"Madame",
-        nom: "Durand",
-        prenom: "Marie",
-        adresse: "456 Rue de Lyon",
-        codePostal: "69000",
-        ville: "Lyon",
-        telephone: "0600000002",
-        email: "marie.durand@example.com",
-        stage: "Stage 2 - 29-30 Décembre 2024",
-        nationalite: "Française",
-        dateNaissance: new Date("1990-06-20"),
-        idCard: "base64EncodedIdCard2",
-        permis: "base64EncodedPermis2",
-      },
-    ],
-  });
-  console.log("Inscriptions ajoutées avec succès.");
+    });
 
-  // Insertion de données pour les paiements (Payment)
-  await prisma.payment.createMany({
-    data: [
-      { userId: 1, amount: 120.5, method: "Carte bancaire", paidAt: new Date("2024-12-01") },
-      { userId: 2, amount: 150.0, method: "Virement bancaire", paidAt: new Date("2024-12-02") },
-    ],
+    sessions.push(session);
+  }
+
+  console.log("✅ 100 sessions créées avec succès !");
+
+  // Création d'un utilisateur
+  const user = await prisma.user.create({
+    data: {
+      civilite: 'Mr',
+      nom: 'Dupont',
+      prenom: 'Jean',
+      adresse: '123 Rue de la République',
+      codePostal: '75001',
+      ville: 'Paris',
+      telephone: '0123456789',
+      email: 'jean.dupont@example.com',
+      nationalite: 'Française',
+      dateNaissance: new Date('1990-01-01'),
+      codePostalNaissance: '75001',
+      numeroPermis: 'P123456',
+      dateDelivrancePermis: new Date('2020-01-01'),
+      prefecture: 'Paris',
+      etatPermis: 'Valide',
+      casStage: 'N/A',
+      // Les champs optionnels comme id_recto, id_verso, permis_recto, permis_verso sont déjà à null par défaut
+    },
   });
-  console.log("Paiements ajoutés avec succès.");
+
+  console.log("✅ Utilisateur créé !");
+
+  // Inscription de l'utilisateur à une session aléatoire parmi les 100
+  const randomSession = sessions[Math.floor(Math.random() * sessions.length)];
+  const sessionUser = await prisma.sessionUsers.create({
+    data: {
+      sessionId: randomSession.id,
+      userId: user.id,
+      isPaid: false, // Champ correctement placé dans SessionUsers selon le schéma
+    },
+  });
+
+  console.log(`✅ L'utilisateur a été inscrit à la session ${randomSession.numeroStageAnts}`);
+
+  // Création d'un paiement associé à l'inscription
+  const payment = await prisma.payment.create({
+    data: {
+      sessionUserId: sessionUser.id,
+      amount: 200.0,
+      method: 'Credit Card',
+    },
+  });
+
+  console.log("✅ Paiement enregistré !");
+
+  console.log("🎉 Base de données semée avec succès !");
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
+  .catch((error) => {
+    console.error('❌ Erreur lors du seed : ', error);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

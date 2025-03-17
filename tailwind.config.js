@@ -1,5 +1,3 @@
-// tailwind.config.js
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -10,24 +8,34 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#ffcf40',   // Jaune vif pour les éléments principaux et les appels à l'action
-        secondary: '#000000', // Noir pour le texte principal et les titres
-        accent: '#F5F5F5',    // Gris clair pour les arrière-plans secondaires et les bordures
-        dark: '#000000',      // Noir pour le texte principal
-        light: '#f5ebe4',     // Blanc pour les fonds
-        success: '#28a745',   // Vert pour indiquer le succès
-        error: '#dc3545',     // Rouge pour signaler les erreurs
+        teal: {
+          DEFAULT: '#33658A',
+          light: '#009D9D',
+        },
+        beige: {
+          DEFAULT: '#F2E7D6',
+        },
+        yellow: {
+          DEFAULT: '#F6B732',
+          dark: '#E5A52C',
+        },
+        gray: {
+          light: '#F9F9F9',
+          medium: '#BFBFBF',
+          dark: '#333333',
+        },
       },
       fontFamily: {
-        sans: ['Marianne', 'sans-serif'],  // Police officielle utilisée par le gouvernement français
-        serif: ['Georgia', 'serif'],       // Police de secours pour les textes en serif
+        sans: ['Poppins', 'Marianne', 'Roboto', 'Arial', 'sans-serif'],
+        serif: ['Merriweather', 'Georgia', 'serif'],
+        mono: ['Courier New', 'Menlo', 'monospace'],
       },
       fontSize: {
-        'xs': '.75rem',
-        'sm': '.875rem',
-        'base': '1rem',
-        'lg': '1.125rem',
-        'xl': '1.25rem',
+        xs: '.75rem',
+        sm: '.875rem',
+        base: '1rem',
+        lg: '1.125rem',
+        xl: '1.25rem',
         '2xl': '1.5rem',
         '3xl': '1.875rem',
         '4xl': '2.25rem',
@@ -39,10 +47,10 @@ module.exports = {
         '144': '36rem',
       },
       borderRadius: {
-        'xl': '1rem',
+        xl: '1rem',
       },
       boxShadow: {
-        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       },
     },
   },
@@ -50,4 +58,4 @@ module.exports = {
     require('@tailwindcss/forms'),      // Plugin pour styliser les formulaires
     require('@tailwindcss/typography'), // Plugin pour styliser le texte
   ],
-}
+};
