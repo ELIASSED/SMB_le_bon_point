@@ -1,14 +1,41 @@
-// components/Carousel/types.ts
-
+// src/components/Carousel/types.ts
 export interface Stage {
-  description: any;
   id: number;
   numeroStageAnts: string;
+  price: number;
   startDate: string;
   endDate: string;
   location: string;
   capacity: number;
-  price: number;
+  description?: string;
+}
+
+export interface RegistrationInfo {
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1: string;
+  prenom2: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  telephone: string;
+  email: string;
+  confirmationEmail: string;
+  nationalite: string;
+  dateNaissance: string;
+  lieuNaissance: string;
+  codePostalNaissance: string;
+  numeroPermis: string;
+  dateDelivrancePermis: string;
+  prefecture: string;
+  etatPermis: string;
+  casStage: string;
+  scanIdentiteRecto: File | null;
+  scanIdentiteVerso: File | null;
+  scanPermisRecto: File | null;
+  scanPermisVerso: File | null;
+  acceptConditions: boolean;
 }
 
 
@@ -44,36 +71,7 @@ telephone: string;
 email: string;
 confirmationEmail: string;
 }
-export interface RegistrationInfo {
-  // Informations personnelles
-  civilite: string;
-  nom: string;
-  prenom: string;
-  prenom1?: string;
-  prenom2?: string;
-  adresse: string;
-  codePostal: string;
-  ville: string;
-  telephone: string;
-  email: string;
-  confirmationEmail: string;
-  nationalite: string;
-  dateNaissance: string;
-  lieuNaissance: string;
-  codePostalNaissance: string;
-  // Informations sur le permis
-  numeroPermis: string;
-  dateDelivrancePermis: string;
-  prefecture: string;
-  etatPermis: string;
-  casStage: string;
-  // Fichiers et commentaire (optionnels)
-  permis_recto?: string;
-  permis_verso?: string;
-  id_recto?: string;
-  id_verso?: string;
-  commentaire: string;
-}
+
 
 export interface UserFormData {
 civilite: string;
