@@ -1,39 +1,76 @@
-import prisma from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
+
+type UserData = {
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1?: string;
+  prenom2?: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  telephone: string;
+  email: string;
+  nationalite: string;
+  dateNaissance: string;
+  codePostalNaissance: string;
+  numeroPermis: string;
+  dateDelivrancePermis: string;
+  prefecture: string;
+  etatPermis: string;
+  casStage: string;
+  id_recto?: string;
+  id_verso?: string;
+  permis_recto?: string;
+  permis_verso?: string;
+};
+
+type RegisterRequest = {
+  stageId: number;
+  userData: UserData;
+};
+
+type RegisterResponse = {
+  message: string;
+  user?: any;
+  sessionUser?: any;
+  error?: string;
+};
 
 export async function POST(request: Request) {
   try {
-    const { stageId, userData } = await request.json();
-    console.log("Requête reçue dans /api/register :", { stageId, userData });
+    const { stageId, userData } = (await request.json()) as RegisterRequest;
+    console.log('📥 Requête reçue dans /api/register :', { stageId, userData });
 
     if (!userData || !stageId) {
-      console.log("Données invalides détectées.");
-      return NextResponse.json({ error: "Données invalides." }, { status: 400 });
+      console.log('⚠️ Données invalides détectées.');
+      return NextResponse.json({ error: 'Données invalides.' }, { status: 400 });
     }
 
     const requiredFields = [
-      "civilite",
-      "nom",
-      "prenom",
-      "adresse",
-      "codePostal",
-      "ville",
-      "telephone",
-      "email",
-      "nationalite",
-      "dateNaissance",
-      "codePostalNaissance",
-      "numeroPermis",
-      "dateDelivrancePermis",
-      "prefecture",
-      "etatPermis",
-      "casStage",
-    ];
+      'civilite',
+      'nom',
+      'prenom',
+      'adresse',
+      'codePostal',
+      'ville',
+      'telephone',
+      'email',
+      'nationalite',
+      'dateNaissance',
+      'codePostalNaissance',
+      'numeroPermis',
+      'dateDelivrancePermis',
+      'prefecture',
+      'etatPermis',
+      'casStage',
+    ] as const;
     const missingFields = requiredFields.filter((field) => !userData[field]);
     if (missingFields.length > 0) {
-      console.log("Champs manquants :", missingFields);
+      console.log('⚠️ Champs manquants :', missingFields);
       return NextResponse.json(
-        { error: `Champs obligatoires manquants : ${missingFields.join(", ")}` },
+        { error: `Champs obligatoires manquants : ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
@@ -64,25 +101,25 @@ export async function POST(request: Request) {
       permis_verso: userData.permis_verso || null,
     };
 
-    console.log("Vérification de la session avec stageId :", stageId);
+    console.log('🔍 Vérification de la session avec stageId :', stageId);
     const session = await prisma.session.findUnique({ where: { id: stageId } });
     if (!session) {
-      console.log("Session non trouvée pour stageId :", stageId);
-      return NextResponse.json({ error: "La session n'existe pas." }, { status: 404 });
+      console.log('⚠️ Session non trouvée pour stageId :', stageId);
+      return NextResponse.json({ error: 'La session n’existe pas.' }, { status: 404 });
     }
     if (session.capacity <= 0) {
-      console.log("Capacité insuffisante pour stageId :", stageId);
-      return NextResponse.json({ error: "Plus de places disponibles." }, { status: 400 });
+      console.log('⚠️ Capacité insuffisante pour stageId :', stageId);
+      return NextResponse.json({ error: 'Plus de places disponibles.' }, { status: 400 });
     }
 
-    console.log("Upsert de l'utilisateur avec email :", normalizedEmail);
+    console.log('🔄 Upsert de l’utilisateur avec email :', normalizedEmail);
     const user = await prisma.user.upsert({
       where: { email: normalizedEmail },
       update: normalizedUserData,
       create: normalizedUserData,
     });
 
-    console.log("Transaction pour SessionUsers...");
+    console.log('🔄 Transaction pour SessionUsers...');
     const sessionUser = await prisma.$transaction(async (tx) => {
       const existingByDate = await tx.sessionUsers.findFirst({
         where: {
@@ -93,40 +130,35 @@ export async function POST(request: Request) {
       });
       if (existingByDate) {
         throw new Error(
-          `Cet email (${normalizedEmail}) est déjà inscrit à une session débutant le ${session.startDate.toLocaleDateString("fr-FR")}.`
+          `Cet email (${normalizedEmail}) est déjà inscrit à une session débutant le ${session.startDate.toLocaleDateString('fr-FR')}.`
         );
       }
 
       const existingBySessionId = await tx.sessionUsers.findUnique({
-        where: {
-          sessionId_userId: { sessionId: stageId, userId: user.id },
-        },
+        where: { sessionId_userId: { sessionId: stageId, userId: user.id } },
       });
       if (existingBySessionId) {
-        throw new Error("Cet utilisateur est déjà inscrit à cette session.");
+        throw new Error('Cet utilisateur est déjà inscrit à cette session.');
       }
 
       return tx.sessionUsers.create({
         data: {
           sessionId: stageId,
           userId: user.id,
-          isPaid: false,
         },
       });
     });
 
-    console.log("Inscription réussie pour l'utilisateur :", user.id);
+    console.log('✅ Inscription réussie pour l’utilisateur :', user.id);
     return NextResponse.json({
-      message: "Utilisateur inscrit avec succès.",
+      message: 'Utilisateur inscrit avec succès.',
       user,
       sessionUser,
     });
-  } catch (error: any) {
-    console.error("Erreur dans /api/register :", error.message, error.stack);
-    return NextResponse.json(
-      { error: error.message || "Erreur serveur lors de l'inscription." },
-      { status: error.status || 500 }
-    );
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    console.error('❌ Erreur dans /api/register :', errMessage, error instanceof Error ? error.stack : '');
+    return NextResponse.json({ error: errMessage }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

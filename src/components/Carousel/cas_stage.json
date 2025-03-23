@@ -1,22 +1,22 @@
 [
     {
       "type": "Cas 1",
-      "description": "Stage volontaire pour récupération de points.",
+      "description": "Cas 1 - Stage volontaire pour récupération de points.",
       "reference_legale": "Article L223-6 du Code de la route"
     },
     {
       "type": "Cas 2",
-      "description": "Stage obligatoire en période probatoire.",
+      "description": "Cas 2 - Stage obligatoire en période probatoire.",
       "reference_legale": "Article L223-6 du Code de la route"
     },
     {
       "type": "Cas 3",
-      "description": "Stage obligatoire en alternative à la poursuite judiciaire (composition pénale).",
+      "description": "Cas 3 - Stage obligatoire en alternative à la poursuite judiciaire (composition pénale).",
       "reference_legale": "Articles 41-1 et 41-2 du Code de procédure pénale"
     },
     {
       "type": "Cas 4",
-      "description": "Stage obligatoire en peine complémentaire.",
+      "description": "Cas 4 - Stage obligatoire en peine complémentaire.",
       "reference_legale": "Article 131-35-1 du Code pénal"
     } 
 ]

@@ -1,90 +1,68 @@
-// api/confirm-payment.ts
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import Stripe from "stripe";
+import { NextResponse } from 'next/server';
+import { PrismaClient, SessionUsers, User, Session } from '@prisma/client';
+import Stripe from 'stripe';
+import generateAttestation from '@/lib/generateAttestation';
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: '2025-02-24.acacia',
 });
+
+type ConfirmPaymentRequest = {
+  sessionId: number;
+  userId: number;
+  paymentIntentId: string;
+};
+
+type ConfirmPaymentResponse = {
+  message: string;
+  sessionUser?: SessionUsers;
+  error?: string;
+};
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, userId, paymentIntentId } = await request.json();
+    const { sessionId, userId, paymentIntentId } = (await request.json()) as ConfirmPaymentRequest;
 
-    console.log("Données reçues dans /api/confirm-payment :", { sessionId, userId, paymentIntentId });
+    console.log('📥 Données reçues dans /api/confirm-payment:', { sessionId, userId, paymentIntentId });
 
     if (!sessionId || !userId || !paymentIntentId) {
-      return NextResponse.json(
-        { error: "Données manquantes pour confirmer le paiement." },
-        { status: 400 }
-      );
+      console.warn('⚠️ Données manquantes');
+      return NextResponse.json({ error: 'Données manquantes.' }, { status: 400 });
     }
 
-    // Vérifier l'inscription
     const sessionUser = await prisma.sessionUsers.findUnique({
-      where: {
-        sessionId_userId: { sessionId, userId },
-      },
+      where: { sessionId_userId: { sessionId, userId } },
+      include: { user: true, session: true },
     });
 
     if (!sessionUser) {
-      console.log("Inscription non trouvée pour :", { sessionId, userId });
-      return NextResponse.json(
-        { error: "Inscription non trouvée." },
-        { status: 404 }
-      );
+      console.warn('⚠️ Inscription non trouvée:', { sessionId, userId });
+      return NextResponse.json({ error: 'Inscription non trouvée.' }, { status: 404 });
     }
 
     if (sessionUser.isPaid) {
-      console.log("Inscription déjà payée :", sessionUser);
-      return NextResponse.json(
-        { error: "Cette inscription est déjà marquée comme payée." },
-        { status: 400 }
-      );
+      console.log('ℹ️ Déjà payé:', sessionUser);
+      return NextResponse.json({ error: 'Déjà payé.' }, { status: 400 });
     }
 
-    // Vérifier la session et la capacité
-    const session = await prisma.session.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!session) {
-      console.log("Session non trouvée :", sessionId);
-      return NextResponse.json(
-        { error: "Session non trouvée." },
-        { status: 404 }
-      );
+    const session = await prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session || session.capacity <= 0) {
+      console.warn('⚠️ Session invalide:', session);
+      return NextResponse.json({ error: 'Session invalide ou complète.' }, { status: 400 });
     }
 
-    if (session.capacity <= 0) {
-      console.log("Plus de places disponibles :", session);
-      return NextResponse.json(
-        { error: "Plus de places disponibles pour cette session." },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier le paiement avec Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (paymentIntent.status !== "succeeded") {
-      console.log("Paiement non réussi :", paymentIntent.status);
-      return NextResponse.json(
-        { error: `Le paiement n'a pas été confirmé. Statut : ${paymentIntent.status}` },
-        { status: 400 }
-      );
+    if (paymentIntent.status !== 'succeeded') {
+      console.warn('⚠️ Paiement non réussi:', paymentIntent.status);
+      return NextResponse.json({ error: `Paiement non réussi: ${paymentIntent.status}` }, { status: 400 });
     }
 
-    // Mettre à jour isPaid et décrémenter la capacité
     const updatedSessionUser = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.sessionUsers.update({
-        where: {
-          sessionId_userId: { sessionId, userId },
-        },
-        data: {
-          isPaid: true,
-          paymentIntentId, // Champ maintenant valide
-        },
+        where: { sessionId_userId: { sessionId, userId } },
+        data: { isPaid: true, paymentIntentId },
+        include: { user: true, session: true },
       });
 
       await tx.session.update({
@@ -92,21 +70,26 @@ export async function POST(request: Request) {
         data: { capacity: { decrement: 1 } },
       });
 
+      const pdfBuffer = await generateAttestation(updatedUser as SessionUsers & { user: User; session: Session });
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { attestationPdf: pdfBuffer },
+      });
+
       return updatedUser;
     });
 
-    console.log("Inscription mise à jour avec succès :", updatedSessionUser);
+    console.log('✅ Paiement confirmé et PDF stocké dans la base de données:', updatedSessionUser);
 
     return NextResponse.json({
-      message: "Paiement confirmé avec succès. Votre place est réservée.",
+      message: 'Paiement confirmé. Attestation stockée dans la base de données.',
       sessionUser: updatedSessionUser,
     });
-  } catch (error: any) {
-    console.error("Erreur dans /api/confirm-payment :", error.message);
-    return NextResponse.json(
-      { error: error.message || "Une erreur est survenue lors de la confirmation du paiement." },
-      { status: error.message ? 400 : 500 }
-    );
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+    console.error('❌ Erreur dans /api/confirm-payment:', errMessage);
+    return NextResponse.json({ error: errMessage }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

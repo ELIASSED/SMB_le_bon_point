@@ -8,7 +8,7 @@ async function main() {
   console.log("📢 Suppression des anciennes données...");
 
   // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
-  await prisma.payment.deleteMany();
+
   await prisma.sessionUsers.deleteMany();
   await prisma.session.deleteMany();
   await prisma.psychologue.deleteMany();

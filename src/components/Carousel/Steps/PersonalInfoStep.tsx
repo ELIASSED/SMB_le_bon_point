@@ -613,7 +613,7 @@ export default function PersonalInfoStep({
                 <option value="">Sélectionnez un cas</option>
                 {casStageData.map((cas, index) => (
                   <option key={index} value={cas.description}>
-                    {cas.type} - {cas.description}
+                    {cas.description}
                   </option>
                 ))}
               </select>
