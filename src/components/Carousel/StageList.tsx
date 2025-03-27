@@ -52,9 +52,7 @@ const StageList = ({
                     {formatDateWithDay(stage.startDate)} -{" "}
                     {formatDateWithDay(stage.endDate)}
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">{stage.location}</span>
-                  </div>
+                
                   <div
                     className={`text-lg font-medium ${
                       stage.capacity <= 5 ? "text-red-600" : "text-green-600"

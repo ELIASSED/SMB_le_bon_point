@@ -249,9 +249,8 @@ export default function PersonalInfoStep({
   };
   
   return (
-    <div className="px-4 py-6 bg-gray-50 min-h-screen">
+    <div className=" bg-gray-50 min-h-screen">
       <section aria-labelledby="selected-stage-heading" className="mb-6 p-4 border rounded bg-white shadow">
-        <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900 mb-2">Stage Sélectionné</h2>
         <SelectedStageInfo selectedStage={selectedStage} />
       </section>
 
