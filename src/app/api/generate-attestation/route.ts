@@ -1,67 +1,64 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import handlebars from 'handlebars';
 import pdf from 'html-pdf';
 import prisma from '@/lib/prisma';
 
-// Types pour la réponse
+// Types for the response
 type ResponseData = {
   message: string;
   filePath?: string;
   error?: string;
 };
 
-// Charger le template HTML
+// Load HTML template
 const templatePath = path.join(process.cwd(), 'lib/templates/attestation.html');
 const templateHtml = fs.readFileSync(templatePath, 'utf8');
 const template = handlebars.compile(templateHtml);
 
-// Fonction pour formater les dates
+// Date formatting function
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-// Créer le dossier "documents" s'il n'existe pas
+// Ensure documents directory exists
 const documentsDir = path.join(process.cwd(), 'documents');
 if (!fs.existsSync(documentsDir)) {
   fs.mkdirSync(documentsDir);
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Méthode non autorisée' });
-  }
-
-  const { sessionUserId } = req.body as { sessionUserId?: string };
-
-  if (!sessionUserId) {
-    return res.status(400).json({ message: 'ID de SessionUsers requis' });
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    // Récupérer les données de SessionUsers avec relations
+    const body = await req.json();
+    const { sessionUserId } = body as { sessionUserId?: string };
+
+    if (!sessionUserId) {
+      return NextResponse.json({ message: 'ID de SessionUsers requis' }, { status: 400 });
+    }
+
+    // Fetch SessionUsers with relations
     const sessionUser = await prisma.sessionUsers.findUnique({
       where: { id: parseInt(sessionUserId) },
       include: {
         user: true,
         session: true,
-        payments: true, // Inclure les paiements pour vérification
+        payments: true,
       },
     });
 
     if (!sessionUser) {
-      return res.status(404).json({ message: 'SessionUsers non trouvé' });
+      return NextResponse.json({ message: 'SessionUsers non trouvé' }, { status: 404 });
     }
 
-    // Vérifier si le paiement est confirmé
+    // Check payment confirmation
     if (!sessionUser.isPaid || sessionUser.payments.length === 0) {
-      return res.status(403).json({ message: 'Paiement non confirmé' });
+      return NextResponse.json({ message: 'Paiement non confirmé' }, { status: 403 });
     }
 
     const { user, session } = sessionUser;
 
-    // Préparer les données pour le template
+    // Prepare data for template
     const stagiaire = {
       nom: user.nom,
       prenom: user.prenom,
@@ -80,10 +77,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const html = template(stagiaire);
     const options: pdf.CreateOptions = { format: 'A4' };
-    const fileName = `attestation_${user.nom}_${user.prenom}_${sessionUserId}.pdf`; // Ajout de sessionUserId pour unicité
+    const fileName = `attestation_${user.nom}_${user.prenom}_${sessionUserId}.pdf`;
     const filePath = path.join(documentsDir, fileName);
 
-    // Générer le PDF
+    // Generate PDF
     await new Promise((resolve, reject) => {
       pdf.create(html, options).toFile(filePath, (err) => {
         if (err) reject(err);
@@ -91,9 +88,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     });
 
-    res.status(200).json({ message: 'PDF généré', filePath: filePath });
+    return NextResponse.json({ message: 'PDF généré', filePath: filePath }, { status: 200 });
   } catch (error) {
     console.error('Erreur :', error);
-    res.status(500).json({ message: 'Erreur serveur', error: (error as Error).message });
+    return NextResponse.json({ 
+      message: 'Erreur serveur', 
+      error: (error as Error).message 
+    }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 // prisma/seed.ts
-
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -8,14 +8,26 @@ async function main() {
   console.log("📢 Suppression des anciennes données...");
 
   // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
-
   await prisma.sessionUsers.deleteMany();
+
   await prisma.session.deleteMany();
   await prisma.psychologue.deleteMany();
   await prisma.instructor.deleteMany();
   await prisma.user.deleteMany();
 
+
   console.log("✅ Anciennes données supprimées !");
+
+  // Création d'un administrateur
+  const adminPassword = await bcrypt.hash("admin123", 10); // Hachage du mot de passe
+  const admin = await prisma.admin.create({
+    data: {
+      email: "admin@example.com",
+      password: adminPassword,
+      name: "Administrateur",
+    },
+  });
+  console.log("✅ Administrateur créé ! Email: admin@example.com, Mot de passe: admin123");
 
   // Création d'un instructeur
   const instructor = await prisma.instructor.create({
@@ -89,7 +101,6 @@ async function main() {
       prefecture: 'Paris',
       etatPermis: 'Valide',
       casStage: 'N/A',
-      // Les champs optionnels comme id_recto, id_verso, permis_recto, permis_verso sont déjà à null par défaut
     },
   });
 
@@ -101,7 +112,7 @@ async function main() {
     data: {
       sessionId: randomSession.id,
       userId: user.id,
-      isPaid: false, // Champ correctement placé dans SessionUsers selon le schéma
+      isPaid: false,
     },
   });
 

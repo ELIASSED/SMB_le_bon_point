@@ -1,4 +1,3 @@
-// src/components/Carousel/Carousel.tsx
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -36,21 +35,22 @@ export default function Carousel() {
   const handleStageSelection = async (stage: Stage) => {
     try {
       console.log("Stage sélectionné :", stage);
+      if (!stage?.id) throw new Error("Stage invalide ou ID manquant.");
       setSelectedStage(stage);
       setSessionId(stage.id);
       console.log("sessionId défini :", stage.id);
 
       const paymentIntent = await createPaymentIntent(stage);
       console.log("Réponse de createPaymentIntent :", paymentIntent);
-      if (!paymentIntent.clientSecret) {
+      if (!paymentIntent?.clientSecret) {
         throw new Error("clientSecret non retourné par l'API");
       }
       setClientSecret(paymentIntent.clientSecret);
       console.log("clientSecret défini :", paymentIntent.clientSecret);
       nextStep();
     } catch (err: any) {
-      console.error("Erreur lors de la sélection du stage :", err.message);
-      setError("Impossible de sélectionner le stage. Veuillez réessayer.");
+      console.error("Erreur lors de la sélection du stage :", err.message, err.stack);
+      setError(err.message || "Impossible de sélectionner le stage. Veuillez réessayer.");
     }
   };
 
@@ -61,33 +61,44 @@ export default function Carousel() {
       setError(null);
 
       const formEntries = Object.fromEntries(data.entries()) as unknown as RegistrationInfo;
+      if (!formEntries.email || !formEntries.confirmationEmail) {
+        throw new Error("Email ou confirmation d'email manquant.");
+      }
       formEntries.email = formEntries.email.toLowerCase().trim();
       formEntries.confirmationEmail = formEntries.confirmationEmail.toLowerCase().trim();
       console.log("Données personnelles normalisées :", formEntries);
       setRegistrationInfo(formEntries);
 
-      if (!selectedStage) {
-        console.error("Aucun stage sélectionné.");
-        setError("Aucun stage sélectionné.");
-        return;
+      if (!selectedStage || !selectedStage.id) {
+        console.error("Aucun stage sélectionné ou ID manquant.");
+        throw new Error("Aucun stage sélectionné.");
       }
 
       const registrationData = { stageId: selectedStage.id, userData: formEntries };
       console.log("Envoi à /api/register avec :", registrationData);
-      const response = await registerUser(registrationData);
 
+      let response;
+      try {
+        response = await registerUser(registrationData);
+      } catch (apiError: any) {
+        throw new Error(`Échec de l'appel à /api/register : ${apiError.message}`);
+      }
       console.log("Réponse de registerUser :", response);
+
       if (response.error) {
         console.error("Erreur retournée par registerUser :", response.error);
-        setError(response.error);
-        return;
+        throw new Error(response.error);
+      }
+
+      if (!response.user?.id) {
+        throw new Error("ID utilisateur non retourné par l'API.");
       }
 
       setUserId(response.user.id);
       console.log("userId défini :", response.user.id);
       nextStep();
     } catch (err: any) {
-      console.error("Erreur inattendue dans handlePersonalInfoSubmit :", err.message, err.stack);
+      console.error("Erreur dans handlePersonalInfoSubmit :", err.message, err.stack);
       setError(err.message || "Erreur lors de l'enregistrement des informations. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
@@ -96,6 +107,7 @@ export default function Carousel() {
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     console.log("handlePaymentSuccess appelé avec paymentIntentId :", paymentIntentId);
+
     if (!selectedStage || !registrationInfo || !sessionId || !userId || !paymentIntentId) {
       console.error("Données manquantes pour finaliser le paiement :", {
         selectedStage,
@@ -104,7 +116,7 @@ export default function Carousel() {
         userId,
         paymentIntentId,
       });
-      setError("Informations manquantes. Veuillez revenir en arrière et vérifier.");
+      setError("Informations manquantes. Veuillez revenir en arrière et vérifier toutes les étapes.");
       return;
     }
 
@@ -119,12 +131,13 @@ export default function Carousel() {
         body: JSON.stringify({ sessionId, userId, paymentIntentId }),
       });
 
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        throw new Error(`Échec de /api/confirm-payment : ${errorText}`);
+      }
+
       const updateResult = await updateResponse.json();
       console.log("Réponse de /api/confirm-payment :", updateResult);
-
-      if (!updateResponse.ok) {
-        throw new Error(updateResult.error || "Erreur lors de la mise à jour du paiement.");
-      }
 
       if (!updateResult.sessionUser?.isPaid) {
         throw new Error("Le statut de paiement n'a pas été mis à jour correctement.");
@@ -170,8 +183,8 @@ export default function Carousel() {
         console.error("Erreur lors de l'envoi de l'email (non bloquant) :", emailError.message);
       }
     } catch (err: any) {
-      console.error("Erreur dans handlePaymentSuccess :", err.message);
-      setError(err.message || "Une erreur est survenue après le paiement. Contactez-nous.");
+      console.error("Erreur dans handlePaymentSuccess :", err.message, err.stack);
+      setError(err.message || "Erreur après le paiement. Contactez le support.");
     } finally {
       setIsSubmitting(false);
     }
@@ -196,7 +209,7 @@ export default function Carousel() {
       ),
     },
     {
-      title: "      Finalisez votre paiement ",
+      title: "Finalisez votre paiement",
       content: selectedStage && clientSecret ? (
         <PaymentStep
           selectedStage={selectedStage}
@@ -204,13 +217,15 @@ export default function Carousel() {
           onPaymentSuccess={handlePaymentSuccess}
         />
       ) : (
-        <p className="text-gray-500">Informations de paiement non disponibles. Veuillez compléter les étapes précédentes.</p>
+        <p className="text-red-500">
+          Informations de paiement non disponibles. Veuillez compléter les étapes précédentes ou réessayer.
+        </p>
       ),
     },
   ];
 
   return (
-    <div className="carousel-container max-w-4xl mx-auto ">
+    <div className="carousel-container max-w-4xl mx-auto">
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       {currentStep >= 0 && currentStep < steps.length ? (
         <>
@@ -230,7 +245,6 @@ export default function Carousel() {
           Étape invalide. Veuillez recharger la page ou contacter le support.
         </p>
       )}
-    
       {isSubmitting && (
         <p className="text-center mt-4 text-gray-600">Traitement en cours...</p>
       )}

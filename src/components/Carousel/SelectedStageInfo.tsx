@@ -20,13 +20,21 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Colonne 1 : Infos générales */}
-        <div className="space-y-3 text-gray-700">
-          <p>
-            <strong className="font-medium">Places disponibles :</strong>{" "}
-            <span className={selectedStage.capacity <= 5 ? "text-red-600 font-semibold" : "text-gray-600"}>
-              {selectedStage.capacity}
-            </span>
-          </p>
+        <div className="space-y-3 text-gray-700"> 
+         {/* Psychologue */}
+          <div className="flex items-start space-x-3">
+            <AcademicCapIcon className="w-6 h-6 text-purple-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Psychologue</p>
+              <p className="text-gray-700">
+                {selectedStage.psychologue.firstName} {selectedStage.psychologue.lastName}
+              </p>
+              <p className="text-sm text-gray-500">
+                N° Autorisation : {selectedStage.psychologue.numeroAutorisationPrefectorale}
+              </p>
+            </div>
+          </div>
+         
           <p>
             <strong className="font-medium">Prix :</strong>{" "}
             <span className="text-green-600 font-semibold">
@@ -51,19 +59,7 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
             </div>
           </div>
 
-          {/* Psychologue */}
-          <div className="flex items-start space-x-3">
-            <AcademicCapIcon className="w-6 h-6 text-purple-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Psychologue</p>
-              <p className="text-gray-700">
-                {selectedStage.psychologue.firstName} {selectedStage.psychologue.lastName}
-              </p>
-              <p className="text-sm text-gray-500">
-                N° Autorisation : {selectedStage.psychologue.numeroAutorisationPrefectorale}
-              </p>
-            </div>
-          </div>
+        
         </div>
       </div>
     </div>

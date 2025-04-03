@@ -1,4 +1,3 @@
-// components/Carousel/PaymentStep.tsx
 "use client";
 import React, { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
@@ -19,55 +18,67 @@ interface PaymentStepProps {
   onPaymentSuccess: (paymentIntentId: string) => void;
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ selectedStage, clientSecret, onPaymentSuccess }) => {
-  const renderSelectedStageInfo = () =>
-    selectedStage && (
-      <div className="mb-8 p-6 bg-white border rounded-lg shadow-sm">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Résumé de votre commande</h3>
-        <div className="space-y-2 text-gray-700">
-          <p>
-            <span className="font-medium">Stage :</span> {selectedStage.numeroStageAnts}
-          </p>
-          <p>
-            <span className="font-medium">Dates :</span> {formatDateWithDay(selectedStage.startDate)} au{" "}
-            {formatDateWithDay(selectedStage.endDate)}
-          </p>
-          <p>
-            <span className="font-medium">Lieu :</span> {selectedStage.location}
-          </p>
-          <p>
-            <span className="font-medium">Places restantes :</span>{" "}
-            <span className={selectedStage.capacity <= 5 ? "text-red-600" : "text-gray-600"}>
-              {selectedStage.capacity}
-            </span>
-          </p>
-          <p className="text-lg font-semibold text-gray-900">
-            <span>Total :</span>{" "}
-            {selectedStage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-          </p>
-        </div>
-      </div>
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
+    console.error("Clé publique Stripe manquante dans les variables d'environnement.");
+    return <p className="text-red-500">Erreur de configuration. Contactez le support.</p>;
+  }
+
+  if (!clientSecret) {
+    console.error("clientSecret non fourni à PaymentStep.");
+    return (
+      <p className="text-red-500">Erreur : Impossible de charger le paiement. Veuillez réessayer ou contacter le support.</p>
     );
+  }
+
+  if (!selectedStage) {
+    console.error("selectedStage non fourni à PaymentStep.");
+    return <p className="text-red-500">Erreur : Aucun stage sélectionné.</p>;
+  }
+
+  const renderSelectedStageInfo = () => (
+    <div className="mb-8 p-6 bg-white border rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold text-gray-800 mb-4">Résumé de votre commande</h3>
+      <div className="space-y-2 text-gray-700">
+        <p>
+          <span className="font-medium">Stage :</span> {selectedStage.numeroStageAnts}
+        </p>
+        <p>
+          <span className="font-medium">Dates :</span> {formatDateWithDay(selectedStage.startDate)} au{" "}
+          {formatDateWithDay(selectedStage.endDate)}
+        </p>
+        <p>
+          <span className="font-medium">Lieu :</span> {selectedStage.location}
+        </p>
+        <p>
+          <span className="font-medium">Places restantes :</span>{" "}
+          <span className={selectedStage.capacity <= 5 ? "text-red-600" : "text-gray-600"}>
+            {selectedStage.capacity}
+          </span>
+        </p>
+        <p className="text-lg font-semibold text-gray-900">
+          <span>Total :</span>{" "}
+          {selectedStage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h2 className="text-3xl font-bold text-gray-900 mb-8">Paiement sécurisé</h2>
       {renderSelectedStageInfo()}
-      {clientSecret ? (
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <CheckoutForm selectedStage={selectedStage} clientSecret={clientSecret} onPaymentSuccess={onPaymentSuccess} />
-        </Elements>
-      ) : (
-        <p className="text-gray-500 italic">Chargement du formulaire de paiement...</p>
-      )}
+      <Elements stripe={stripePromise} options={{ clientSecret }}>
+        <CheckoutForm selectedStage={selectedStage} clientSecret={clientSecret} onPaymentSuccess={onPaymentSuccess} />
+      </Elements>
     </div>
   );
 };
 
 interface CheckoutFormProps {
-  selectedStage: Stage | null;
+  selectedStage: Stage;
   clientSecret: string;
   onPaymentSuccess: (paymentIntentId: string) => void;
 }
@@ -83,7 +94,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ selectedStage, clientSecret
     address: "",
     city: "",
     postalCode: "",
-    country: "FR", // Par défaut France, modifiable
+    country: "FR",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -94,60 +105,93 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ selectedStage, clientSecret
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.log("Paiement déjà en cours de traitement.");
+      return;
+    }
 
     setIsProcessing(true);
     setError(null);
 
     if (!stripe || !elements) {
-      setError("Stripe n'est pas encore chargé. Veuillez réessayer.");
-      setIsProcessing(false);
-      return;
-    }
-
-    // Validation simple des champs
-    if (!billingDetails.name || !billingDetails.email || !billingDetails.address || !billingDetails.postalCode) {
-      setError("Veuillez remplir tous les champs obligatoires.");
+      console.error("Stripe ou Elements non initialisé.");
+      setError("Erreur de chargement du paiement. Veuillez rafraîchir la page.");
       setIsProcessing(false);
       return;
     }
 
     const cardNumberElement = elements.getElement(CardNumberElement);
     if (!cardNumberElement) {
+      console.error("Élément de carte non trouvé.");
       setError("Informations de carte invalides.");
       setIsProcessing(false);
       return;
     }
 
-    const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardNumberElement,
-        billing_details: {
-          name: billingDetails.name,
-          email: billingDetails.email,
-          address: {
-            line1: billingDetails.address,
-            city: billingDetails.city,
-            postal_code: billingDetails.postalCode,
-            country: billingDetails.country,
-          },
-        },
-      },
-    });
-
-    if (paymentError) {
-      console.error("Erreur lors du paiement :", paymentError);
-      setError(paymentError.message || "Échec du paiement. Vérifiez vos informations.");
+    if (!billingDetails.name || !billingDetails.email || !billingDetails.address || !billingDetails.postalCode) {
+      console.error("Champs de facturation manquants :", billingDetails);
+      setError("Veuillez remplir tous les champs obligatoires.");
       setIsProcessing(false);
       return;
     }
 
-    if (paymentIntent && paymentIntent.status === "succeeded") {
-      console.log("Paiement réussi, paymentIntentId :", paymentIntent.id);
-      setIsProcessing(false);
-      onPaymentSuccess(paymentIntent.id);
-    } else {
-      setError("Le paiement n'a pas été complété avec succès.");
+    try {
+      console.log("Tentative de confirmation de paiement avec clientSecret :", clientSecret);
+      const { error: paymentError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardNumberElement,
+          billing_details: {
+            name: billingDetails.name,
+            email: billingDetails.email,
+            address: {
+              line1: billingDetails.address,
+              city: billingDetails.city,
+              postal_code: billingDetails.postalCode,
+              country: billingDetails.country,
+            },
+          },
+        },
+      });
+
+      if (paymentError) {
+        console.error("Erreur Stripe :", paymentError);
+        setError(paymentError.message || "Échec du paiement. Vérifiez vos informations.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!paymentIntent) {
+        console.error("Aucun paymentIntent retourné par Stripe.");
+        setError("Erreur interne lors du paiement. Veuillez réessayer.");
+        setIsProcessing(false);
+        return;
+      }
+
+      console.log("paymentIntent reçu :", paymentIntent);
+      switch (paymentIntent.status) {
+        case "succeeded":
+          console.log("Paiement réussi avec paymentIntentId :", paymentIntent.id);
+          setIsProcessing(false);
+          onPaymentSuccess(paymentIntent.id);
+          break;
+        case "requires_action":
+          console.log("Action supplémentaire requise :", paymentIntent);
+          setError("Authentification supplémentaire requise. Vérifiez avec votre banque.");
+          setIsProcessing(false);
+          break;
+        case "requires_payment_method":
+          console.log("Méthode de paiement requise :", paymentIntent);
+          setError("Paiement échoué. Veuillez essayer une autre méthode de paiement.");
+          setIsProcessing(false);
+          break;
+        default:
+          console.error("Statut inattendu :", paymentIntent.status);
+          setError(`Statut inattendu : ${paymentIntent.status}. Contactez le support.`);
+          setIsProcessing(false);
+      }
+    } catch (err: any) {
+      console.error("Erreur inattendue dans handleSubmit :", err.message, err.stack);
+      setError(err.message || "Erreur lors du traitement du paiement. Veuillez réessayer.");
       setIsProcessing(false);
     }
   };
@@ -233,7 +277,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ selectedStage, clientSecret
               <option value="FR">France</option>
               <option value="BE">Belgique</option>
               <option value="CH">Suisse</option>
-              {/* Ajoutez d'autres pays si nécessaire */}
             </select>
           </div>
         </div>
@@ -244,7 +287,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ selectedStage, clientSecret
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Informations de paiement</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de carte *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de carte *</
+
+label>
             <div className="p-3 bg-gray-50 border border-gray-300 rounded-md">
               <CardNumberElement
                 options={{
@@ -321,7 +366,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ selectedStage, clientSecret
               Traitement en cours...
             </span>
           ) : (
-            `Payer ${selectedStage?.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}`
+            `Payer ${selectedStage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}`
           )}
         </button>
       </div>

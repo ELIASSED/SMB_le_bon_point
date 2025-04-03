@@ -314,7 +314,7 @@ export default function PersonalInfoStep({
             </div>
 
             <div>
-              <label htmlFor="prenom1" className="block text-sm font-medium text-gray-700">Prénom 1 (Optionnel)</label>
+              <label htmlFor="prenom1" className="block text-sm font-medium text-gray-700">2eme prénomw</label>
               <input
                 id="prenom1"
                 type="text"
@@ -327,7 +327,7 @@ export default function PersonalInfoStep({
             </div>
 
             <div>
-              <label htmlFor="prenom2" className="block text-sm font-medium text-gray-700">Prénom 2 (Optionnel)</label>
+              <label htmlFor="prenom2" className="block text-sm font-medium text-gray-700">3eme prénom</label>
               <input
                 id="prenom2"
                 type="text"
