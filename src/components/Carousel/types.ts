@@ -1,13 +1,27 @@
 // src/components/Carousel/types.ts
+// components/types.ts
 export interface Stage {
   id: number;
   numeroStageAnts: string;
   price: number;
-  startDate: string;
-  endDate: string;
+  description: string;
+  startDate: string; // ou Date si vous préférez
+  endDate: string;   // ou Date
   location: string;
   capacity: number;
-  description?: string;
+  instructorId: number;
+  psychologueId: number;
+  instructor: {
+    firstName: string;
+    lastName: string;
+    numeroAutorisationPrefectorale: number;
+
+  };
+  psychologue: {
+    firstName: string;
+    lastName: string;
+    numeroAutorisationPrefectorale: number;
+  };
 }
 
 export interface RegistrationInfo {

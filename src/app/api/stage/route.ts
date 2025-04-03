@@ -1,3 +1,4 @@
+// app/api/sessions/route.ts (ou pages/api/sessions.ts)
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -6,17 +7,16 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Paramètres de tri
+  // Paramètres de tri avec valeurs par défaut sécurisées
   const orderDate = url.searchParams.get("orderDate") === "desc" ? "desc" : "asc";
   const orderPrice = url.searchParams.get("orderPrice") === "desc" ? "desc" : "asc";
 
   try {
-    // Requête Prisma avec tri croisé
     const sessions = await prisma.session.findMany({
       where: {
         isArchived: false,
         capacity: {
-          gt: 0, // Filtre : sessions avec des places disponibles
+          gt: 0, // Filtre pour les sessions avec places disponibles
         },
       },
       select: {
@@ -27,17 +27,33 @@ export async function GET(request: Request) {
         endDate: true,
         location: true,
         capacity: true,
+        instructor: {
+          select: {
+            firstName: true,
+            lastName: true,
+            numeroAutorisationPrefectorale: true,
+
+          },
+        },
+        psychologue: {
+          select: {
+            firstName: true,
+            lastName: true,
+            numeroAutorisationPrefectorale: true,
+          },
+        },
       },
       orderBy: [
         { startDate: orderDate }, // Tri par date
         { price: orderPrice },    // Tri par prix
       ],
     });
-    return NextResponse.json(sessions);
+
+    return NextResponse.json(sessions, { status: 200 });
   } catch (error) {
-    console.error("Erreur Prisma :", error);
+    console.error("Erreur lors de la récupération des sessions :", error);
     return NextResponse.json(
-      { error: "Erreur lors de la récupération des sessions" },
+      { error: "Une erreur est survenue lors de la récupération des sessions" },
       { status: 500 }
     );
   } finally {
