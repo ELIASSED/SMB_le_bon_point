@@ -76,7 +76,7 @@ const StageList = ({
                     className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-6 rounded shadow"
                     onClick={() => onStageSelected(stage)}
                   >
-                    Réserver
+                    Voir le stage
                   </button>
                 </div>
               </div>

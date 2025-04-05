@@ -5,7 +5,16 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  /*directUrl = env("DIRECT_URL")*/
+  directUrl = env("DIRECT_URL")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -19,7 +28,7 @@ model User {
   codePostal           String
   ville                String
   telephone            String
-  email                String         @unique
+  email                String
   nationalite          String
   dateNaissance        DateTime
   codePostalNaissance  String
@@ -33,21 +42,23 @@ model User {
   prefecture           String
   etatPermis           String
   casStage             String
+  attestationPdf       Bytes?
   sessionUsers         SessionUsers[]
 }
 
 model SessionUsers {
-  id         Int       @id @default(autoincrement())
-  sessionId  Int
-  userId     Int
-  isPaid     Boolean   @default(false) // Déplacé ici depuis User
-  isArchived Boolean   @default(false)
-  paymentIntentId String?  @unique
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  payments   Payment[]
-  session    Session   @relation(fields: [sessionId], references: [id])
-  user       User      @relation(fields: [userId], references: [id])
+  id              Int       @id @default(autoincrement())
+  sessionId       Int
+  userId          Int
+  isPaid          Boolean   @default(false)
+  isArchived      Boolean   @default(false)
+  paymentIntentId String?   @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  payments        Payment[]
+  session         Session   @relation(fields: [sessionId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+
   @@unique([sessionId, userId])
 }
 
@@ -55,10 +66,10 @@ model Session {
   id              Int            @id @default(autoincrement())
   numeroStageAnts String
   price           Float          @default(200.0)
-  description     String
+  description     String?
   startDate       DateTime
   endDate         DateTime
-  location        String
+  location        String?
   capacity        Int            @default(20)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

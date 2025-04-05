@@ -1,21 +1,37 @@
 // prisma/seed.ts
-
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("📢 Suppression des anciennes données...");
 
-  // Suppression des données existantes (ordre respecté pour les contraintes relationnelles)
-  await prisma.payment.deleteMany();
-  await prisma.sessionUsers.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.psychologue.deleteMany();
-  await prisma.instructor.deleteMany();
-  await prisma.user.deleteMany();
+  try {
+    // Suppression des données existantes
+    await prisma.sessionUsers.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.psychologue.deleteMany();
+    await prisma.instructor.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.admin.deleteMany();
+    console.log("✅ Anciennes données supprimées !");
+  } catch (error) {
+    console.error("❌ Erreur lors de la suppression des données :", error);
+    throw error;
+  }
 
-  console.log("✅ Anciennes données supprimées !");
+  // Création d'un administrateur
+  const adminPassword = await bcrypt.hash("admin123", 10);
+  const admin = await prisma.admin.create({
+    data: {
+      email: "admin@example.com",
+      password: adminPassword,
+      name: "Administrateur",
+    },
+  });
+  console.log("✅ Administrateur créé ! Email: admin@example.com, Mot de passe: admin123");
 
   // Création d'un instructeur
   const instructor = await prisma.instructor.create({
@@ -41,15 +57,14 @@ async function main() {
 
   console.log("✅ Instructeur et psychologue créés !");
 
-  // Création de 100 sessions avec des dates différentes
+  // Création de 100 sessions
   console.log("📢 Génération de 100 sessions...");
-
   const sessions = [];
   for (let i = 0; i < 100; i++) {
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() + i * 3); // Chaque session commence 3 jours après la précédente
+    startDate.setDate(startDate.getDate() + i * 3);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 1); // 1 jour après
+    endDate.setDate(startDate.getDate() + 1);
 
     const session = await prisma.session.create({
       data: {
@@ -64,10 +79,8 @@ async function main() {
         psychologueId: psychologue.id,
       },
     });
-
     sessions.push(session);
   }
-
   console.log("✅ 100 sessions créées avec succès !");
 
   // Création d'un utilisateur
@@ -89,25 +102,22 @@ async function main() {
       prefecture: 'Paris',
       etatPermis: 'Valide',
       casStage: 'N/A',
-      // Les champs optionnels comme id_recto, id_verso, permis_recto, permis_verso sont déjà à null par défaut
     },
   });
-
   console.log("✅ Utilisateur créé !");
 
-  // Inscription de l'utilisateur à une session aléatoire parmi les 100
+  // Inscription de l'utilisateur à une session aléatoire
   const randomSession = sessions[Math.floor(Math.random() * sessions.length)];
   const sessionUser = await prisma.sessionUsers.create({
     data: {
       sessionId: randomSession.id,
       userId: user.id,
-      isPaid: false, // Champ correctement placé dans SessionUsers selon le schéma
+      isPaid: false,
     },
   });
-
   console.log(`✅ L'utilisateur a été inscrit à la session ${randomSession.numeroStageAnts}`);
 
-  // Création d'un paiement associé à l'inscription
+  // Création d'un paiement
   const payment = await prisma.payment.create({
     data: {
       sessionUserId: sessionUser.id,
@@ -115,7 +125,6 @@ async function main() {
       method: 'Credit Card',
     },
   });
-
   console.log("✅ Paiement enregistré !");
 
   console.log("🎉 Base de données semée avec succès !");

@@ -210,7 +210,7 @@ export default function Carousel() {
   ];
 
   return (
-    <div className="carousel-container max-w-4xl mx-auto p-4">
+    <div className="carousel-container max-w-6xl mx-auto p-4">
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       {currentStep >= 0 && currentStep < steps.length ? (
         <>
@@ -230,27 +230,7 @@ export default function Carousel() {
           Étape invalide. Veuillez recharger la page ou contacter le support.
         </p>
       )}
-      <div className="navigation mt-6 flex justify-between">
-        {currentStep > 0 && (
-          <button
-            onClick={prevStep}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50"
-            disabled={isSubmitting}
-          >
-            Précédent
-          </button>
-        )}
-        {/* Bouton "Suivant" facultatif pour debug, à supprimer si non nécessaire */}
-        {currentStep < steps.length - 1 && (
-          <button
-            onClick={nextStep}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            disabled={isSubmitting || !selectedStage || (currentStep === 1 && !clientSecret)}
-          >
-            Suivant
-          </button>
-        )}
-      </div>
+   
       {isSubmitting && (
         <p className="text-center mt-4 text-gray-600">Traitement en cours...</p>
       )}

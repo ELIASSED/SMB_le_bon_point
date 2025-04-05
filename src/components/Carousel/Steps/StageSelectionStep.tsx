@@ -105,29 +105,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                 className="flex flex-col p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 <div className="flex flex-col md:flex-row justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <CalendarDays className="h-5 w-5 text-blue-500" />
-                      <h3 className="text-lg font-semibold text-blue-600">
-                        {formatDateRange(stage.startDate, stage.endDate)}
-                      </h3>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span>{stage.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${getCapacityColor(stage.capacity)}`}>
-                        {stage.capacity} {stage.capacity > 1 ? 'places disponibles' : 'place disponible'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 md:mt-0 flex flex-col items-start md:items-end space-y-3">
-                    <div className="flex items-center space-x-2">
+                  <div className="space-y-3">  <div className="flex items-center space-x-2">
                       <CreditCard className="h-5 w-5 text-gray-600" />
                       <span className="text-xl font-bold text-gray-800">
                         {stage.price.toLocaleString("fr-FR", {
@@ -137,11 +115,30 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                       </span>
                     </div>
                     
+                    
+                    
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${getCapacityColor(stage.capacity)}`}>
+                        {stage.capacity} {stage.capacity > 1 ? 'places disponibles' : 'place disponible'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <CalendarDays className="h-5 w-5 text-blue-500" />
+                      <h3 className="text-lg font-semibold text-blue-600">
+                        {formatDateRange(stage.startDate, stage.endDate)}
+                      </h3>
+                    </div>
+                    
+            
+                  <div className="mt-4 md:mt-0 flex flex-col items-start md:items-end space-y-3">
+                  
                     <button
                       onClick={() => onStageSelected(stage)}
                       className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow transition-colors duration-200"
                     >
-                      Réserver
+                      Voir le stage
                     </button>
                   </div>
                 </div>

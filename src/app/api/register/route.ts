@@ -1,3 +1,4 @@
+// src/app/api/register/route.ts
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -75,15 +76,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plus de places disponibles." }, { status: 400 });
     }
 
-    console.log("Upsert de l'utilisateur avec email :", normalizedEmail);
-    const user = await prisma.user.upsert({
-      where: { email: normalizedEmail },
-      update: normalizedUserData,
-      create: normalizedUserData,
+    // Créer un nouvel utilisateur à chaque inscription
+    console.log("Création d'un nouvel utilisateur avec email :", normalizedEmail);
+    const user = await prisma.user.create({
+      data: normalizedUserData,
     });
 
     console.log("Transaction pour SessionUsers...");
     const sessionUser = await prisma.$transaction(async (tx) => {
+      // Vérifier si cet email est déjà inscrit à une session à la même date
       const existingByDate = await tx.sessionUsers.findFirst({
         where: {
           user: { email: normalizedEmail },
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
         );
       }
 
+      // Vérifier si cet utilisateur est déjà inscrit à cette session spécifique
       const existingBySessionId = await tx.sessionUsers.findUnique({
         where: {
           sessionId_userId: { sessionId: stageId, userId: user.id },

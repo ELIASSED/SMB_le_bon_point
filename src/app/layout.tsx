@@ -16,12 +16,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="description" content={metadata.description} />
         <link rel="icon" href="/favicon.ico" />        
 
-      </head><Header />
+      </head>
       <body>
-
+      <Header />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">{children}</main>
-       
-      </body> <Footer />
+        <Footer />
+      </body>
     </html>
   );
 }
