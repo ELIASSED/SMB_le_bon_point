@@ -49,6 +49,8 @@
     "supabase": "^2.19.6"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
     "@types/express": "^5.0.0",
     "@types/node": "^20.17.17",
     "@types/nodemailer": "^6.4.17",
@@ -57,6 +59,7 @@
     "@types/react-dom": "^19",
     "@types/webpack": "^5.28.5",
     "autoprefixer": "^10.4.20",
+    "babel-loader": "^10.0.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.4",
     "gh-pages": "^5.0.0",

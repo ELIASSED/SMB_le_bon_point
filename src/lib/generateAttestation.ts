@@ -1,25 +1,26 @@
 // src/lib/generateAttestation.ts
-import fs from "fs";
-import path from "path";
-import Handlebars from "handlebars";
-import chromium from "@sparticuz/chromium"; // Remplace chrome-aws-lambda
-import { Browser } from "puppeteer-core";
-import { SessionUsers, User, Session } from "@prisma/client";
-import prisma from "@/lib/prisma";
+import fs from 'fs';
+import path from 'path';
+import Handlebars from 'handlebars';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core'; // Importez puppeteer-core ici
+import { Browser } from 'puppeteer-core';
+import { SessionUsers, User, Session } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-const templatePath = path.join(process.cwd(), "src/lib/templates/attestation.html");
+const templatePath = path.join(process.cwd(), 'src/lib/templates/attestation.html');
 if (!fs.existsSync(templatePath)) {
   console.error(`❌ Fichier template introuvable à : ${templatePath}`);
   throw new Error(`Template HTML introuvable à : ${templatePath}`);
 }
-const templateHtml = fs.readFileSync(templatePath, "utf8");
+const templateHtml = fs.readFileSync(templatePath, 'utf8');
 const template = Handlebars.compile(templateHtml);
 
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 };
 
@@ -46,7 +47,7 @@ const generateAttestation = async (
     adresse: user.adresse,
     ville: user.ville,
     dateNaissance: formatDate(user.dateNaissance),
-    lieuNaissance: user.codePostalNaissance || "Non spécifié",
+    lieuNaissance: user.codePostalNaissance || 'Non spécifié',
     numeroPermis: user.numeroPermis,
     datePermis: formatDate(user.dateDelivrancePermis),
     prefecturePermis: user.prefecture,
@@ -54,8 +55,8 @@ const generateAttestation = async (
     dateFinStage: formatDate(session.endDate),
     casStage: user.casStage,
     dateAttestation: formatDate(new Date()),
-    animateur: instructor ? `${instructor.firstName} ${instructor.lastName}` : "Animateur non spécifié",
-    psychologue: psychologue ? `${psychologue.firstName} ${psychologue.lastName}` : "Psychologue non spécifié",
+    animateur: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Animateur non spécifié',
+    psychologue: psychologue ? `${psychologue.firstName} ${psychologue.lastName}` : 'Psychologue non spécifié',
   };
 
   const html = template(stagiaire);
@@ -64,26 +65,26 @@ const generateAttestation = async (
   try {
     const executablePath = await chromium.executablePath();
     if (!executablePath) {
-      throw new Error("Chromium executable path not found");
+      throw new Error('Chromium executable path not found');
     }
 
-    browser = await chromium.puppeteer.launch({
+    browser = await puppeteer.launch({ // Utilisez puppeteer.launch directement
       args: chromium.args,
       executablePath,
-      headless: true, // @sparticuz/chromium utilise headless par défaut
+      headless: true,
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
     const pdfData = await page.pdf({
-      format: "A4",
+      format: 'A4',
       printBackground: true,
     });
 
     return Buffer.from(pdfData);
   } catch (error) {
-    console.error("❌ Erreur lors de la génération du PDF :", error);
+    console.error('❌ Erreur lors de la génération du PDF :', error);
     throw error;
   } finally {
     if (browser) {
