@@ -42,4 +42,5 @@ next-env.d.ts
 # Ignorer les binaires Chromium/Puppeteer
 chrome/
 *.pdf  # Si vous générez des PDFs localement
-*.log  # Logs npm ou autres
+*.log  # Logs npm ou autreschrome/
+chrome/
