@@ -1,3 +1,4 @@
+// src/app/api/confirm-payment/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient, SessionUsers, User, Session } from '@prisma/client';
 import Stripe from 'stripe';
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Paiement non réussi: ${paymentIntent.status}` }, { status: 400 });
     }
 
+    // Transaction pour les mises à jour critiques uniquement
     const updatedSessionUser = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.sessionUsers.update({
         where: { sessionId_userId: { sessionId, userId } },
@@ -70,14 +72,16 @@ export async function POST(request: Request) {
         data: { capacity: { decrement: 1 } },
       });
 
-      const pdfBuffer = await generateAttestation(updatedUser as SessionUsers & { user: User; session: Session });
-
-      await tx.user.update({
-        where: { id: userId },
-        data: { attestationPdf: pdfBuffer },
-      });
-
       return updatedUser;
+    });
+
+    // Génération du PDF hors transaction
+    const pdfBuffer = await generateAttestation(updatedSessionUser as SessionUsers & { user: User; session: Session });
+
+    // Mise à jour de l’utilisateur avec le PDF après la transaction
+    await prisma.user.update({
+      where: { id: userId },
+      data: { attestationPdf: pdfBuffer },
     });
 
     console.log('✅ Paiement confirmé et PDF stocké dans la base de données:', updatedSessionUser);
