@@ -89,7 +89,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
   }
 
   return (
-    <div className="bg-white p-6 md:p-10 rounded-lg shadow-lg border border-gray-200">
+    <div className="bg-white p-6 md:p-20 rounded-lg shadow-lg border border-gray-200">
 
       
       <div className="mb-6">
@@ -104,44 +104,46 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                 key={stage.id}
                 className="flex flex-col p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <div className="flex flex-col md:flex-row justify-between">
-                  <div className="space-y-3">  <div className="flex items-center space-x-2">
-                      <CreditCard className="h-5 w-5 text-gray-600" />
-                      <span className="text-xl font-bold text-gray-800">
-                        {stage.price.toLocaleString("fr-FR", {
-                          style: "currency",
-                          currency: "EUR",
-                        })}
-                      </span>
-                    </div>
-                    
-                    
-                    
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className={`text-sm font-medium px-3 py-1 rounded-full ${getCapacityColor(stage.capacity)}`}>
-                        {stage.capacity} {stage.capacity > 1 ? 'places disponibles' : 'place disponible'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                      <CalendarDays className="h-5 w-5 text-blue-500" />
-                      <h3 className="text-lg font-semibold text-blue-600">
-                        {formatDateRange(stage.startDate, stage.endDate)}
-                      </h3>
-                    </div>
-                    
-            
-                  <div className="mt-4 md:mt-0 flex flex-col items-start md:items-end space-y-3">
-                  
-                    <button
-                      onClick={() => onStageSelected(stage)}
-                      className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow transition-colors duration-200"
-                    >
-                      Voir le stage
-                    </button>
-                  </div>
-                </div>
+               <div className="flex flex-col md:flex-row justify-between">
+  <div className="space-y-3">
+    <div className="flex items-center space-x-8">
+
+      <span className="text-xl font-bold text-gray-800">
+        {stage.price.toLocaleString("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+        })}
+      </span>
+    </div>
+  </div>
+  
+  {/* Superposition des dates et places disponibles */}
+  <div className="relative flex items-center space-x-2">
+    <div className="relative">
+      <div className="flex items-center pb-4 space-x-2">
+        <CalendarDays className="h-5 w-5 text-blue-500" />
+        <h3 className="text-md font-semibold text-blue-600">
+          {formatDateRange(stage.startDate, stage.endDate)}
+        </h3>
+      </div>
+      <div className="absolute top-0 left-0 flex items-center space-x-2 translate-y-6">
+        <Users className="h-4 w-4 text-gray-500" />
+        <span className={`text-sm font-medium px-3 py-1 rounded-full ${getCapacityColor(stage.capacity)}`}>
+          {stage.capacity} {stage.capacity > 1 ? 'places disponibles' : 'place disponible'}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div className="mt-4 md:mt-0 flex flex-col items-start md:items-end space-y-3">
+    <button
+      onClick={() => onStageSelected(stage)}
+      className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg shadow transition-colors duration-200"
+    >
+      Voir le stage
+    </button>
+  </div>
+</div>
               </div>
             ))}
           </div>

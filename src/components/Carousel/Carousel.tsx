@@ -210,7 +210,7 @@ export default function Carousel() {
   ];
 
   return (
-    <div className="carousel-container max-w-6xl mx-auto p-4">
+    <div className="carousel-container  ">
       <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
       {currentStep >= 0 && currentStep < steps.length ? (
         <>
