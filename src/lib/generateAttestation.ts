@@ -2,12 +2,11 @@
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
-import chromium from "chrome-aws-lambda";
+import chromium from "@sparticuz/chromium"; // Remplace chrome-aws-lambda
 import { Browser } from "puppeteer-core";
 import { SessionUsers, User, Session } from "@prisma/client";
 import prisma from "@/lib/prisma";
 
-// Charger le template HTML
 const templatePath = path.join(process.cwd(), "src/lib/templates/attestation.html");
 if (!fs.existsSync(templatePath)) {
   console.error(`❌ Fichier template introuvable à : ${templatePath}`);
@@ -16,7 +15,6 @@ if (!fs.existsSync(templatePath)) {
 const templateHtml = fs.readFileSync(templatePath, "utf8");
 const template = Handlebars.compile(templateHtml);
 
-// Formater les dates
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -30,17 +28,11 @@ const generateAttestation = async (
 ): Promise<Buffer> => {
   const { user, session } = sessionUser;
 
-  // Récupérer l'instructeur
   const instructor = await prisma.instructor.findUnique({
     where: { id: session.instructorId },
     select: { lastName: true, firstName: true },
   });
 
-  if (!instructor) {
-    console.warn(`⚠️ Animateur non trouvé pour instructorId: ${session.instructorId}`);
-  }
-
-  // Récupérer le psychologue (si applicable)
   const psychologue = session.psychologueId
     ? await prisma.psychologue.findUnique({
         where: { id: session.psychologueId },
@@ -48,11 +40,6 @@ const generateAttestation = async (
       })
     : null;
 
-  if (session.psychologueId && !psychologue) {
-    console.warn(`⚠️ Psychologue non trouvé pour psychologueId: ${session.psychologueId}`);
-  }
-
-  // Préparer les données pour le template
   const stagiaire = {
     nom: user.nom,
     prenom: user.prenom,
@@ -73,13 +60,17 @@ const generateAttestation = async (
 
   const html = template(stagiaire);
 
-  // Lancer Chromium avec chrome-aws-lambda
   let browser: Browser | null = null;
   try {
+    const executablePath = await chromium.executablePath();
+    if (!executablePath) {
+      throw new Error("Chromium executable path not found");
+    }
+
     browser = await chromium.puppeteer.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+      executablePath,
+      headless: true, // @sparticuz/chromium utilise headless par défaut
     });
 
     const page = await browser.newPage();
@@ -90,10 +81,7 @@ const generateAttestation = async (
       printBackground: true,
     });
 
-    const pdfBuffer = Buffer.from(pdfData);
-
-    console.log(`✅ PDF généré en mémoire pour ${user.nom} ${user.prenom}`);
-    return pdfBuffer;
+    return Buffer.from(pdfData);
   } catch (error) {
     console.error("❌ Erreur lors de la génération du PDF :", error);
     throw error;
