@@ -8,8 +8,8 @@
  */
 export function formatDateWithDay(dateStr: string): string {
   const options: Intl.DateTimeFormatOptions = {
-    weekday: "long", // "jeu."
-    year: "numeric",  // "2025"
+    weekday: "short", // "jeu."
+
     month: "long",    // "janvier"
     day: "numeric",   // "16"
   };
@@ -34,7 +34,7 @@ export function formatDateRange(startStr: string, endStr: string): string {
     // -> "jeu. 16" (sans mois/année) + "et" + "ven. 17 janvier 2025"
     // 1) Format "jour + nom du jour" (sans mois/année)
     const shortOptions: Intl.DateTimeFormatOptions = {
-      weekday: "long",
+      weekday: "short",
       day: "numeric",
     };
     const startShort = startDate.toLocaleDateString("fr-FR", shortOptions);
@@ -45,7 +45,7 @@ export function formatDateRange(startStr: string, endStr: string): string {
     return `${startShort} et ${endFull}`;
   } else {
     // Cas normal : "formatDateWithDay(start) - formatDateWithDay(end)"
-    return `${formatDateWithDay(startStr)} - ${formatDateWithDay(endStr)}`;
+    return `${formatDateWithDay(startStr)} et ${formatDateWithDay(endStr)}`;
   }
 }
 

@@ -42,7 +42,8 @@ const nextConfig: NextConfig = {
     return config;
   },
   experimental: {
-    serverComponentsExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+    serverComponentsExternalPackages: ['@sparticuz/chromium', 'puppeteer-core', 'resend'],
+
   },
 };
 

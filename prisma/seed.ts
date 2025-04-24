@@ -1,8 +1,24 @@
-// prisma/seed.ts
+
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// Simple seeded random number generator for reproducibility
+function seededRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 9301 + 49297) % 233280;
+    return state / 233280;
+  };
+}
+
+// Generate random price between min and max, rounded to 2 decimal places
+function getRandomPrice(min: number, max: number, random: () => number): number {
+  const range = max - min;
+  const price = min + range * random();
+  return Math.round(price * 100) / 100; // Round to 2 decimal places
+}
 
 async function main() {
   console.log("📢 Suppression des anciennes données...");
@@ -59,17 +75,22 @@ async function main() {
 
   // Création de 100 sessions
   console.log("📢 Génération de 100 sessions...");
-  const sessions = [];
+  const sessions: any[] = [];
+  const seed = 12345; // Fixed seed for reproducibility
+  const random = seededRandom(seed);
+
   for (let i = 0; i < 100; i++) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() + i * 3);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 1);
 
+    const price = getRandomPrice(200, 300, random); // Random price between €200 and €300
+
     const session = await prisma.session.create({
       data: {
-        numeroStageAnts: `STAGE${i + 1}`,
-        price: 200.0,
+        numeroStageAnts: `24R22094005${i + 1}`,
+        price,
         description: `Session de formation n°${i + 1}`,
         startDate,
         endDate,
@@ -80,6 +101,7 @@ async function main() {
       },
     });
     sessions.push(session);
+    console.log(`Session ${i + 1} créée avec prix : €${price.toFixed(2)}`);
   }
   console.log("✅ 100 sessions créées avec succès !");
 

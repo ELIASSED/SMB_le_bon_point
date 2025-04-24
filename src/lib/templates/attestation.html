@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: 'Times New Roman', serif;
-            font-size: 10pt;
+            font-size: 8pt;
             line-height: 1.6;
             margin: 40px;
         }
@@ -22,7 +22,7 @@
         }
         .title {
             text-align: center;
-            font-size: 12pt;
+            font-size: 11pt;
             text-transform: uppercase;
             margin: 180px 0 60px;
             font-weight: bold;
@@ -31,9 +31,7 @@
         .content {
             text-align: justify;
         }
-        .content p {
-            margin: 5px 0;
-        }
+       
         .stagiaire-container {
             display: flex;
             gap: 20px;
@@ -43,10 +41,10 @@
             flex: 1;
         }
         .stagiaire-info p {
-            margin: 5px 0;
+            margin: 0px;
         }
         .stagiaire-info span {
-            display: inline-block;
+        
             width: 180px;
         }
         .signature-block {
@@ -54,6 +52,7 @@
             display: flex;
             justify-content: space-between;
             font-size: 11pt;
+            
         }
         .signature-block div {
             text-align: center;
@@ -97,16 +96,19 @@
             </div>
         </div>
         <p>a suivi le stage de formation spécifique correspondant au cas visé ci-dessous, qui s’est déroulé les {{dateDebutStage}} et {{dateFinStage}} à l’adresse suivante : 35 Avenue Foch, 94100 Saint-Maur-des-Fossés.</p>
-        <p><strong>Cas de stage :</strong><br>{{casStage}}</p>
+        <p><strong>Cas de stage :</strong>{{casStage}}</p>
     </div>
     <div class="signature-block">
         <div>
-            Signature du directeur<br>
+            Signature du directeur<br>            
             SALIMA MAHOUR<br>
         </div>
         <div>
-            Signature des animateurs<br>
-            {{animateur}}<br>
+            <div></div>Signature des animateurs<br>
+      
+            BAFM<br>
+            {{animateur}}<br>            <br/>
+
             Psychologue<br>
             {{psychologue}}<br>
         </div>

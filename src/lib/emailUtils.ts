@@ -1,5 +1,3 @@
-// lib/emailUtils.ts
-
 /**
  * Génère un template d'email HTML pour confirmer l'inscription d'un utilisateur à un stage.
  * @param prenom - Le prénom de l'utilisateur

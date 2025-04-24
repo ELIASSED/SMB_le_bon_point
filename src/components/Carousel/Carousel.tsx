@@ -1,13 +1,12 @@
-// src/components/Carousel/Carousel.tsx
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateConfirmationEmail } from "../../lib/emailUtils";
 import { formatDateWithDay } from "../utils";
 import { Stage, RegistrationInfo } from "./types";
 import StageSelectionStep from "./Steps/StageSelectionStep";
 import PersonalInfoStep from "./Steps/PersonalInfoStep";
 import PaymentStep from "./Steps/PaymentStep";
+import RecapStep from "./Steps/RecapStep";
 import ProgressBar from "./ProgressBar";
 import { createPaymentIntent, registerUser } from "../../lib/api";
 
@@ -20,15 +19,18 @@ export default function Carousel() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
   const router = useRouter();
 
   const nextStep = () => {
+    console.log(`Transition vers l'étape ${currentStep + 1}`);
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
     setError(null);
   };
 
   const prevStep = () => {
+    console.log(`Retour à l'étape ${currentStep - 1}`);
     setCurrentStep((prev) => Math.max(prev - 1, 0));
     setError(null);
   };
@@ -72,6 +74,12 @@ export default function Carousel() {
         return;
       }
 
+      if (!clientSecret) {
+        console.error("clientSecret manquant.");
+        setError("Erreur de configuration du paiement. Veuillez réessayer la sélection du stage.");
+        return;
+      }
+
       const registrationData = { stageId: selectedStage.id, userData: formEntries };
       console.log("Envoi à /api/register avec :", registrationData);
       const response = await registerUser(registrationData);
@@ -96,7 +104,8 @@ export default function Carousel() {
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     console.log("handlePaymentSuccess appelé avec paymentIntentId :", paymentIntentId);
-    if (!selectedStage || !registrationInfo || !sessionId || !userId || !paymentIntentId) {
+
+    if (!selectedStage || !registrationInfo || !sessionId || !userId) {
       console.error("Données manquantes pour finaliser le paiement :", {
         selectedStage,
         registrationInfo,
@@ -112,6 +121,7 @@ export default function Carousel() {
       setIsSubmitting(true);
       setError(null);
 
+      // Confirm payment
       console.log("Envoi à /api/confirm-payment :", { sessionId, userId, paymentIntentId });
       const updateResponse = await fetch("/api/confirm-payment", {
         method: "POST",
@@ -121,69 +131,123 @@ export default function Carousel() {
 
       const updateResult = await updateResponse.json();
       console.log("Réponse de /api/confirm-payment :", updateResult);
-
       if (!updateResponse.ok) {
         throw new Error(updateResult.error || "Erreur lors de la mise à jour du paiement.");
       }
-
       if (!updateResult.sessionUser?.isPaid) {
         throw new Error("Le statut de paiement n'a pas été mis à jour correctement.");
       }
 
-      console.log("Paiement confirmé, redirection vers /success...");
-      router.push("/success");
+      setPaymentIntentId(paymentIntentId);
+      console.log("Paiement confirmé, déclenchement de l'email client en arrière-plan...");
 
-      // Envoi de l'email (non bloquant)
-      try {
-        const formattedStartDate = formatDateWithDay(selectedStage.startDate);
-        const formattedEndDate = formatDateWithDay(selectedStage.endDate);
-        const emailHTML = generateConfirmationEmail(
-          registrationInfo.prenom,
-          registrationInfo.nom,
-          selectedStage.location,
-          selectedStage.numeroStageAnts,
-          formattedStartDate,
-          formattedEndDate,
-          "support@votre-site.com",
-          "01 23 45 67 89"
-        );
+      // Fire-and-forget client confirmation email via /api/send-mail
+      const emailData = {
+        to: registrationInfo.email,
+        subject: "Confirmation de votre inscription au stage",
+        text: `Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},\n\nNous vous confirmons votre inscription au stage ${selectedStage.numeroStageAnts} à ${selectedStage.location}.\n\nDétails du stage :\n- Début : ${formatDateWithDay(selectedStage.startDate)}\n- Fin : ${formatDateWithDay(selectedStage.endDate)}\n\nVotre paiement a été reçu. Pour toute question, contactez-nous au 01 23 45 67 89.`,
+        html: `
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Confirmation d'inscription</title>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+            <table role="presentation" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <tr>
+                <td style="padding: 20px; text-align: center; background-color: #004aad; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Confirmation de votre inscription</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 30px;">
+                  <p style="font-size: 16px; color: #333333; margin: 0 0 20px;">
+                    Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},<br><br>
+                    Nous vous confirmons votre inscription au stage suivant :
+                  </p>
+                  <table role="presentation" width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
+                    <tr>
+                      <td style="padding: 10px; font-size: 16px; color: #333333; border-bottom: 1px solid #e0e0e0;">
+                        <strong>Numéro du stage :</strong> ${selectedStage.numeroStageAnts}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; font-size: 16px; color: #333333; border-bottom: 1px solid #e0e0e0;">
+                        <strong>Lieu :</strong> ${selectedStage.location}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; font-size: 16px; color: #333333; border-bottom: 1px solid #e0e0e0;">
+                        <strong>Date de début :</strong> ${formatDateWithDay(selectedStage.startDate)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; font-size: 16px; color: #333333; border-bottom: 1px solid #e0e0e0;">
+                        <strong>Date de fin :</strong> ${formatDateWithDay(selectedStage.endDate)}
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="font-size: 16px; color: #333333; margin: 0 0 20px;">
+                    Votre paiement a été reçu avec succès. Vous recevrez prochainement toute information complémentaire concernant votre stage.
+                  </p>
+                  <p style="font-size: 16px; color: #333333; margin: 0 0 20px;">
+                    Pour toute question, contactez-nous par téléphone :
+                  </p>
+                  <p style="font-size: 16px; color: #333333; margin: 0;">
+                    <strong>Téléphone :</strong> 01 23 45 67 89
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 20px; text-align: center; background-color: #f4f4f4; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+                  <p style="font-size: 14px; color: #666666; margin: 0;">
+                    © ${new Date().getFullYear()} Votre Organisation. Tous droits réservés.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `,
+      };
 
-        console.log("Envoi de l'email via /api/send-mail...");
-        const emailResponse = await fetch("/api/send-mail", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: registrationInfo.email,
-            subject: "Confirmation de votre inscription au stage",
-            text: `Bonjour ${registrationInfo.prenom} ${registrationInfo.nom}, votre inscription est confirmée.`,
-            html: emailHTML,
-          }),
-        });
+      console.log("Préparation envoi à /api/send-mail avec:", emailData);
+      fetch("/api/send-mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(emailData),
+      })
+        .then((response) => response.json())
+        .then((result) => console.log("Réponse de /api/send-mail:", result))
+        .catch((err) => console.error("Erreur dans /api/send-mail:", err.message));
 
-        const emailResult = await emailResponse.json();
-        console.log("Réponse de /api/send-mail :", emailResult);
-
-        if (!emailResponse.ok) {
-          console.error("Échec de l'envoi de l'email :", emailResult.error);
-        }
-      } catch (emailError: any) {
-        console.error("Erreur lors de l'envoi de l'email (non bloquant) :", emailError.message);
-      }
+      console.log("Transition vers l'étape Récapitulatif...");
+      setCurrentStep(3); // Go to RecapStep
     } catch (err: any) {
-      console.error("Erreur dans handlePaymentSuccess :", err.message);
+      console.error("Erreur dans handlePaymentSuccess:", {
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+      });
       setError(err.message || "Une erreur est survenue après le paiement. Contactez-nous.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleRecapConfirm = async () => {
+    console.log("handleRecapConfirm déclenché à", new Date().toISOString());
+  };
+
   const steps = [
     {
-      title: "Sélectionnez un stage",
+      title: "SELECTIONNEZ VOTRE STAGE",
       content: <StageSelectionStep onStageSelected={handleStageSelection} />,
     },
     {
-      title: "Formulaire d'inscription",
+      title: "FORMULAIRE",
       content: selectedStage ? (
         <PersonalInfoStep
           selectedStage={selectedStage}
@@ -196,25 +260,50 @@ export default function Carousel() {
       ),
     },
     {
-      title: "Paiement",
+      title: "PAIEMENT",
       content: selectedStage && clientSecret ? (
         <PaymentStep
           selectedStage={selectedStage}
           clientSecret={clientSecret}
           onPaymentSuccess={handlePaymentSuccess}
+          onConfirm={handleRecapConfirm}
         />
       ) : (
         <p className="text-gray-500">Informations de paiement non disponibles. Veuillez compléter les étapes précédentes.</p>
       ),
     },
+    {
+      title: "RECAPITULATIF",
+      content: selectedStage && registrationInfo && paymentIntentId ? (
+        <>
+          {console.log("Rendu de RecapStep avec :", { selectedStage, registrationInfo, paymentIntentId })}
+          <RecapStep
+            selectedStage={selectedStage}
+            registrationInfo={registrationInfo}
+            paymentIntentId={paymentIntentId}
+            onConfirm={handleRecapConfirm}
+          />
+        </>
+      ) : (
+        <>
+          {console.log("Étape Récapitulatif bloquée, données manquantes :", {
+            selectedStage,
+            registrationInfo,
+            paymentIntentId,
+          })}
+          <p className="text-gray-500">Veuillez compléter les étapes précédentes.</p>
+        </>
+      ),
+    }
   ];
 
+  const stepTitles = steps.map((step) => step.title);
+
   return (
-    <div className="carousel-container  ">
-      <ProgressBar currentStep={currentStep} stepsLength={steps.length} />
+    <div className="carousel-container max-w-6xl mx-auto">
+      <ProgressBar currentStep={currentStep} steps={stepTitles} />
       {currentStep >= 0 && currentStep < steps.length ? (
         <>
-          <h1 className="text-2xl font-bold mb-4">{steps[currentStep].title}</h1>
           {error && (
             <div
               className="text-red-500 text-center mb-4 p-3 bg-red-100 border border-red-400 rounded"
@@ -230,7 +319,7 @@ export default function Carousel() {
           Étape invalide. Veuillez recharger la page ou contacter le support.
         </p>
       )}
-   
+
       {isSubmitting && (
         <p className="text-center mt-4 text-gray-600">Traitement en cours...</p>
       )}

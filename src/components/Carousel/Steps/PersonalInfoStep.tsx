@@ -1,3 +1,4 @@
+// src/components/Steps/PersonalInfoStep.tsx
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
@@ -8,9 +9,11 @@ import nationalitiesData from "../nationalite.json";
 import casStageData from "../cas_stage.json";
 import prefecturesData from "../prefectures.json";
 import { supabase } from "@/lib/supabaseClient";
+import imageCompression from 'browser-image-compression';
+
 
 interface PersonalInfoStepProps {
-  selectedStage: Stage;
+  selectedStage?: Stage;
   onSubmit: (data: FormData) => Promise<void>;
   setRegistrationInfo: React.Dispatch<React.SetStateAction<RegistrationInfo | null>>;
   nextStep: () => void;
@@ -47,7 +50,10 @@ export default function PersonalInfoStep({
     scanIdentiteVerso: null,
     scanPermisRecto: null,
     scanPermisVerso: null,
+    letter_48N: null,
+    extraDocument: null,
     acceptConditions: false,
+    commitToUpload: false,
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -56,6 +62,7 @@ export default function PersonalInfoStep({
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [nationalities, setNationalities] = useState<{ code: string; name: string }[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
   const inputClassName =
     "mt-1 block w-full border border-gray-300 rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500";
@@ -80,12 +87,23 @@ export default function PersonalInfoStep({
     }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
-    const file = e.target.files?.[0] || null;
-    console.log(`Fichier sélectionné pour ${name}:`, file?.name);
+    let file = e.target.files?.[0] || null;
+    if (file && file.size > 20 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, [name]: "Le fichier dépasse la taille maximale de 5 Mo." }));
+      return;
+    }
+    if (file && file.type.startsWith('image/')) {
+      try {
+        file = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
+        console.log(`Fichier compressé pour ${name}:`, file.name);
+      } catch (error) {
+        console.error(`Erreur de compression pour ${name}:`, error);
+      }
+    }
     setFormData((prev) => ({ ...prev, [name]: file }));
+    setUploadProgress((prev) => ({ ...prev, [name]: 0 }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -110,42 +128,69 @@ export default function PersonalInfoStep({
   };
 
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+    const props = suggestion.properties;
     setFormData((prev) => ({
       ...prev,
-      adresse: suggestion.properties.label,
-      codePostal: suggestion.properties.postcode || prev.codePostal,
-      ville: suggestion.properties.city || prev.ville,
+      adresse: props.name || props.street || props.label.split(',')[0] || "",
+      codePostal: props.postcode || "",
+      ville: props.city || props.context?.split(',')?.[1]?.trim() || "",
     }));
     setShowSuggestions(false);
   };
 
+  const uploadFileWithRetry = async (file: File, filePath: string, retries = 3): Promise<string> => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .upload(filePath, file, { upsert: true });
+
+        if (error) throw error;
+
+        const { publicUrl } = supabase.storage.from("documents").getPublicUrl(filePath).data;
+        console.log(`Upload réussi pour ${filePath}:`, publicUrl);
+        return publicUrl;
+      } catch (error: any) {
+        console.error(`Tentative ${attempt} échouée pour ${filePath}:`, error.message);
+        if (attempt === retries) throw new Error(`Échec de l'upload de ${filePath} après ${retries} tentatives: ${error.message}`);
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+      }
+    }
+    throw new Error("Erreur inattendue dans uploadFileWithRetry");
+  };
+
   const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
+    console.log("Début de l'upload des fichiers pour ID:", id);
     const uploadedPaths: { [key: string]: string } = {};
     const fileFields = {
       scanPermisRecto: "permis_recto",
       scanPermisVerso: "permis_verso",
       scanIdentiteRecto: "id_recto",
       scanIdentiteVerso: "id_verso",
+      letter_48N: "letter_48N",
+      extraDocument: "extraDocument",
     };
 
-    for (const [field, dbField] of Object.entries(fileFields)) {
+    const uploadPromises = Object.entries(fileFields).map(async ([field, dbField]) => {
       const file = formData[field as keyof RegistrationInfo] as File | null;
-      if (file) {
+      if (file && file.size > 0) {
         const filePath = `${id}/${dbField}/${Date.now()}_${file.name}`;
-        const { data, error } = await supabase.storage
-          .from("documents")
-          .upload(filePath, file, { upsert: true });
-
-        if (error) {
-          console.error(`Erreur d'upload pour ${field}:`, error.message);
-          throw new Error(`Échec de l'upload de ${field}: ${error.message}`);
+        setUploadProgress((prev) => ({ ...prev, [field]: 10 })); // Initial progress
+        try {
+          const publicUrl = await uploadFileWithRetry(file, filePath);
+          uploadedPaths[field] = publicUrl;
+          setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
+        } catch (error: any) {
+          console.error(`Erreur pour ${field}:`, error.message);
+          setErrors((prev) => ({ ...prev, [field]: `Échec de l'upload: ${error.message}` }));
         }
-
-        const { publicUrl } = supabase.storage.from("documents").getPublicUrl(filePath).data;
-        uploadedPaths[field] = publicUrl;
+      } else {
+        setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
       }
-    }
+    });
 
+    await Promise.all(uploadPromises);
+    console.log("Tous les chemins uploadés:", uploadedPaths);
     return uploadedPaths;
   };
 
@@ -196,11 +241,18 @@ export default function PersonalInfoStep({
       newErrors.telephone = "Format de téléphone invalide (10 chiffres).";
     }
 
-    const allowedFileTypes = ["image/jpeg", "image/png", "application/pdf"];
-    ["scanPermisRecto", "scanPermisVerso", "scanIdentiteRecto", "scanIdentiteVerso"].forEach((field) => {
+    const allowedFileTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+    [
+      "scanPermisRecto",
+      "scanPermisVerso",
+      "scanIdentiteRecto",
+      "scanIdentiteVerso",
+      "letter_48N",
+      "extraDocument",
+    ].forEach((field) => {
       const file = formData[field as keyof RegistrationInfo] as File | null;
       if (file && !allowedFileTypes.includes(file.type)) {
-        newErrors[field] = "Type de fichier invalide. Autorisé: JPEG, PNG, PDF.";
+        newErrors[field] = "Type de fichier invalide. Autorisé: JPEG, JPG, PNG, PDF.";
       }
     });
 
@@ -210,6 +262,7 @@ export default function PersonalInfoStep({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Soumission du formulaire déclenchée");
     if (!validate()) {
       console.log("Validation échouée:", errors);
       return;
@@ -217,29 +270,42 @@ export default function PersonalInfoStep({
 
     setIsSubmitting(true);
     try {
-      const formDataObj = new FormData(e.currentTarget);
-      const uploadedPaths = await uploadFilesToSupabase(formData.email);
+      const formDataObj = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "acceptConditions" || key === "commitToUpload") return;
+        if (value instanceof File && value.size > 0) {
+          formDataObj.append(key, value);
+        } else if (typeof value === "string" && value) {
+          formDataObj.append(key, value);
+        }
+      });
 
-      // Remplacer les champs de fichiers par leurs URLs
+      console.log("FormData initial:", Object.fromEntries(formDataObj));
+
+      const uploadedPaths = await uploadFilesToSupabase(formData.email);
+      console.log("Chemins uploadés reçus:", uploadedPaths);
+
       if (uploadedPaths.scanPermisRecto) formDataObj.set("permis_recto", uploadedPaths.scanPermisRecto);
       if (uploadedPaths.scanPermisVerso) formDataObj.set("permis_verso", uploadedPaths.scanPermisVerso);
       if (uploadedPaths.scanIdentiteRecto) formDataObj.set("id_recto", uploadedPaths.scanIdentiteRecto);
       if (uploadedPaths.scanIdentiteVerso) formDataObj.set("id_verso", uploadedPaths.scanIdentiteVerso);
+      if (uploadedPaths.letter_48N) formDataObj.set("letter_48N", uploadedPaths.letter_48N);
+      if (uploadedPaths.extraDocument) formDataObj.set("extraDocument", uploadedPaths.extraDocument);
 
-      // Supprimer les champs de fichiers originaux et acceptConditions
       formDataObj.delete("scanPermisRecto");
       formDataObj.delete("scanPermisVerso");
       formDataObj.delete("scanIdentiteRecto");
       formDataObj.delete("scanIdentiteVerso");
-      formDataObj.delete("acceptConditions");
+      formDataObj.delete("letter_48N");
+      formDataObj.delete("extraDocument");
 
-      // Mettre à jour l'état global via setRegistrationInfo
+      console.log("FormData final envoyé à onSubmit:", Object.fromEntries(formDataObj));
+
       const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
       setRegistrationInfo(registrationData);
 
-      // Appeler onSubmit et passer à l'étape suivante
       await onSubmit(formDataObj);
-      nextStep();
+      console.log("Soumission réussie, transition vers l'étape suivante");
     } catch (error: any) {
       console.error("Erreur lors de la soumission:", error.message);
       setErrors((prev) => ({ ...prev, submit: error.message || "Erreur lors de l'envoi des données." }));
@@ -247,191 +313,256 @@ export default function PersonalInfoStep({
       setIsSubmitting(false);
     }
   };
-  
+
+  if (!selectedStage) {
+    return (
+      <div className="text-center text-red-500 p-4" role="alert">
+        Veuillez sélectionner une session avant de continuer.
+      </div>
+    );
+  }
+
+  function getDateSeizeYearsAgo(): string {
+    const today = new Date();
+    today.setFullYear(today.getFullYear() - 16);
+    return today.toISOString().split("T")[0]; // format YYYY-MM-DD
+  }
+
   return (
-<div className="bg-gray-50 min-h-screen p-4 md:p-6">
-  <section aria-labelledby="selected-stage-heading" className="mb-4 p-3 border rounded bg-white shadow">
-    <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900">Stage Sélectionné</h2>
-    <SelectedStageInfo selectedStage={selectedStage} />
-  </section>
+    <div className="min-h-screen md:p-6">
+      <section aria-labelledby="selected-stage-heading" className="mb-4 p-3 border rounded">
+        <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900">Stage Sélectionné</h2>
+        <SelectedStageInfo selectedStage={selectedStage} />
+      </section>
 
-  <form onSubmit={handleSubmit} className="bg-white p-4 md:p-6 rounded-lg shadow" encType="multipart/form-data" noValidate>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Informations Personnelles */}
-      <fieldset className="border p-3 rounded" aria-labelledby="personal-info-legend">
-        <legend id="personal-info-legend" className="text-lg font-bold text-gray-800 mb-2">Infos Personnelles</legend>
-        <div className="grid grid-cols-1 gap-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="civilite" className="text-xs font-medium text-gray-700">Civilité *</label>
-              <select id="civilite" name="civilite" value={formData.civilite} onChange={handleChange} className={`${inputClassName} ${errors.civilite ? "border-red-500" : ""}`} aria-required="true">
-                <option value="">--</option>
-                <option value="Monsieur">M.</option>
-                <option value="Madame">Mme</option>
-              </select>
-              {errors.civilite && <p className="text-red-500 text-xs">{errors.civilite}</p>}
+      <form onSubmit={handleSubmit} className="p-4 md:p-6 rounded-lg shadow" encType="multipart/form-data" noValidate>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <fieldset className="border p-3 rounded" aria-labelledby="personal-info-legend">
+            <legend id="personal-info-legend" className="text-lg font-bold text-gray-800 mb-2">Infos Personnelles</legend>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="civilite" className="text-xs font-medium text-gray-700">Civilité *</label>
+                  <select id="civilite" name="civilite" value={formData.civilite} onChange={handleChange} className={`${inputClassName} ${errors.civilite ? "border-red-500" : ""}`} aria-required="true">
+                    <option value="">--</option>
+                    <option value="Monsieur">M.</option>
+                    <option value="Madame">Mme</option>
+                  </select>
+                  {errors.civilite && <p className="text-red-500 text-xs">{errors.civilite}</p>}
+                </div>
+                <div>
+                  <label htmlFor="nom" className="text-xs font-medium text-gray-700">Nom *</label>
+                  <input id="nom" type="text" name="nom" value={formData.nom} onChange={handleChange} className={`${inputClassName} ${errors.nom ? "border-red-500" : ""}`} placeholder="Nom" aria-required="true" />
+                  {errors.nom && <p className="text-red-500 text-xs">{errors.nom}</p>}
+                </div>
+              </div>
+              <div>
+                <label htmlFor="prenom" className="text-xs font-medium text-gray-700">Prénom *</label>
+                <input id="prenom" type="text" name="prenom" value={formData.prenom} onChange={handleChange} className={`${inputClassName} ${errors.prenom ? "border-red-500" : ""}`} placeholder="Prénom" aria-required="true" />
+                {errors.prenom && <p className="text-red-500 text-xs">{errors.prenom}</p>}
+              </div>
+              <div>
+                <label htmlFor="adresse" className="text-xs font-medium text-gray-700">Adresse *</label>
+                <input id="adresse" type="text" name="adresse" value={formData.adresse} onChange={handleAddressChange} className={`${inputClassName} ${errors.adresse ? "border-red-500" : ""}`} placeholder="Adresse" aria-required="true" />
+                {isLoadingAddress && <span className="absolute right-2 top-8 text-gray-400 text-xs">Chargement...</span>}
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <ul className="absolute z-10 bg-white border w-full max-h-40 overflow-auto">
+                    {addressSuggestions.map((suggestion, index) => (
+                      <li key={index} onClick={() => handleSuggestionClick(suggestion)} className="p-1 hover:bg-gray-100 cursor-pointer text-xs">{suggestion.properties.label}</li>
+                    ))}
+                  </ul>
+                )}
+                {errors.adresse && <p className="text-red-500 text-xs">{errors.adresse}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="codePostal" className="text-xs font-medium text-gray-700">Code Postal *</label>
+                  <input id="codePostal" type="text" name="codePostal" value={formData.codePostal} onChange={handleChange} className={`${inputClassName} ${errors.codePostal ? "border-red-500" : ""}`} placeholder="75001" aria-required="true" />
+                  {errors.codePostal && <p className="text-red-500 text-xs">{errors.codePostal}</p>}
+                </div>
+                <div>
+                  <label htmlFor="ville" className="text-xs font-medium text-gray-700">Ville *</label>
+                  <input id="ville" type="text" name="ville" value={formData.ville} onChange={handleChange} className={`${inputClassName} ${errors.ville ? "border-red-500" : ""}`} placeholder="Ville" aria-required="true" />
+                  {errors.ville && <p className="text-red-500 text-xs">{errors.ville}</p>}
+                </div>
+              </div>
+              <div>
+                <label htmlFor="telephone" className="text-xs font-medium text-gray-700">Téléphone *</label>
+                <input id="telephone" type="tel" name="telephone" value={formData.telephone} onChange={handleChange} className={`${inputClassName} ${errors.telephone ? "border-red-500" : ""}`} placeholder="0123456789" aria-required="true" />
+                {errors.telephone && <p className="text-red-500 text-xs">{errors.telephone}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="email" className="text-xs font-medium text-gray-700">Email *</label>
+                  <input id="email" type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClassName} ${errors.email ? "border-red-500" : ""}`} placeholder="Email" aria-required="true" />
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                </div>
+                <div>
+                  <label htmlFor="confirmationEmail" className="text-xs font-medium text-gray-700">Confirmer Email *</label>
+                  <input id="confirmationEmail" type="email" name="confirmationEmail" value={formData.confirmationEmail} onChange={handleChange} className={`${inputClassName} ${errors.confirmationEmail ? "border-red-500" : ""}`} placeholder="Confirmer" aria-required="true" />
+                  {errors.confirmationEmail && <p className="text-red-500 text-xs">{errors.confirmationEmail}</p>}
+                </div>
+              </div>
+              <div>
+                <label htmlFor="nationalite" className="text-xs font-medium text-gray-700">Nationalité *</label>
+                <select id="nationalite" name="nationalite" value={formData.nationalite} onChange={handleChange} className={`${inputClassName} ${errors.nationalite ? "border-red-500" : ""}`} aria-required="true">
+                  <option value="">--</option>
+                  {nationalities.map((nat) => (
+                    <option key={nat.code} value={nat.name}>{nat.name}</option>
+                  ))}
+                </select>
+                {errors.nationalite && <p className="text-red-500 text-xs">{errors.nationalite}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="dateNaissance" className="text-xs font-medium text-gray-700">Date Naissance *</label>
+                  <input
+                    id="dateNaissance"
+                    type="date"
+                    name="dateNaissance"
+                    value={formData.dateNaissance}
+                    onChange={handleChange}
+                    max={getDateSeizeYearsAgo()}
+                    className={`${inputClassName} ${errors.dateNaissance ? "border-red-500" : ""}`}
+                    aria-required="true"
+                  />
+                  {errors.dateNaissance && <p className="text-red-500 text-xs">{errors.dateNaissance}</p>}
+                </div>
+                <div>
+                  <label htmlFor="codePostalNaissance" className="text-xs font-medium text-gray-700">Lieu Naissance *</label>
+                  <input id="codePostalNaissance" type="text" name="codePostalNaissance" value={formData.codePostalNaissance} onChange={handleChange} className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`} placeholder="Ville, Pays" aria-required="true" />
+                  {errors.codePostalNaissance && <p className="text-red-500 text-xs">{errors.codePostalNaissance}</p>}
+                </div>
+              </div>
             </div>
-            <div>
-              <label htmlFor="nom" className="text-xs font-medium text-gray-700">Nom *</label>
-              <input id="nom" type="text" name="nom" value={formData.nom} onChange={handleChange} className={`${inputClassName} ${errors.nom ? "border-red-500" : ""}`} placeholder="Nom" aria-required="true" />
-              {errors.nom && <p className="text-red-500 text-xs">{errors.nom}</p>}
+          </fieldset>
+
+          <fieldset className="border p-3 rounded" aria-labelledby="driving-license-legend">
+            <legend id="driving-license-legend" className="text-lg font-bold text-gray-800 mb-2">Permis de Conduire</legend>
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label htmlFor="numeroPermis" className="text-xs font-medium text-gray-700">Numéro Permis *</label>
+                <input id="numeroPermis" type="text" name="numeroPermis" value={formData.numeroPermis} onChange={handleChange} className={`${inputClassName} ${errors.numeroPermis ? "border-red-500" : ""}`} placeholder="12AB34567" aria-required="true" />
+                {errors.numeroPermis && <p className="text-red-500 text-xs">{errors.numeroPermis}</p>}
+              </div>
+              <div>
+                <label htmlFor="dateDelivrancePermis" className="text-xs font-medium text-gray-700">Date Délivrance *</label>
+                <input id="dateDelivrancePermis" type="date" name="dateDelivrancePermis" value={formData.dateDelivrancePermis} onChange={handleChange} className={`${inputClassName} ${errors.dateDelivrancePermis ? "border-red-500" : ""}`} aria-required="true" />
+                {errors.dateDelivrancePermis && <p className="text-red-500 text-xs">{errors.dateDelivrancePermis}</p>}
+              </div>
+              <div>
+                <label htmlFor="prefecture" className="text-xs font-medium text-gray-700">Préfecture *</label>
+                <select id="prefecture" name="prefecture" value={formData.prefecture} onChange={handleChange} className={`${inputClassName} ${errors.prefecture ? "border-red-500" : ""}`} aria-required="true">
+                  <option value="">--</option>
+                  {prefecturesData.map((pref) => (
+                    <option key={pref.codePostal} value={pref.prefecture}>{pref.prefecture} ({pref.codePostal})</option>
+                  ))}
+                </select>
+                {errors.prefecture && <p className="text-red-500 text-xs">{errors.prefecture}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="etatPermis" className="text-xs font-medium text-gray-700">État Permis *</label>
+                  <select id="etatPermis" name="etatPermis" value={formData.etatPermis} onChange={handleChange} className={`${inputClassName} ${errors.etatPermis ? "border-red-500" : ""}`} aria-required="true">
+                    <option value="">--</option>
+                    <option value="Valide">Valide</option>
+                    <option value="Invalide">Invalide</option>
+                  </select>
+                  {errors.etatPermis && <p className="text-red-500 text-xs">{errors.etatPermis}</p>}
+                </div>
+                <div>
+                  <label htmlFor="casStage" className="text-xs font-medium text-gray-700">Cas Stage *</label>
+                  <select id="casStage" name="casStage" value={formData.casStage} onChange={handleChange} className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`} aria-required="true">
+                    <option value="">--</option>
+                    {casStageData.map((cas, index) => (
+                      <option key={index} value={cas.description}>{cas.type} - {cas.description}</option>
+                    ))}
+                  </select>
+                  {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
+                </div>
+              </div>
+
+              <div className="mt-3 border-t pt-3">
+                <h3 className="text-xs font-semibold text-indigo-600 mb-2">Téléchargements</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label htmlFor="scanPermisRecto" className="text-xs font-medium text-gray-700">Permis Recto</label>
+                    <input id="scanPermisRecto" type="file" name="scanPermisRecto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`} />
+                    {uploadProgress.scanPermisRecto > 0 && uploadProgress.scanPermisRecto < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanPermisRecto}%` }}></div>
+                      </div>
+                    )}
+                    {errors.scanPermisRecto && <p className="text-red-500 text-xs">{errors.scanPermisRecto}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="scanPermisVerso" className="text-xs font-medium text-gray-700">Permis Verso</label>
+                    <input id="scanPermisVerso" type="file" name="scanPermisVerso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`} />
+                    {uploadProgress.scanPermisVerso > 0 && uploadProgress.scanPermisVerso < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanPermisVerso}%` }}></div>
+                      </div>
+                    )}
+                    {errors.scanPermisVerso && <p className="text-red-500 text-xs">{errors.scanPermisVerso}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="scanIdentiteRecto" className="text-xs font-medium text-gray-700">ID Recto</label>
+                    <input id="scanIdentiteRecto" type="file" name="scanIdentiteRecto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`} />
+                    {uploadProgress.scanIdentiteRecto > 0 && uploadProgress.scanIdentiteRecto < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanIdentiteRecto}%` }}></div>
+                      </div>
+                    )}
+                    {errors.scanIdentiteRecto && <p className="text-red-500 text-xs">{errors.scanIdentiteRecto}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="scanIdentiteVerso" className="text-xs font-medium text-gray-700">ID Verso</label>
+                    <input id="scanIdentiteVerso" type="file" name="scanIdentiteVerso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`} />
+                    {uploadProgress.scanIdentiteVerso > 0 && uploadProgress.scanIdentiteVerso < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanIdentiteVerso}%` }}></div>
+                      </div>
+                    )}
+                    {errors.scanIdentiteVerso && <p className="text-red-500 text-xs">{errors.scanIdentiteVerso}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="letter_48N" className="text-xs font-medium text-gray-700">Lettre 48N</label>
+                    <input id="letter_48N" type="file" name="letter_48N" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.letter_48N ? "border-red-500" : ""}`} />
+                    {uploadProgress.letter_48N > 0 && uploadProgress.letter_48N < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.letter_48N}%` }}></div>
+                      </div>
+                    )}
+                    {errors.letter_48N && <p className="text-red-500 text-xs">{errors.letter_48N}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="extraDocument" className="text-xs font-medium text-gray-700">Document Supplémentaire</label>
+                    <input id="extraDocument" type="file" name="extraDocument" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.extraDocument ? "border-red-500" : ""}`} />
+                    {uploadProgress.extraDocument > 0 && uploadProgress.extraDocument < 100 && (
+                      <div className="mt-1 h-2 bg-gray-200 rounded">
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.extraDocument}%` }}></div>
+                      </div>
+                    )}
+                    {errors.extraDocument && <p className="text-red-500 text-xs">{errors.extraDocument}</p>}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div>
-            <label htmlFor="prenom" className="text-xs font-medium text-gray-700">Prénom *</label>
-            <input id="prenom" type="text" name="prenom" value={formData.prenom} onChange={handleChange} className={`${inputClassName} ${errors.prenom ? "border-red-500" : ""}`} placeholder="Prénom" aria-required="true" />
-            {errors.prenom && <p className="text-red-500 text-xs">{errors.prenom}</p>}
-          </div>
-          <div>
-            <label htmlFor="adresse" className="text-xs font-medium text-gray-700">Adresse *</label>
-            <input id="adresse" type="text" name="adresse" value={formData.adresse} onChange={handleAddressChange} className={`${inputClassName} ${errors.adresse ? "border-red-500" : ""}`} placeholder="Adresse" aria-required="true" />
-            {isLoadingAddress && <span className="absolute right-2 top-8 text-gray-400 text-xs">Chargement...</span>}
-            {showSuggestions && addressSuggestions.length > 0 && (
-              <ul className="absolute z-10 bg-white border w-full max-h-40 overflow-auto">
-                {addressSuggestions.map((suggestion, index) => (
-                  <li key={index} onClick={() => handleSuggestionClick(suggestion)} className="p-1 hover:bg-gray-100 cursor-pointer text-xs">{suggestion.properties.label}</li>
-                ))}
-              </ul>
-            )}
-            {errors.adresse && <p className="text-red-500 text-xs">{errors.adresse}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="codePostal" className="text-xs font-medium text-gray-700">Code Postal *</label>
-              <input id="codePostal" type="text" name="codePostal" value={formData.codePostal} onChange={handleChange} className={`${inputClassName} ${errors.codePostal ? "border-red-500" : ""}`} placeholder="75001" aria-required="true" />
-              {errors.codePostal && <p className="text-red-500 text-xs">{errors.codePostal}</p>}
-            </div>
-            <div>
-              <label htmlFor="ville" className="text-xs font-medium text-gray-700">Ville *</label>
-              <input id="ville" type="text" name="ville" value={formData.ville} onChange={handleChange} className={`${inputClassName} ${errors.ville ? "border-red-500" : ""}`} placeholder="Ville" aria-required="true" />
-              {errors.ville && <p className="text-red-500 text-xs">{errors.ville}</p>}
-            </div>
-          </div>
-          <div>
-            <label htmlFor="telephone" className="text-xs font-medium text-gray-700">Téléphone *</label>
-            <input id="telephone" type="tel" name="telephone" value={formData.telephone} onChange={handleChange} className={`${inputClassName} ${errors.telephone ? "border-red-500" : ""}`} placeholder="0123456789" aria-required="true" />
-            {errors.telephone && <p className="text-red-500 text-xs">{errors.telephone}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="email" className="text-xs font-medium text-gray-700">Email *</label>
-              <input id="email" type="email" name="email" value={formData.email} onChange={handleChange} className={`${inputClassName} ${errors.email ? "border-red-500" : ""}`} placeholder="Email" aria-required="true" />
-              {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
-            </div>
-            <div>
-              <label htmlFor="confirmationEmail" className="text-xs font-medium text-gray-700">Confirmer Email *</label>
-              <input id="confirmationEmail" type="email" name="confirmationEmail" value={formData.confirmationEmail} onChange={handleChange} className={`${inputClassName} ${errors.confirmationEmail ? "border-red-500" : ""}`} placeholder="Confirmer" aria-required="true" />
-              {errors.confirmationEmail && <p className="text-red-500 text-xs">{errors.confirmationEmail}</p>}
-            </div>
-          </div>
-          <div>
-            <label htmlFor="nationalite" className="text-xs font-medium text-gray-700">Nationalité *</label>
-            <select id="nationalite" name="nationalite" value={formData.nationalite} onChange={handleChange} className={`${inputClassName} ${errors.nationalite ? "border-red-500" : ""}`} aria-required="true">
-              <option value="">--</option>
-              {nationalities.map((nat) => <option key={nat.code} value={nat.name}>{nat.name}</option>)}
-            </select>
-            {errors.nationalite && <p className="text-red-500 text-xs">{errors.nationalite}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="dateNaissance" className="text-xs font-medium text-gray-700">Date Naissance *</label>
-              <input id="dateNaissance" type="date" name="dateNaissance" value={formData.dateNaissance} onChange={handleChange} className={`${inputClassName} ${errors.dateNaissance ? "border-red-500" : ""}`} aria-required="true" />
-              {errors.dateNaissance && <p className="text-red-500 text-xs">{errors.dateNaissance}</p>}
-            </div>
-            <div>
-              <label htmlFor="codePostalNaissance" className="text-xs font-medium text-gray-700">Lieu Naissance *</label>
-              <input id="codePostalNaissance" type="text" name="codePostalNaissance" value={formData.codePostalNaissance} onChange={handleChange} className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`} placeholder="Ville, Pays" aria-required="true" />
-              {errors.codePostalNaissance && <p className="text-red-500 text-xs">{errors.codePostalNaissance}</p>}
-            </div>
-          </div>
+          </fieldset>
         </div>
-      </fieldset>
 
-      {/* Permis de Conduire + Téléchargements */}
-      <fieldset className="border p-3 rounded" aria-labelledby="driving-license-legend">
-        <legend id="driving-license-legend" className="text-lg font-bold text-gray-800 mb-2">Permis de Conduire</legend>
-        <div className="grid grid-cols-1 gap-3">
-          <div>
-            <label htmlFor="numeroPermis" className="text-xs font-medium text-gray-700">Numéro Permis *</label>
-            <input id="numeroPermis" type="text" name="numeroPermis" value={formData.numeroPermis} onChange={handleChange} className={`${inputClassName} ${errors.numeroPermis ? "border-red-500" : ""}`} placeholder="12AB34567" aria-required="true" />
-            {errors.numeroPermis && <p className="text-red-500 text-xs">{errors.numeroPermis}</p>}
-          </div>
-          <div>
-            <label htmlFor="dateDelivrancePermis" className="text-xs font-medium text-gray-700">Date Délivrance *</label>
-            <input id="dateDelivrancePermis" type="date" name="dateDelivrancePermis" value={formData.dateDelivrancePermis} onChange={handleChange} className={`${inputClassName} ${errors.dateDelivrancePermis ? "border-red-500" : ""}`} aria-required="true" />
-            {errors.dateDelivrancePermis && <p className="text-red-500 text-xs">{errors.dateDelivrancePermis}</p>}
-          </div>
-          <div>
-            <label htmlFor="prefecture" className="text-xs font-medium text-gray-700">Préfecture *</label>
-            <select id="prefecture" name="prefecture" value={formData.prefecture} onChange={handleChange} className={`${inputClassName} ${errors.prefecture ? "border-red-500" : ""}`} aria-required="true">
-              <option value="">--</option>
-              {prefecturesData.map((pref) => <option key={pref.codePostal} value={pref.prefecture}>{pref.prefecture} ({pref.codePostal})</option>)}
-            </select>
-            {errors.prefecture && <p className="text-red-500 text-xs">{errors.prefecture}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="etatPermis" className="text-xs font-medium text-gray-700">État Permis *</label>
-              <select id="etatPermis" name="etatPermis" value={formData.etatPermis} onChange={handleChange} className={`${inputClassName} ${errors.etatPermis ? "border-red-500" : ""}`} aria-required="true">
-                <option value="">--</option>
-                <option value="Valide">Valide</option>
-                <option value="Invalide">Invalide</option>
-              </select>
-              {errors.etatPermis && <p className="text-red-500 text-xs">{errors.etatPermis}</p>}
-            </div>
-            <div>
-              <label htmlFor="casStage" className="text-xs font-medium text-gray-700">Cas Stage *</label>
-              <select id="casStage" name="casStage" value={formData.casStage} onChange={handleChange} className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`} aria-required="true">
-                <option value="">--</option>
-                {casStageData.map((cas, index) => <option key={index} value={cas.description}>{cas.type} - {cas.description}</option>)}
-              </select>
-              {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
-            </div>
-          </div>
-
-          {/* Téléchargements intégrés ici */}
-          <div className="mt-3 border-t pt-3">
-            <h3 className="text-xs font-semibold text-indigo-600 mb-2">Téléchargements</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label htmlFor="scanPermisRecto" className="text-xs font-medium text-gray-700">Permis Recto</label>
-                <input id="scanPermisRecto" type="file" name="scanPermisRecto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`} aria-required="true" />
-                {errors.scanPermisRecto && <p className="text-red-500 text-xs">{errors.scanPermisRecto}</p>}
-              </div>
-              <div>
-                <label htmlFor="scanPermisVerso" className="text-xs font-medium text-gray-700">Permis Verso</label>
-                <input id="scanPermisVerso" type="file" name="scanPermisVerso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`} aria-required="true" />
-                {errors.scanPermisVerso && <p className="text-red-500 text-xs">{errors.scanPermisVerso}</p>}
-              </div>
-              <div>
-                <label htmlFor="scanIdentiteRecto" className="text-xs font-medium text-gray-700">ID Recto</label>
-                <input id="scanIdentiteRecto" type="file" name="scanIdentiteRecto" onChange={handleFileChange} className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`} aria-required="true" />
-                {errors.scanIdentiteRecto && <p className="text-red-500 text-xs">{errors.scanIdentiteRecto}</p>}
-              </div>
-              <div>
-                <label htmlFor="scanIdentiteVerso" className="text-xs font-medium text-gray-700">ID Verso</label>
-                <input id="scanIdentiteVerso" type="file" name="scanIdentiteVerso" onChange={handleFileChange} className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`} aria-required="true" />
-                {errors.scanIdentiteVerso && <p className="text-red-500 text-xs">{errors.scanIdentiteVerso}</p>}
-              </div>
-            </div>
-          </div>
+        <div className="mt-4 flex flex-col items-center space-y-3">
+          <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
+            <input id="acceptConditions" type="checkbox" name="acceptConditions" checked={formData.acceptConditions} onChange={handleChange} className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} aria-required="true" />
+            J'accepte les conditions générales *
+          </label>
+          {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
+          <button type="submit" disabled={isSubmitting} className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}>
+            {isSubmitting ? "Envoi..." : "Enregistrer"}
+          </button>
+          {errors.submit && <p className="text-red-500 text-xs">{errors.submit}</p>}
         </div>
-      </fieldset>
+      </form>
     </div>
-
-    {/* Checkbox et Bouton */}
-    <div className="mt-4 flex flex-col items-center space-y-3">
-      <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
-        <input id="acceptConditions" type="checkbox" name="acceptConditions" checked={formData.acceptConditions} onChange={handleChange} className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} aria-required="true" />
-        J'accepte les conditions générales *
-      </label>
-      {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
-      <button type="submit" disabled={isSubmitting} className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}>
-        {isSubmitting ? "Envoi..." : "Enregistrer"}
-      </button>
-      {errors.submit && <p className="text-red-500 text-xs">{errors.submit}</p>}
-    </div>
-  </form>
-</div>
   );
 }

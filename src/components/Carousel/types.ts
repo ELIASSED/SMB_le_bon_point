@@ -28,8 +28,8 @@ export interface RegistrationInfo {
   civilite: string;
   nom: string;
   prenom: string;
-  prenom1: string;
-  prenom2: string;
+  prenom1?: string;
+  prenom2?: string;
   adresse: string;
   codePostal: string;
   ville: string;
@@ -38,7 +38,7 @@ export interface RegistrationInfo {
   confirmationEmail: string;
   nationalite: string;
   dateNaissance: string;
-  lieuNaissance: string;
+  lieuNaissance?: string;
   codePostalNaissance: string;
   numeroPermis: string;
   dateDelivrancePermis: string;
@@ -49,9 +49,11 @@ export interface RegistrationInfo {
   scanIdentiteVerso: File | null;
   scanPermisRecto: File | null;
   scanPermisVerso: File | null;
+  letter_48N: File | null;
+  extraDocument: File | null;
   acceptConditions: boolean;
+  commitToUpload?: boolean;
 }
-
 
 export interface DrivingLicenseInfo {
   numeroPermis: string;
@@ -61,13 +63,17 @@ export interface DrivingLicenseInfo {
 }
 
 export interface AddressSuggestion {
-properties: {
-  label: string;
-  postcode: string;
-  city: string;
-  name: string;
-};
+  properties: {
+    name: string;
+    postcode: string;
+    city: string;
+    label: string;
+    street?: string;
+    context?: string;
+  };
 }
+
+
 
 export interface PersonalInfo {
 civilite: string;
@@ -115,13 +121,5 @@ scanPermisVerso: File | null;
 commentaire: string | null;
 }
 
-export interface AddressSuggestion {
-properties: {
-  name: string;
-  postcode: string;
-  city: string;
-  label: string;
-};
-}
 
 export type FormDataType = any; // Remplacez par le type approprié si nécessaire

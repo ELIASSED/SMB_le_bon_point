@@ -20,18 +20,32 @@ export async function fetchStages() {
     return response.json();
   }
 
+  async function generateAttestation(sessionId: number, userId: number) {
+    try {
+      const response = await fetch('/api/generate-attestation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, userId }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+      const data = await response.json();
+      alert(data.message); // Or show in UI
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la génération de l’attestation.');
+    }
+  }
   
-export async function registerUser(data: { stageId: number; userData: any }) {
+export async function registerUser(data: { stageId: number; userData: RegistrationInfo }) {
   const response = await fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const result = await response.json();
-  if (!response.ok) {
-    throw new Error(result.error || "Erreur lors de l'inscription");
-  }
-  return result;
+  return response.json();
 }
   
   export async function sendConfirmationEmail(data: { to: string; subject: string; text: string; html: string; }) {

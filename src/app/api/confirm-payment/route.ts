@@ -76,13 +76,13 @@ export async function POST(request: Request) {
     });
 
     // Génération du PDF hors transaction
-    const pdfBuffer = await generateAttestation(updatedSessionUser as SessionUsers & { user: User; session: Session });
+    // const pdfBuffer = await generateAttestation(updatedSessionUser as SessionUsers & { user: User; session: Session });
 
     // Mise à jour de l’utilisateur avec le PDF après la transaction
-    await prisma.user.update({
-      where: { id: userId },
-      data: { attestationPdf: pdfBuffer },
-    });
+    // await prisma.user.update({
+    //   where: { id: userId },
+    //   data: { attestationPdf: pdfBuffer },
+    // });
 
     console.log('✅ Paiement confirmé et PDF stocké dans la base de données:', updatedSessionUser);
 

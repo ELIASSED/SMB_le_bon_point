@@ -6,11 +6,7 @@ const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-
-  // Paramètres de tri avec valeurs par défaut sécurisées
-  const orderDate = url.searchParams.get("orderDate") === "desc" ? "desc" : "asc";
-  const orderPrice = url.searchParams.get("orderPrice") === "desc" ? "desc" : "asc";
-
+  
   try {
     const sessions = await prisma.session.findMany({
       where: {
@@ -42,11 +38,7 @@ export async function GET(request: Request) {
             numeroAutorisationPrefectorale: true,
           },
         },
-      },
-      orderBy: [
-        { startDate: orderDate }, // Tri par date
-        { price: orderPrice },    // Tri par prix
-      ],
+      }
     });
 
     return NextResponse.json(sessions, { status: 200 });

@@ -37,12 +37,7 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
             </div>
           </div>
          
-          <p>
-            <strong className="font-medium">Prix :</strong>{" "}
-            <span className="text-green-600 font-semibold">
-              {selectedStage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-            </span>
-          </p>
+       
         </div>
 
         {/* Colonne 2 : Animateurs */}
@@ -63,6 +58,12 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
 
         
         </div>
+        <p>
+            <strong className="font-medium">Prix :</strong>{" "}
+            <span className="text-green-600 font-semibold">
+              {selectedStage.price.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+            </span>
+          </p>
       </div>
     </div>
   );

@@ -16,38 +16,27 @@ export default function Hero() {
   };
 
   return (
-    <section className="rounded-lg relative bg-beige text-white overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col-reverse lg:flex-row items-center justify-between">
+    <section className="absolute inset-0 flex items-center justify-center text-white">
+      <div className="container px-4 sm:px-6 lg:px-8 relative h-full">
+        <div className="h-full flex flex-col">
           {/* Contenu textuel */}
-          <div className="lg:w-1/2">
-            <div className="space-y-4">
-              <h1 className="rounded-lg p-2 bg-yellow font-bold text-4xl text-teal">
-                Récupérez Vos Points à Saint-Maur-des-Fossés
+          <div className="pt-8 md:pt-12 lg:pt-16">
+            <div className="space-y-4 p-4  inline-block">
+              <h1 className="font-bold  bg-black bg-opacity-5 text-2xl sm:text-3xl md:text-4xl text-white">
+                Récupérez Vos Points à Saint-Maur-des-Fossés (Site en demo)
               </h1>
-              <p className="text-lg font-bold text-teal">
-                Participez à nos stages agréés et reprenez confiance au volant.
-              </p>
-              <button
-                type="button"
-                onClick={handleRedirect}
-                className={`bg-yellow text-teal font-bold py-3 px-6 rounded-full transition-transform duration-300 ease-in-out hover:scale-110 hover:bg-yellow-dark ${isSliding ? 'transform scale-90 opacity-50' : ''}`}
-              >
-                Voir les stages
-              </button> 
             </div>
           </div>
-          {/* Image */} 
-          <div className={`lg:w-1/2 transition-all duration-1000 ease-in-out ${isSliding ? 'transform -translate-x-full' : ''}`}>
-            <div className="bg-primary p-1 rounded-lg shadow-lg">
-              <Image
-                src="/images/volant.png"
-                alt="Stage de récupération de points"
-                width={800}
-                height={400}
-                className="rounded-lg object-cover"
-              />
-            </div>
+          
+          {/* Bouton positionné en bas à droite */}
+          <div className="mt-auto mb-6 md:mb-8 lg:mb-10 flex justify-end">
+            <button
+              type="button"
+              onClick={handleRedirect}
+              className={`bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-full transition-transform duration-300 ease-in-out hover:scale-110 ${isSliding ? 'transform scale-90 opacity-50' : ''}`}
+            >
+              Voir les stages
+            </button>
           </div>
         </div>
       </div>

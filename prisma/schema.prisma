@@ -37,6 +37,8 @@ model User {
   id_verso             String?
   permis_recto         String?
   permis_verso         String?
+  letter_48N           String?
+  extraDocument        String?
   numeroPermis         String
   dateDelivrancePermis DateTime
   prefecture           String
@@ -75,6 +77,7 @@ model Session {
   updatedAt       DateTime       @updatedAt
   instructorId    Int
   psychologueId   Int
+  attendanceSheetPdf Bytes?
   isArchived      Boolean        @default(false)
   instructor      Instructor     @relation(fields: [instructorId], references: [id])
   psychologue     Psychologue    @relation(fields: [psychologueId], references: [id])

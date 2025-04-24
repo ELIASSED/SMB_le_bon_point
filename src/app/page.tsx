@@ -9,11 +9,20 @@ import FeaturesGrid from '../components/Homepage/FeatureGrid';
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          {/* Section Introduction */}
+      <div className="relative w-full overflow-hidden shadow-xl" style={{ height: "80vh", minHeight: "300px", maxHeight: "600px" }}>
+        <div className="absolute inset-0 transform ">
+          <Image 
+            src="/image4.jpg" 
+            alt="Centre de récupération de points à Saint-Maur-des-Fossés" 
+            fill 
+            className="object-cover"
+            priority
+          />
         </div>
+        <Hero />
+      </div>
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <p className="mb-4 text-gray-800">
           Découvrez notre Centre de Récupération de Points Permis à St Maur des Fossés, à deux pas du RER A Saint-Maur le Parc.
           ‍Avec un parking, plus de 200m2 d'espace, salle de repos, coins repas, et zones de détente, nous rendons la récupération de points aussi facile que confortable.
@@ -25,10 +34,6 @@ export default function HomePage() {
         <p className="mb-6 text-gray-700">
           Notre centre est situé au cœur de Saint-Maur, facilement accessible en transport en commun ou en voiture. Les sessions ont lieu régulièrement, et les places sont limitées (maximum 20 participants).
         </p>
-        <div className="flex justify-center mb-12">
-          <BookingButton />
-        </div>
-
         {/* Location Section */}
         <div className="bg-gray-50 rounded-lg shadow-md overflow-hidden my-12">
           <div className="grid md:grid-cols-2 gap-6">
@@ -58,15 +63,10 @@ export default function HomePage() {
                 referrerPolicy="no-referrer-when-downgrade"
                 className="w-full h-full min-h-80"
               />
+              <BookingButton />
             </div>
           </div>
         </div>
-
-        {/* External Link Button */}
-        <div className="my-12 flex justify-center">
-          <ExternalLinkButton />
-        </div>
-
         {/* FAQ Section */}
         <FAQ />
       </div>
