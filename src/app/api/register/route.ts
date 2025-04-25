@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { RegistrationInfo } from "@/components/Carousel/types";
@@ -66,7 +67,12 @@ export async function POST(req: NextRequest) {
     console.log("Utilisateur créé:", {
       id: user.id,
       email: user.email,
+      permis_recto: user.permis_recto,
+      permis_verso: user.permis_verso,
+      id_recto: user.id_recto,
+      id_verso: user.id_verso,
       letter_48N: user.letter_48N,
+      extraDocument: user.extraDocument,
     });
 
     return NextResponse.json({ user }, { status: 200 });

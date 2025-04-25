@@ -161,8 +161,6 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
         return startDay === 4 && endDay === 5;
       case "ven-sam":
         return startDay === 5 && endDay === 6;
-      case "sam-dim":
-        return (startDay === 6 && endDay === 0) || (startDay === 6 && endDay === 6) || (startDay === 0 && endDay === 0);
       default:
         return true;
     }

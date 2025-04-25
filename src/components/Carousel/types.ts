@@ -1,5 +1,4 @@
 // src/components/Carousel/types.ts
-// components/types.ts
 export interface Stage {
   id: number;
   numeroStageAnts: string;
@@ -15,7 +14,6 @@ export interface Stage {
     firstName: string;
     lastName: string;
     numeroAutorisationPrefectorale: number;
-
   };
   psychologue: {
     firstName: string;
@@ -45,12 +43,12 @@ export interface RegistrationInfo {
   prefecture: string;
   etatPermis: string;
   casStage: string;
-  scanIdentiteRecto: File | null;
-  scanIdentiteVerso: File | null;
-  scanPermisRecto: File | null;
-  scanPermisVerso: File | null;
-  letter_48N: File | null;
-  extraDocument: File | null;
+  id_recto: string | null;
+  id_verso: string | null;
+  permis_recto: string | null;
+  permis_verso: string | null;
+  letter_48N: string | null;
+  extraDocument: string | null;
   acceptConditions: boolean;
   commitToUpload?: boolean;
 }
@@ -73,53 +71,51 @@ export interface AddressSuggestion {
   };
 }
 
-
-
 export interface PersonalInfo {
-civilite: string;
-nom: string;
-prenom: string;
-prenom1?: string;
-prenom2?: string;
-adresse: string;
-codePostal: string;
-ville: string;
-dateNaissance: string;
-codePostalNaissance: string;
-nationalite: string;
-telephone: string;
-email: string;
-confirmationEmail: string;
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1?: string;
+  prenom2?: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  dateNaissance: string;
+  codePostalNaissance: string;
+  nationalite: string;
+  telephone: string;
+  email: string;
+  confirmationEmail: string;
 }
-
 
 export interface UserFormData {
-civilite: string;
-nom: string;
-prenom: string;
-prenom1: string;
-prenom2: string;
-adresse: string;
-codePostal: string;
-ville: string;
-telephone: string;
-email: string;
-confirmationEmail: string;
-nationalite: string;
-dateNaissance: string;
-lieuNaissance: string;
-codePostalNaissance: string;
-numeroPermis: string;
-dateDelivrancePermis: string;
-prefecture: string;
-etatPermis: string;
-casStage: string;
-scanIdentiteRecto: File | null;
-scanIdentiteVerso: File | null;
-scanPermisRecto: File | null;
-scanPermisVerso: File | null;
-commentaire: string | null;
+  civilite: string;
+  nom: string;
+  prenom: string;
+  prenom1: string;
+  prenom2: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  telephone: string;
+  email: string;
+  confirmationEmail: string;
+  nationalite: string;
+  dateNaissance: string;
+  lieuNaissance: string;
+  codePostalNaissance: string;
+  numeroPermis: string;
+  dateDelivrancePermis: string;
+  prefecture: string;
+  etatPermis: string;
+  casStage: string;
+  id_recto: string | null;
+  id_verso: string | null;
+  permis_recto: string | null;
+  permis_verso: string | null;
+  letter_48N: string | null;
+  extraDocument: string | null;
+  commentaire: string | null;
 }
-
 
 export type FormDataType = any; // Remplacez par le type approprié si nécessaire

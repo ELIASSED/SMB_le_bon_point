@@ -1,4 +1,3 @@
-// src/components/Steps/PersonalInfoStep.tsx
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
@@ -9,8 +8,6 @@ import nationalitiesData from "../nationalite.json";
 import casStageData from "../cas_stage.json";
 import prefecturesData from "../prefectures.json";
 import { supabase } from "@/lib/supabaseClient";
-import imageCompression from 'browser-image-compression';
-
 
 interface PersonalInfoStepProps {
   selectedStage?: Stage;
@@ -46,10 +43,10 @@ export default function PersonalInfoStep({
     prefecture: "",
     etatPermis: "",
     casStage: "",
-    scanIdentiteRecto: null,
-    scanIdentiteVerso: null,
-    scanPermisRecto: null,
-    scanPermisVerso: null,
+    id_recto: null,
+    id_verso: null,
+    permis_recto: null,
+    permis_verso: null,
     letter_48N: null,
     extraDocument: null,
     acceptConditions: false,
@@ -87,20 +84,17 @@ export default function PersonalInfoStep({
     }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
-    let file = e.target.files?.[0] || null;
+    const file = e.target.files?.[0] || null;
     if (file && file.size > 20 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, [name]: "Le fichier dépasse la taille maximale de 5 Mo." }));
+      setErrors((prev) => ({ ...prev, [name]: "Le fichier dépasse la taille maximale de 20 Mo." }));
       return;
     }
-    if (file && file.type.startsWith('image/')) {
-      try {
-        file = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
-        console.log(`Fichier compressé pour ${name}:`, file.name);
-      } catch (error) {
-        console.error(`Erreur de compression pour ${name}:`, error);
-      }
+    if (file && file.size === 0) {
+      setErrors((prev) => ({ ...prev, [name]: "Le fichier est vide ou corrompu." }));
+      return;
     }
     setFormData((prev) => ({ ...prev, [name]: file }));
     setUploadProgress((prev) => ({ ...prev, [name]: 0 }));
@@ -139,59 +133,186 @@ export default function PersonalInfoStep({
   };
 
   const uploadFileWithRetry = async (file: File, filePath: string, retries = 3): Promise<string> => {
+    // Vérifier si le fichier est valide avant de tenter l'upload
+    if (!file || file.size === 0) {
+      throw new Error(`Fichier invalide pour ${filePath}`);
+    }
+  
+    console.log(`Début de l'upload pour ${filePath}, taille: ${file.size} octets, type: ${file.type}`);
+    
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
+        // Ajout de logs pour le diagnostic
+        console.log(`Tentative ${attempt}/${retries} pour ${filePath}`);
+        
+        // S'assurer que le client Supabase est bien initialisé
+        if (!supabase || !supabase.storage) {
+          throw new Error("Client Supabase non initialisé correctement");
+        }
+        
+        // Upload avec monitoring de progression
         const { data, error } = await supabase.storage
           .from("documents")
-          .upload(filePath, file, { upsert: true });
-
-        if (error) throw error;
-
-        const { publicUrl } = supabase.storage.from("documents").getPublicUrl(filePath).data;
-        console.log(`Upload réussi pour ${filePath}:`, publicUrl);
-        return publicUrl;
+          .upload(filePath, file, { 
+            upsert: true,
+            // Ajouter un handler de progression si nécessaire
+            onUploadProgress: (progress) => {
+              const percentComplete = Math.round((progress.loaded / progress.total) * 100);
+              setUploadProgress((prev) => ({ 
+                ...prev, 
+                [filePath.split('/')[1]]: percentComplete 
+              }));
+            }
+          });
+  
+        if (error) {
+          console.error(`Erreur Supabase pour ${filePath}:`, error);
+          throw error;
+        }
+  
+        if (!data || !data.path) {
+          throw new Error(`Aucun chemin retourné pour ${filePath}`);
+        }
+  
+        const { data: urlData } = supabase.storage.from("documents").getPublicUrl(data.path);
+        
+        if (!urlData || !urlData.publicUrl) {
+          throw new Error(`Impossible d'obtenir l'URL publique pour ${filePath}`);
+        }
+  
+        console.log(`Upload réussi pour ${filePath}:`, urlData.publicUrl);
+        return urlData.publicUrl;
       } catch (error: any) {
         console.error(`Tentative ${attempt} échouée pour ${filePath}:`, error.message);
-        if (attempt === retries) throw new Error(`Échec de l'upload de ${filePath} après ${retries} tentatives: ${error.message}`);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+        
+        // Si c'est la dernière tentative, propager l'erreur
+        if (attempt === retries) {
+          throw new Error(`Échec de l'upload de ${filePath} après ${retries} tentatives: ${error.message}`);
+        }
+        
+        // Attendre avant de réessayer avec un délai exponentiel
+        const delay = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s...
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
     throw new Error("Erreur inattendue dans uploadFileWithRetry");
   };
-
+  
+  // Correction de la fonction uploadFilesToSupabase
+  
   const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
     console.log("Début de l'upload des fichiers pour ID:", id);
     const uploadedPaths: { [key: string]: string } = {};
+    
+    // Vérifier que l'ID est valide
+    if (!id || typeof id !== 'string') {
+      throw new Error("ID utilisateur invalide pour l'upload");
+    }
+    
+    // Map des fichiers à uploader avec leurs champs correspondants
     const fileFields = {
-      scanPermisRecto: "permis_recto",
-      scanPermisVerso: "permis_verso",
-      scanIdentiteRecto: "id_recto",
-      scanIdentiteVerso: "id_verso",
+      id_recto: "id_recto",
+      id_verso: "id_verso",
+      permis_recto: "permis_recto",
+      permis_verso: "permis_verso",
       letter_48N: "letter_48N",
       extraDocument: "extraDocument",
     };
-
-    const uploadPromises = Object.entries(fileFields).map(async ([field, dbField]) => {
+  
+    // Upload séquentiel au lieu de parallèle pour éviter les problèmes de concurrence
+    for (const [field, dbField] of Object.entries(fileFields)) {
       const file = formData[field as keyof RegistrationInfo] as File | null;
-      if (file && file.size > 0) {
-        const filePath = `${id}/${dbField}/${Date.now()}_${file.name}`;
-        setUploadProgress((prev) => ({ ...prev, [field]: 10 })); // Initial progress
-        try {
-          const publicUrl = await uploadFileWithRetry(file, filePath);
-          uploadedPaths[field] = publicUrl;
-          setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
-        } catch (error: any) {
-          console.error(`Erreur pour ${field}:`, error.message);
-          setErrors((prev) => ({ ...prev, [field]: `Échec de l'upload: ${error.message}` }));
-        }
-      } else {
+      
+      if (!file) {
+        console.log(`Aucun fichier pour ${field}`);
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
+        continue;
       }
-    });
-
-    await Promise.all(uploadPromises);
+      
+      // Vérifier que le fichier est valide
+      if (file.size === 0) {
+        console.error(`Fichier vide pour ${field}`);
+        setErrors((prev) => ({ ...prev, [field]: "Fichier vide" }));
+        setUploadProgress((prev) => ({ ...prev, [field]: 0 }));
+        continue;
+      }
+  
+      // Créer un chemin unique pour chaque fichier
+      const timestamp = Date.now();
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `${id}/${dbField}/${timestamp}_${cleanFileName}`;
+      
+      console.log(`Tentative d'upload pour ${field}: ${filePath}`);
+      setUploadProgress((prev) => ({ ...prev, [field]: 10 })); // Initial progress
+      
+      try {
+        const publicUrl = await uploadFileWithRetry(file, filePath);
+        uploadedPaths[field] = publicUrl;
+        setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
+        console.log(`Upload réussi pour ${field}: ${publicUrl}`);
+      } catch (error: any) {
+        console.error(`Erreur pour ${field}:`, error.message);
+        setErrors((prev) => ({ ...prev, [field]: `Échec de l'upload: ${error.message}` }));
+        // Ne pas lancer d'erreur, continuer avec les autres fichiers
+        setUploadProgress((prev) => ({ ...prev, [field]: 0 }));
+      }
+    }
+  
     console.log("Tous les chemins uploadés:", uploadedPaths);
     return uploadedPaths;
+  };
+  
+  // Modification du handleSubmit pour gérer correctement les uploads
+  
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Soumission du formulaire déclenchée");
+    if (!validate()) {
+      console.log("Validation échouée:", errors);
+      return;
+    }
+  
+    setIsSubmitting(true);
+    try {
+      const formDataObj = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "acceptConditions" || key === "commitToUpload") return;
+        
+        // Ne pas ajouter les fichiers à FormData pour l'instant
+        if (!(value instanceof File) && value !== null && value !== undefined) {
+          formDataObj.append(key, value.toString());
+        }
+      });
+  
+      console.log("FormData initial sans fichiers:", Object.fromEntries(formDataObj));
+  
+      // S'assurer que l'email est disponible pour l'ID
+      if (!formData.email) {
+        throw new Error("Email requis pour l'upload des fichiers");
+      }
+  
+      // Upload des fichiers à Supabase
+      const uploadedPaths = await uploadFilesToSupabase(formData.email);
+      console.log("Chemins uploadés reçus:", uploadedPaths);
+  
+      // Ajouter les URLs des fichiers uploadés à FormData
+      Object.entries(uploadedPaths).forEach(([field, url]) => {
+        formDataObj.append(field, url);
+      });
+  
+      console.log("FormData final envoyé à onSubmit:", Object.fromEntries(formDataObj));
+  
+      const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
+      setRegistrationInfo(registrationData);
+  
+      await onSubmit(formDataObj);
+      console.log("Soumission réussie, transition vers l'étape suivante");
+    } catch (error: any) {
+      console.error("Erreur lors de la soumission:", error.message, error.stack);
+      setErrors((prev) => ({ ...prev, submit: error.message || "Erreur lors de l'envoi des données. Veuillez réessayer." }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const validate = () => {
@@ -216,6 +337,9 @@ export default function PersonalInfoStep({
       "etatPermis",
       "casStage",
       "acceptConditions",
+      // Uncomment to make some files mandatory
+      // "permis_recto",
+      // "id_recto",
     ];
 
     requiredFields.forEach((field) => {
@@ -243,10 +367,10 @@ export default function PersonalInfoStep({
 
     const allowedFileTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
     [
-      "scanPermisRecto",
-      "scanPermisVerso",
-      "scanIdentiteRecto",
-      "scanIdentiteVerso",
+      "id_recto",
+      "id_verso",
+      "permis_recto",
+      "permis_verso",
       "letter_48N",
       "extraDocument",
     ].forEach((field) => {
@@ -260,59 +384,7 @@ export default function PersonalInfoStep({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Soumission du formulaire déclenchée");
-    if (!validate()) {
-      console.log("Validation échouée:", errors);
-      return;
-    }
 
-    setIsSubmitting(true);
-    try {
-      const formDataObj = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "acceptConditions" || key === "commitToUpload") return;
-        if (value instanceof File && value.size > 0) {
-          formDataObj.append(key, value);
-        } else if (typeof value === "string" && value) {
-          formDataObj.append(key, value);
-        }
-      });
-
-      console.log("FormData initial:", Object.fromEntries(formDataObj));
-
-      const uploadedPaths = await uploadFilesToSupabase(formData.email);
-      console.log("Chemins uploadés reçus:", uploadedPaths);
-
-      if (uploadedPaths.scanPermisRecto) formDataObj.set("permis_recto", uploadedPaths.scanPermisRecto);
-      if (uploadedPaths.scanPermisVerso) formDataObj.set("permis_verso", uploadedPaths.scanPermisVerso);
-      if (uploadedPaths.scanIdentiteRecto) formDataObj.set("id_recto", uploadedPaths.scanIdentiteRecto);
-      if (uploadedPaths.scanIdentiteVerso) formDataObj.set("id_verso", uploadedPaths.scanIdentiteVerso);
-      if (uploadedPaths.letter_48N) formDataObj.set("letter_48N", uploadedPaths.letter_48N);
-      if (uploadedPaths.extraDocument) formDataObj.set("extraDocument", uploadedPaths.extraDocument);
-
-      formDataObj.delete("scanPermisRecto");
-      formDataObj.delete("scanPermisVerso");
-      formDataObj.delete("scanIdentiteRecto");
-      formDataObj.delete("scanIdentiteVerso");
-      formDataObj.delete("letter_48N");
-      formDataObj.delete("extraDocument");
-
-      console.log("FormData final envoyé à onSubmit:", Object.fromEntries(formDataObj));
-
-      const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
-      setRegistrationInfo(registrationData);
-
-      await onSubmit(formDataObj);
-      console.log("Soumission réussie, transition vers l'étape suivante");
-    } catch (error: any) {
-      console.error("Erreur lors de la soumission:", error.message);
-      setErrors((prev) => ({ ...prev, submit: error.message || "Erreur lors de l'envoi des données." }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (!selectedStage) {
     return (
@@ -486,44 +558,44 @@ export default function PersonalInfoStep({
                 <h3 className="text-xs font-semibold text-indigo-600 mb-2">Téléchargements</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label htmlFor="scanPermisRecto" className="text-xs font-medium text-gray-700">Permis Recto</label>
-                    <input id="scanPermisRecto" type="file" name="scanPermisRecto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisRecto ? "border-red-500" : ""}`} />
-                    {uploadProgress.scanPermisRecto > 0 && uploadProgress.scanPermisRecto < 100 && (
+                    <label htmlFor="permis_recto" className="text-xs font-medium text-gray-700">Permis Recto</label>
+                    <input id="permis_recto" type="file" name="permis_recto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.permis_recto ? "border-red-500" : ""}`} />
+                    {uploadProgress.permis_recto > 0 && uploadProgress.permis_recto < 100 && (
                       <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanPermisRecto}%` }}></div>
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_recto}%` }}></div>
                       </div>
                     )}
-                    {errors.scanPermisRecto && <p className="text-red-500 text-xs">{errors.scanPermisRecto}</p>}
+                    {errors.permis_recto && <p className="text-red-500 text-xs">{errors.permis_recto}</p>}
                   </div>
                   <div>
-                    <label htmlFor="scanPermisVerso" className="text-xs font-medium text-gray-700">Permis Verso</label>
-                    <input id="scanPermisVerso" type="file" name="scanPermisVerso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanPermisVerso ? "border-red-500" : ""}`} />
-                    {uploadProgress.scanPermisVerso > 0 && uploadProgress.scanPermisVerso < 100 && (
+                    <label htmlFor="permis_verso" className="text-xs font-medium text-gray-700">Permis Verso</label>
+                    <input id="permis_verso" type="file" name="permis_verso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.permis_verso ? "border-red-500" : ""}`} />
+                    {uploadProgress.permis_verso > 0 && uploadProgress.permis_verso < 100 && (
                       <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanPermisVerso}%` }}></div>
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_verso}%` }}></div>
                       </div>
                     )}
-                    {errors.scanPermisVerso && <p className="text-red-500 text-xs">{errors.scanPermisVerso}</p>}
+                    {errors.permis_verso && <p className="text-red-500 text-xs">{errors.permis_verso}</p>}
                   </div>
                   <div>
-                    <label htmlFor="scanIdentiteRecto" className="text-xs font-medium text-gray-700">ID Recto</label>
-                    <input id="scanIdentiteRecto" type="file" name="scanIdentiteRecto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanIdentiteRecto ? "border-red-500" : ""}`} />
-                    {uploadProgress.scanIdentiteRecto > 0 && uploadProgress.scanIdentiteRecto < 100 && (
+                    <label htmlFor="id_recto" className="text-xs font-medium text-gray-700">ID Recto</label>
+                    <input id="id_recto" type="file" name="id_recto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.id_recto ? "border-red-500" : ""}`} />
+                    {uploadProgress.id_recto > 0 && uploadProgress.id_recto < 100 && (
                       <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanIdentiteRecto}%` }}></div>
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_recto}%` }}></div>
                       </div>
                     )}
-                    {errors.scanIdentiteRecto && <p className="text-red-500 text-xs">{errors.scanIdentiteRecto}</p>}
+                    {errors.id_recto && <p className="text-red-500 text-xs">{errors.id_recto}</p>}
                   </div>
                   <div>
-                    <label htmlFor="scanIdentiteVerso" className="text-xs font-medium text-gray-700">ID Verso</label>
-                    <input id="scanIdentiteVerso" type="file" name="scanIdentiteVerso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.scanIdentiteVerso ? "border-red-500" : ""}`} />
-                    {uploadProgress.scanIdentiteVerso > 0 && uploadProgress.scanIdentiteVerso < 100 && (
+                    <label htmlFor="id_verso" className="text-xs font-medium text-gray-700">ID Verso</label>
+                    <input id="id_verso" type="file" name="id_verso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.id_verso ? "border-red-500" : ""}`} />
+                    {uploadProgress.id_verso > 0 && uploadProgress.id_verso < 100 && (
                       <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.scanIdentiteVerso}%` }}></div>
+                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_verso}%` }}></div>
                       </div>
                     )}
-                    {errors.scanIdentiteVerso && <p className="text-red-500 text-xs">{errors.scanIdentiteVerso}</p>}
+                    {errors.id_verso && <p className="text-red-500 text-xs">{errors.id_verso}</p>}
                   </div>
                   <div>
                     <label htmlFor="letter_48N" className="text-xs font-medium text-gray-700">Lettre 48N</label>
