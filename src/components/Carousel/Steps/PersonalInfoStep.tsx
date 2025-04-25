@@ -625,9 +625,9 @@ export default function PersonalInfoStep({
 
         <div className="mt-4 flex flex-col items-center space-y-3">
           <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
-            <input id="acceptConditions" type="checkbox" name="acceptConditions" checked={formData.acceptConditions} onChange={handleChange} className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} aria-required="true" />
-            J'accepte les conditions générales *
-          </label>
+  <input id="acceptConditions" type="checkbox" name="acceptConditions" checked={formData.acceptConditions} onChange={handleChange} className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} aria-required="true" />
+  J'accepte les <a href="/cgv.pdf" target="_blank" className="underline text-indigo-600">conditions générales</a> *
+</label>
           {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
           <button type="submit" disabled={isSubmitting} className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}>
             {isSubmitting ? "Envoi..." : "Enregistrer"}

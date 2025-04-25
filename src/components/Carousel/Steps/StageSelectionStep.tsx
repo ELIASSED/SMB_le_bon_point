@@ -90,7 +90,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
       
       setHasMore(currentLength + nextItems.length < filteredStages.length);
       setLoadingMore(false);
-    }, 500); // Simuler un léger délai de chargement
+    }, 200); // Simuler un léger délai de chargement
   }, [filteredStages, visibleStages, loadingMore]);
 
   // Observer d'intersection pour détecter quand on arrive en bas
