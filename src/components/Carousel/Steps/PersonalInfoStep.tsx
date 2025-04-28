@@ -543,15 +543,26 @@ export default function PersonalInfoStep({
                   {errors.etatPermis && <p className="text-red-500 text-xs">{errors.etatPermis}</p>}
                 </div>
                 <div>
-                  <label htmlFor="casStage" className="text-xs font-medium text-gray-700">Cas Stage *</label>
-                  <select id="casStage" name="casStage" value={formData.casStage} onChange={handleChange} className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`} aria-required="true">
-                    <option value="">--</option>
-                    {casStageData.map((cas, index) => (
-                      <option key={index} value={cas.description}>{cas.type} - {cas.description}</option>
-                    ))}
-                  </select>
-                  {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
-                </div>
+  <label htmlFor="casStage" className="text-xs font-medium text-gray-700">
+    Cas Stage *
+  </label>
+  <select
+    id="casStage"
+    name="casStage"
+    value={formData.casStage}
+    onChange={handleChange}
+    className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`}
+    aria-required="true"
+  >
+    <option value="">--</option>
+    {casStageData.map((cas, index) => (
+      <option key={index} value={cas.value}>
+        {cas.type} - {cas.description}
+      </option>
+    ))}
+  </select>
+  {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
+</div>
               </div>
 
               <div className="mt-3 border-t pt-3">
@@ -624,9 +635,24 @@ export default function PersonalInfoStep({
         </div>
 
         <div className="mt-4 flex flex-col items-center space-y-3">
-          <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
-  <input id="acceptConditions" type="checkbox" name="acceptConditions" checked={formData.acceptConditions} onChange={handleChange} className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} aria-required="true" />
-  J'accepte les <a href="/cgv.pdf" target="_blank" className="underline text-indigo-600">conditions générales</a> *
+        <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
+  <input 
+    id="acceptConditions" 
+    type="checkbox" 
+    name="acceptConditions" 
+    checked={formData.acceptConditions} 
+    onChange={handleChange} 
+    className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} 
+    aria-required="true" 
+  />
+  J'accepte les {" "}
+  <a 
+    href="/conditions-générales-de-ventes.pdf" 
+    target="_blank" 
+    className="underline text-indigo-600"
+  >
+    conditions générales
+  </a>{" "}*
 </label>
           {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
           <button type="submit" disabled={isSubmitting} className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}>

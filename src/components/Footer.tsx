@@ -35,7 +35,7 @@ export default function Footer() {
                 </a>
               </li>    <li className="mb-2">
                 <a
-                  href="/conditions"
+                  href="/conditions-générales-de-ventes.pdf" target="_blank" rel="noopener noreferrer"
                   className="text-beige hover:text-yellow-dark transition duration-200"
                 >
                   Conditions Générales
