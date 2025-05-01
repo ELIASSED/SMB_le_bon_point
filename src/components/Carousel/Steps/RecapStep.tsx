@@ -34,18 +34,18 @@ export default function RecapStep({ selectedStage, registrationInfo, paymentInte
             <FiCheckCircle size={48} />
           </div>
           <h1 className="text-3xl font-bold text-green-600 mb-4">
-            Inscription réussie !
+            Inscription réussie  au  <p>
+              <strong>stage </strong> {selectedStage.numeroStageAnts}
+            </p>
           </h1>
           <div className="text-gray-700 mb-6 text-left">
             <p>
-              <strong>Utilisateur :</strong> {registrationInfo.prenom} {registrationInfo.nom}
+       {registrationInfo.prenom} {registrationInfo.nom}
             </p>
             <p>
               <strong>Lieu du stage :</strong> {selectedStage.location}
             </p>
-            <p>
-              <strong>Numéro de stage :</strong> {selectedStage.numeroStageAnts}
-            </p>
+           
             <p>
               <strong>Dates :</strong> {formatDateWithDay(selectedStage.startDate)} -{" "}
               {formatDateWithDay(selectedStage.endDate)}
@@ -53,9 +53,7 @@ export default function RecapStep({ selectedStage, registrationInfo, paymentInte
             <p>
               <strong>Montant payé :</strong> {(selectedStage.price).toFixed(2)} €
             </p>
-            <p>
-              <strong>ID de transaction :</strong> {paymentIntentId}
-            </p>
+         
           </div>
           <div className="flex items-center justify-center mb-6 text-blue-500">
             <FiMail size={32} />
