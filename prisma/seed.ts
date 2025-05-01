@@ -139,15 +139,7 @@ async function main() {
   });
   console.log(`✅ L'utilisateur a été inscrit à la session ${randomSession.numeroStageAnts}`);
 
-  // Création d'un paiement
-  const payment = await prisma.payment.create({
-    data: {
-      sessionUserId: sessionUser.id,
-      amount: 200.0,
-      method: 'Credit Card',
-    },
-  });
-  console.log("✅ Paiement enregistré !");
+ 
 
   console.log("🎉 Base de données semée avec succès !");
 }

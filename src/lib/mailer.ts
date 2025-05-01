@@ -56,7 +56,6 @@ export async function sendConfirmationEmail({
       console.error("Erreur de l'API Resend:", {
         message: error.message,
         name: error.name,
-        statusCode: error.statusCode,
       });
       throw new Error(`Erreur lors de l'envoi de l'email: ${error.message}`);
     }

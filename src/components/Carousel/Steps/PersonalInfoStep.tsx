@@ -36,7 +36,7 @@ export default function PersonalInfoStep({
     confirmationEmail: "",
     nationalite: "",
     dateNaissance: "",
-    lieuNaissance: "",
+    lieuNaissance: "", // Note: This field is not in schema.prisma
     codePostalNaissance: "",
     numeroPermis: "",
     dateDelivrancePermis: "",
@@ -132,84 +132,53 @@ export default function PersonalInfoStep({
     setShowSuggestions(false);
   };
 
-  const uploadFileWithRetry = async (file: File, filePath: string, retries = 3): Promise<string> => {
-    // Vérifier si le fichier est valide avant de tenter l'upload
+  // New function to upload a single file without retries
+  const uploadFile = async (file: File, filePath: string): Promise<string> => {
     if (!file || file.size === 0) {
       throw new Error(`Fichier invalide pour ${filePath}`);
     }
-  
+
     console.log(`Début de l'upload pour ${filePath}, taille: ${file.size} octets, type: ${file.type}`);
-    
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        // Ajout de logs pour le diagnostic
-        console.log(`Tentative ${attempt}/${retries} pour ${filePath}`);
-        
-        // S'assurer que le client Supabase est bien initialisé
-        if (!supabase || !supabase.storage) {
-          throw new Error("Client Supabase non initialisé correctement");
-        }
-        
-        // Upload avec monitoring de progression
-        const { data, error } = await supabase.storage
-          .from("documents")
-          .upload(filePath, file, { 
-            upsert: true,
-            // Ajouter un handler de progression si nécessaire
-            onUploadProgress: (progress) => {
-              const percentComplete = Math.round((progress.loaded / progress.total) * 100);
-              setUploadProgress((prev) => ({ 
-                ...prev, 
-                [filePath.split('/')[1]]: percentComplete 
-              }));
-            }
-          });
-  
-        if (error) {
-          console.error(`Erreur Supabase pour ${filePath}:`, error);
-          throw error;
-        }
-  
-        if (!data || !data.path) {
-          throw new Error(`Aucun chemin retourné pour ${filePath}`);
-        }
-  
-        const { data: urlData } = supabase.storage.from("documents").getPublicUrl(data.path);
-        
-        if (!urlData || !urlData.publicUrl) {
-          throw new Error(`Impossible d'obtenir l'URL publique pour ${filePath}`);
-        }
-  
-        console.log(`Upload réussi pour ${filePath}:`, urlData.publicUrl);
-        return urlData.publicUrl;
-      } catch (error: any) {
-        console.error(`Tentative ${attempt} échouée pour ${filePath}:`, error.message);
-        
-        // Si c'est la dernière tentative, propager l'erreur
-        if (attempt === retries) {
-          throw new Error(`Échec de l'upload de ${filePath} après ${retries} tentatives: ${error.message}`);
-        }
-        
-        // Attendre avant de réessayer avec un délai exponentiel
-        const delay = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s...
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
+
+    if (!supabase || !supabase.storage) {
+      throw new Error("Client Supabase non initialisé correctement");
     }
-    throw new Error("Erreur inattendue dans uploadFileWithRetry");
+
+    // Upload raw file as-is, no compression or transformation
+    const { data, error } = await supabase.storage
+      .from("documents")
+      .upload(filePath, file, {
+        upsert: true,
+        cacheControl: '3600', // Optional: Cache control for performance
+      });
+
+    if (error) {
+      console.error(`Erreur Supabase pour ${filePath}:`, error);
+      throw error;
+    }
+
+    if (!data || !data.path) {
+      throw new Error(`Aucun chemin retourné pour ${filePath}`);
+    }
+
+    const { data: urlData } = supabase.storage.from("documents").getPublicUrl(data.path);
+
+    if (!urlData || !urlData.publicUrl) {
+      throw new Error(`Impossible d'obtenir l'URL publique pour ${filePath}`);
+    }
+
+    console.log(`Upload réussi pour ${filePath}:`, urlData.publicUrl);
+    return urlData.publicUrl;
   };
-  
-  // Correction de la fonction uploadFilesToSupabase
-  
+
   const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
     console.log("Début de l'upload des fichiers pour ID:", id);
     const uploadedPaths: { [key: string]: string } = {};
-    
-    // Vérifier que l'ID est valide
+
     if (!id || typeof id !== 'string') {
       throw new Error("ID utilisateur invalide pour l'upload");
     }
-    
-    // Map des fichiers à uploader avec leurs champs correspondants
+
     const fileFields = {
       id_recto: "id_recto",
       id_verso: "id_verso",
@@ -218,52 +187,46 @@ export default function PersonalInfoStep({
       letter_48N: "letter_48N",
       extraDocument: "extraDocument",
     };
-  
-    // Upload séquentiel au lieu de parallèle pour éviter les problèmes de concurrence
+
     for (const [field, dbField] of Object.entries(fileFields)) {
       const file = formData[field as keyof RegistrationInfo] as File | null;
-      
+
       if (!file) {
         console.log(`Aucun fichier pour ${field}`);
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
         continue;
       }
-      
-      // Vérifier que le fichier est valide
+
       if (file.size === 0) {
         console.error(`Fichier vide pour ${field}`);
         setErrors((prev) => ({ ...prev, [field]: "Fichier vide" }));
         setUploadProgress((prev) => ({ ...prev, [field]: 0 }));
         continue;
       }
-  
-      // Créer un chemin unique pour chaque fichier
+
       const timestamp = Date.now();
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const filePath = `${id}/${dbField}/${timestamp}_${cleanFileName}`;
-      
+
       console.log(`Tentative d'upload pour ${field}: ${filePath}`);
-      setUploadProgress((prev) => ({ ...prev, [field]: 10 })); // Initial progress
-      
+      setUploadProgress((prev) => ({ ...prev, [field]: 10 }));
+
       try {
-        const publicUrl = await uploadFileWithRetry(file, filePath);
+        const publicUrl = await uploadFile(file, filePath);
         uploadedPaths[field] = publicUrl;
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
         console.log(`Upload réussi pour ${field}: ${publicUrl}`);
       } catch (error: any) {
         console.error(`Erreur pour ${field}:`, error.message);
         setErrors((prev) => ({ ...prev, [field]: `Échec de l'upload: ${error.message}` }));
-        // Ne pas lancer d'erreur, continuer avec les autres fichiers
         setUploadProgress((prev) => ({ ...prev, [field]: 0 }));
       }
     }
-  
+
     console.log("Tous les chemins uploadés:", uploadedPaths);
     return uploadedPaths;
   };
-  
-  // Modification du handleSubmit pour gérer correctement les uploads
-  
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Soumission du formulaire déclenchée");
@@ -271,40 +234,36 @@ export default function PersonalInfoStep({
       console.log("Validation échouée:", errors);
       return;
     }
-  
+
     setIsSubmitting(true);
     try {
       const formDataObj = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === "acceptConditions" || key === "commitToUpload") return;
+        if (key === "acceptConditions" || key === "commitToUpload" || key === "lieuNaissance") return;
         
-        // Ne pas ajouter les fichiers à FormData pour l'instant
         if (!(value instanceof File) && value !== null && value !== undefined) {
           formDataObj.append(key, value.toString());
         }
       });
-  
+
       console.log("FormData initial sans fichiers:", Object.fromEntries(formDataObj));
-  
-      // S'assurer que l'email est disponible pour l'ID
+
       if (!formData.email) {
         throw new Error("Email requis pour l'upload des fichiers");
       }
-  
-      // Upload des fichiers à Supabase
+
       const uploadedPaths = await uploadFilesToSupabase(formData.email);
       console.log("Chemins uploadés reçus:", uploadedPaths);
-  
-      // Ajouter les URLs des fichiers uploadés à FormData
+
       Object.entries(uploadedPaths).forEach(([field, url]) => {
         formDataObj.append(field, url);
       });
-  
+
       console.log("FormData final envoyé à onSubmit:", Object.fromEntries(formDataObj));
-  
+
       const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
       setRegistrationInfo(registrationData);
-  
+
       await onSubmit(formDataObj);
       console.log("Soumission réussie, transition vers l'étape suivante");
     } catch (error: any) {
@@ -337,9 +296,6 @@ export default function PersonalInfoStep({
       "etatPermis",
       "casStage",
       "acceptConditions",
-      // Uncomment to make some files mandatory
-      // "permis_recto",
-      // "id_recto",
     ];
 
     requiredFields.forEach((field) => {
@@ -384,8 +340,6 @@ export default function PersonalInfoStep({
     return Object.keys(newErrors).length === 0;
   };
 
-
-
   if (!selectedStage) {
     return (
       <div className="text-center text-red-500 p-4" role="alert">
@@ -397,7 +351,7 @@ export default function PersonalInfoStep({
   function getDateSeizeYearsAgo(): string {
     const today = new Date();
     today.setFullYear(today.getFullYear() - 16);
-    return today.toISOString().split("T")[0]; // format YYYY-MM-DD
+    return today.toISOString().split("T")[0];
   }
 
   return (
@@ -501,8 +455,8 @@ export default function PersonalInfoStep({
                   {errors.dateNaissance && <p className="text-red-500 text-xs">{errors.dateNaissance}</p>}
                 </div>
                 <div>
-                  <label htmlFor="codePostalNaissance" className="text-xs font-medium text-gray-700">Lieu Naissance *</label>
-                  <input id="codePostalNaissance" type="text" name="codePostalNaissance" value={formData.codePostalNaissance} onChange={handleChange} className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`} placeholder="Ville, Pays" aria-required="true" />
+                  <label htmlFor="codePostalNaissance" className="text-xs font-medium text-gray-700">Code Postal Naissance *</label>
+                  <input id="codePostalNaissance" type="text" name="codePostalNaissance" value={formData.codePostalNaissance} onChange={handleChange} className={`${inputClassName} ${errors.codePostalNaissance ? "border-red-500" : ""}`} placeholder="75001" aria-required="true" />
                   {errors.codePostalNaissance && <p className="text-red-500 text-xs">{errors.codePostalNaissance}</p>}
                 </div>
               </div>
@@ -543,26 +497,24 @@ export default function PersonalInfoStep({
                   {errors.etatPermis && <p className="text-red-500 text-xs">{errors.etatPermis}</p>}
                 </div>
                 <div>
-  <label htmlFor="casStage" className="text-xs font-medium text-gray-700">
-    Cas Stage *
-  </label>
-  <select
-    id="casStage"
-    name="casStage"
-    value={formData.casStage}
-    onChange={handleChange}
-    className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`}
-    aria-required="true"
-  >
-    <option value="">--</option>
-    {casStageData.map((cas, index) => (
-      <option key={index} value={cas.value}>
-        {cas.type} - {cas.description}
-      </option>
-    ))}
-  </select>
-  {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
-</div>
+                  <label htmlFor="casStage" className="text-xs font-medium text-gray-700">Cas Stage *</label>
+                  <select
+                    id="casStage"
+                    name="casStage"
+                    value={formData.casStage}
+                    onChange={handleChange}
+                    className={`${inputClassName} ${errors.casStage ? "border-red-500" : ""}`}
+                    aria-required="true"
+                  >
+                    <option value="">--</option>
+                    {casStageData.map((cas, index) => (
+                      <option key={index} value={cas.value}>
+                        {cas.type} - {cas.description}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.casStage && <p className="text-red-500 text-xs">{errors.casStage}</p>}
+                </div>
               </div>
 
               <div className="mt-3 border-t pt-3">
@@ -635,27 +587,32 @@ export default function PersonalInfoStep({
         </div>
 
         <div className="mt-4 flex flex-col items-center space-y-3">
-        <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
-  <input 
-    id="acceptConditions" 
-    type="checkbox" 
-    name="acceptConditions" 
-    checked={formData.acceptConditions} 
-    onChange={handleChange} 
-    className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`} 
-    aria-required="true" 
-  />
-  J'accepte les {" "}
-  <a 
-    href="/conditions-générales-de-ventes.pdf" 
-    target="_blank" 
-    className="underline text-indigo-600"
-  >
-    conditions générales
-  </a>{" "}*
-</label>
+          <label htmlFor="acceptConditions" className="flex items-center text-xs font-medium text-gray-700">
+            <input
+              id="acceptConditions"
+              type="checkbox"
+              name="acceptConditions"
+              checked={formData.acceptConditions}
+              onChange={handleChange}
+              className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`}
+              aria-required="true"
+            />
+            J'accepte les{" "}
+            <a
+              href="/conditions-générales-de-ventes.pdf"
+              target="_blank"
+              className="underline text-indigo-600"
+            >
+              conditions générales
+            </a>{" "}
+            *
+          </label>
           {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
-          <button type="submit" disabled={isSubmitting} className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
             {isSubmitting ? "Envoi..." : "Enregistrer"}
           </button>
           {errors.submit && <p className="text-red-500 text-xs">{errors.submit}</p>}

@@ -3,6 +3,7 @@ export interface Stage {
   id: number;
   numeroStageAnts: string;
   price: number;
+  lieu: string;
   description: string;
   startDate: string; // ou Date si vous préférez
   endDate: string;   // ou Date
@@ -118,4 +119,12 @@ export interface UserFormData {
   commentaire: string | null;
 }
 
+export interface PaymentStepProps {
+  selectedStage: Stage;
+  clientSecret: string;
+  sessionId: number; // Add sessionId
+  userId: number;
+  onPaymentSuccess: (paymentIntentId: string) => Promise<void>;
+  onConfirm: () => Promise<void>;
+}
 export type FormDataType = any; // Remplacez par le type approprié si nécessaire

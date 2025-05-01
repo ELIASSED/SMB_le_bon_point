@@ -120,6 +120,15 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.AdminScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  password: 'password',
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   civilite: 'civilite',
@@ -205,56 +214,15 @@ exports.Prisma.PsychologueScalarFieldEnum = {
 
 exports.Prisma.PaymentScalarFieldEnum = {
   id: 'id',
-  reference: 'reference',
   sessionUserId: 'sessionUserId',
   amount: 'amount',
-  currency: 'currency',
   method: 'method',
   status: 'status',
-  stripePaymentIntentId: 'stripePaymentIntentId',
-  recordedByAdminId: 'recordedByAdminId',
+  currency: 'currency',
   notes: 'notes',
   refundedAmount: 'refundedAmount',
   refundedAt: 'refundedAt',
-  paidAt: 'paidAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.AdminScalarFieldEnum = {
-  id: 'id',
-  email: 'email',
-  password: 'password',
-  name: 'name',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.AccountScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  provider: 'provider',
-  providerAccountId: 'providerAccountId',
-  refresh_token: 'refresh_token',
-  access_token: 'access_token',
-  expires_at: 'expires_at',
-  token_type: 'token_type',
-  scope: 'scope',
-  id_token: 'id_token',
-  session_state: 'session_state'
-};
-
-exports.Prisma.AuthSessionScalarFieldEnum = {
-  id: 'id',
-  sessionToken: 'sessionToken',
-  userId: 'userId',
-  expires: 'expires'
-};
-
-exports.Prisma.VerificationTokenScalarFieldEnum = {
-  identifier: 'identifier',
-  token: 'token',
-  expires: 'expires'
+  paidAt: 'paidAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -271,30 +239,16 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-exports.PaymentMethod = exports.$Enums.PaymentMethod = {
-  CASH: 'CASH',
-  CREDIT_CARD: 'CREDIT_CARD',
-  BANK_TRANSFER: 'BANK_TRANSFER'
-};
 
-exports.PaymentStatus = exports.$Enums.PaymentStatus = {
-  PENDING: 'PENDING',
-  COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED',
-  REFUNDED: 'REFUNDED'
-};
 
 exports.Prisma.ModelName = {
+  Admin: 'Admin',
   User: 'User',
   SessionUsers: 'SessionUsers',
   Session: 'Session',
   Instructor: 'Instructor',
   Psychologue: 'Psychologue',
-  Payment: 'Payment',
-  Admin: 'Admin',
-  Account: 'Account',
-  AuthSession: 'AuthSession',
-  VerificationToken: 'VerificationToken'
+  Payment: 'Payment'
 };
 
 /**

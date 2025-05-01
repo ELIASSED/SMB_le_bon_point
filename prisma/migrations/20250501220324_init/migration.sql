@@ -31,6 +31,8 @@ CREATE TABLE "User" (
     "id_verso" TEXT,
     "permis_recto" TEXT,
     "permis_verso" TEXT,
+    "letter_48N" TEXT,
+    "extraDocument" TEXT,
     "numeroPermis" TEXT NOT NULL,
     "dateDelivrancePermis" TIMESTAMP(3) NOT NULL,
     "prefecture" TEXT NOT NULL,
@@ -69,6 +71,8 @@ CREATE TABLE "Session" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "instructorId" INTEGER NOT NULL,
     "psychologueId" INTEGER NOT NULL,
+    "attendanceSheetPdf" BYTEA,
+    "certificateSheetPdf" BYTEA,
     "isArchived" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")

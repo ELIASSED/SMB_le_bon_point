@@ -1,12 +1,21 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client"
+  output   = "./generated/client" // Add this line
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -103,80 +112,16 @@ model Psychologue {
   sessions                       Session[]
 }
 
-enum PaymentMethod {
-  CASH
-  CREDIT_CARD
-  BANK_TRANSFER
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
 model Payment {
-  id                    Int           @id @default(autoincrement())
-  reference             String        @unique
-  sessionUserId         Int
-  amount                Decimal       @db.Decimal(10, 2)
-  currency              String        @default("EUR")
-  method                PaymentMethod
-  status                PaymentStatus @default(PENDING)
-  stripePaymentIntentId String?       @unique
-  recordedByAdminId     Int?
-  notes                 String?
-  refundedAmount        Decimal?      @db.Decimal(10, 2)
-  refundedAt            DateTime?
-  paidAt                DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  sessionUser           SessionUsers  @relation(fields: [sessionUserId], references: [id])
-  recordedBy            Admin?        @relation(fields: [recordedByAdminId], references: [id])
-}
-
-model Admin {
-  id        Int           @id @default(autoincrement())
-  email     String        @unique
-  password  String
-  name      String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  payments  Payment[]     @relation()
-  accounts  Account[]
-  sessions  AuthSession[]
-}
-
-model Account {
-  id                Int     @id @default(autoincrement())
-  userId            Int
-  user              Admin   @relation(fields: [userId], references: [id])
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  @@unique([provider, providerAccountId])
-}
-
-model AuthSession {
-  id           Int      @id @default(autoincrement())
-  sessionToken String   @unique
-  userId       Int
-  user         Admin    @relation(fields: [userId], references: [id])
-  expires      DateTime
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  id             Int          @id @default(autoincrement())
+  sessionUserId  Int
+  amount         Float
+  method         String
+  status         String? // Add for COMPLETED, FAILED, REFUNDED
+  currency       String? // Add for currency (e.g., USD, EUR)
+  notes          String? // Add for payment method details
+  refundedAmount Float? // Add for refund amount
+  refundedAt     DateTime? // Add for refund timestamp
+  paidAt         DateTime     @default(now())
+  sessionUser    SessionUsers @relation(fields: [sessionUserId], references: [id])
 }

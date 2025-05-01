@@ -237,9 +237,7 @@ export default function Carousel() {
     }
   };
 
-  const handleRecapConfirm = async () => {
-    console.log("handleRecapConfirm déclenché à", new Date().toISOString());
-  };
+
 
   const steps = [
     {
@@ -266,7 +264,6 @@ export default function Carousel() {
           selectedStage={selectedStage}
           clientSecret={clientSecret}
           onPaymentSuccess={handlePaymentSuccess}
-          onConfirm={handleRecapConfirm}
         />
       ) : (
         <p className="text-gray-500">Informations de paiement non disponibles. Veuillez compléter les étapes précédentes.</p>
@@ -281,7 +278,6 @@ export default function Carousel() {
             selectedStage={selectedStage}
             registrationInfo={registrationInfo}
             paymentIntentId={paymentIntentId}
-            onConfirm={handleRecapConfirm}
           />
         </>
       ) : (

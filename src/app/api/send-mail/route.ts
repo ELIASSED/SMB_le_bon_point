@@ -35,7 +35,6 @@ export async function POST(req: Request) {
       console.error("Erreur de Resend:", {
         message: error.message,
         name: error.name,
-        statusCode: error.statusCode,
       });
       throw new Error(error.message || "Échec de l’envoi de l’email");
     }

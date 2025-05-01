@@ -1,9 +1,8 @@
-// src/hooks/useForm.ts
 import { useState, ChangeEvent, FormEvent } from 'react';
 
 interface FormState<T> {
   values: T;
-  errors: Partial<Record<keyof T, string>>;
+  errors: Partial<Record<keyof T, string>> & { submit?: string };
   isSubmitting: boolean;
 }
 
@@ -54,7 +53,7 @@ export function useForm<T>(
       } catch (error: any) {
         setState((prev) => ({
           ...prev,
-          errors: { submit: error.message || 'Une erreur est survenue.' },
+          errors: { ...prev.errors, submit: error.message || 'Une erreur est survenue.' },
         }));
       } finally {
         setState((prev) => ({ ...prev, isSubmitting: false }));
@@ -71,6 +70,6 @@ export function useForm<T>(
     handleSubmit,
     setValues: (values: T) => setState((prev) => ({ ...prev, values })),
     setErrors: (errors: Partial<Record<keyof T, string>>) =>
-      setState((prev) => ({ ...prev, errors })),
+      setState((prev) => ({ ...prev, errors: { ...prev.errors, ...errors } })),
   };
 }
