@@ -251,7 +251,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../..",
@@ -261,12 +261,11 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": null
+        "value": "postgresql://postgres.fewxlrfepeidboogmhbv:fhblw6yuhFIf8qI0@aws-0-eu-west-3.pooler.supabase.com:5432/postgres?pgbouncer=true"
       }
     }
   },

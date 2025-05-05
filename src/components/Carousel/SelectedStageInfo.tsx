@@ -28,9 +28,7 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
             <AcademicCapIcon className="w-6 h-6 text-purple-600 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-800">Psychologue</p>
-              <p className="text-gray-700">
-                {selectedStage.psychologue.firstName} {selectedStage.psychologue.lastName}
-              </p>
+             
               <p className="text-sm text-gray-500">
                 N° Autorisation : {selectedStage.psychologue.numeroAutorisationPrefectorale}
               </p>
@@ -47,9 +45,7 @@ export default function SelectedStageInfo({ selectedStage }: SelectedStageInfoPr
             <UserIcon className="w-6 h-6 text-indigo-600 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-gray-800">Instructeur (BAFM)</p>
-              <p className="text-gray-700">
-                {selectedStage.instructor.firstName} {selectedStage.instructor.lastName}
-              </p>
+             
               <p className="text-sm text-gray-500">
                 N° Autorisation : {selectedStage.instructor.numeroAutorisationPrefectorale}
               </p>
