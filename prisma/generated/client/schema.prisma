@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client" // Add this line
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Ajoutez ce champ pour la relation inverse
+  payments Payment[]
+}
+
+model Session {
+  id                    Int      @id @default(autoincrement())
+  numeroStagePrefecture String
+  description           String?
+  startDate             DateTime
+  endDate               DateTime
+  location              String
+  capacity              Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relation avec le formateur
+  instructorId Int?
+  instructor   Instructor? @relation(fields: [instructorId], references: [id])
+}
+
+enum Civilite {
+  Monsieur
+  Madame
+}
+
+model Inscription {
+  id            Int      @id @default(autoincrement())
+  civilite      Civilite // Nouveau champ ajouté
+  nom           String
+  prenom        String
+  adresse       String
+  codePostal    String
+  ville         String
+  telephone     String
+  email         String
+  stage         String
+  nationalite   String
+  dateNaissance DateTime
+  idCard        String
+  permis        String
+  createdAt     DateTime @default(now())
+}
+
+model Instructor {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Payment {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  amount Float
+  method String
+  paidAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
