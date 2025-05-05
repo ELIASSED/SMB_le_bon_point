@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client" // Add this line
+  output   = "./generated/client"
 }
 
 datasource db {
@@ -117,11 +117,11 @@ model Payment {
   sessionUserId  Int
   amount         Float
   method         String
-  status         String? // Add for COMPLETED, FAILED, REFUNDED
-  currency       String? // Add for currency (e.g., USD, EUR)
-  notes          String? // Add for payment method details
-  refundedAmount Float? // Add for refund amount
-  refundedAt     DateTime? // Add for refund timestamp
   paidAt         DateTime     @default(now())
+  currency       String?
+  notes          String?
+  refundedAmount Float?
+  refundedAt     DateTime?
+  status         String?
   sessionUser    SessionUsers @relation(fields: [sessionUserId], references: [id])
 }

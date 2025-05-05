@@ -17,7 +17,7 @@ export const metadata = {
     locale: 'fr_FR',
     siteName: 'SMB Le Bon Point',
     url: 'https://smb-lebonpoint.fr',
-    images: [
+    images: [ 
       {
         url: '/images/stage-recuperation-points-saint-maur.jpg',
         width: 1200,

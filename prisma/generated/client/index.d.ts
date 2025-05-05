@@ -301,8 +301,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.7.0
-   * Query Engine version: 3cff47a7f5d65c3ea74883f1d736e41d68ce91ed
+   * Prisma Client JS version: 6.6.0
+   * Query Engine version: f676762280b54cd07c770017ed3711ddde35f37a
    */
   export type PrismaVersion = {
     client: string
@@ -8797,12 +8797,12 @@ export namespace Prisma {
     sessionUserId: number | null
     amount: number | null
     method: string | null
-    status: string | null
+    paidAt: Date | null
     currency: string | null
     notes: string | null
     refundedAmount: number | null
     refundedAt: Date | null
-    paidAt: Date | null
+    status: string | null
   }
 
   export type PaymentMaxAggregateOutputType = {
@@ -8810,12 +8810,12 @@ export namespace Prisma {
     sessionUserId: number | null
     amount: number | null
     method: string | null
-    status: string | null
+    paidAt: Date | null
     currency: string | null
     notes: string | null
     refundedAmount: number | null
     refundedAt: Date | null
-    paidAt: Date | null
+    status: string | null
   }
 
   export type PaymentCountAggregateOutputType = {
@@ -8823,12 +8823,12 @@ export namespace Prisma {
     sessionUserId: number
     amount: number
     method: number
-    status: number
+    paidAt: number
     currency: number
     notes: number
     refundedAmount: number
     refundedAt: number
-    paidAt: number
+    status: number
     _all: number
   }
 
@@ -8852,12 +8852,12 @@ export namespace Prisma {
     sessionUserId?: true
     amount?: true
     method?: true
-    status?: true
+    paidAt?: true
     currency?: true
     notes?: true
     refundedAmount?: true
     refundedAt?: true
-    paidAt?: true
+    status?: true
   }
 
   export type PaymentMaxAggregateInputType = {
@@ -8865,12 +8865,12 @@ export namespace Prisma {
     sessionUserId?: true
     amount?: true
     method?: true
-    status?: true
+    paidAt?: true
     currency?: true
     notes?: true
     refundedAmount?: true
     refundedAt?: true
-    paidAt?: true
+    status?: true
   }
 
   export type PaymentCountAggregateInputType = {
@@ -8878,12 +8878,12 @@ export namespace Prisma {
     sessionUserId?: true
     amount?: true
     method?: true
-    status?: true
+    paidAt?: true
     currency?: true
     notes?: true
     refundedAmount?: true
     refundedAt?: true
-    paidAt?: true
+    status?: true
     _all?: true
   }
 
@@ -8978,12 +8978,12 @@ export namespace Prisma {
     sessionUserId: number
     amount: number
     method: string
-    status: string | null
+    paidAt: Date
     currency: string | null
     notes: string | null
     refundedAmount: number | null
     refundedAt: Date | null
-    paidAt: Date
+    status: string | null
     _count: PaymentCountAggregateOutputType | null
     _avg: PaymentAvgAggregateOutputType | null
     _sum: PaymentSumAggregateOutputType | null
@@ -9010,12 +9010,12 @@ export namespace Prisma {
     sessionUserId?: boolean
     amount?: boolean
     method?: boolean
-    status?: boolean
+    paidAt?: boolean
     currency?: boolean
     notes?: boolean
     refundedAmount?: boolean
     refundedAt?: boolean
-    paidAt?: boolean
+    status?: boolean
     sessionUser?: boolean | SessionUsersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["payment"]>
 
@@ -9024,12 +9024,12 @@ export namespace Prisma {
     sessionUserId?: boolean
     amount?: boolean
     method?: boolean
-    status?: boolean
+    paidAt?: boolean
     currency?: boolean
     notes?: boolean
     refundedAmount?: boolean
     refundedAt?: boolean
-    paidAt?: boolean
+    status?: boolean
     sessionUser?: boolean | SessionUsersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["payment"]>
 
@@ -9038,12 +9038,12 @@ export namespace Prisma {
     sessionUserId?: boolean
     amount?: boolean
     method?: boolean
-    status?: boolean
+    paidAt?: boolean
     currency?: boolean
     notes?: boolean
     refundedAmount?: boolean
     refundedAt?: boolean
-    paidAt?: boolean
+    status?: boolean
     sessionUser?: boolean | SessionUsersDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["payment"]>
 
@@ -9052,15 +9052,15 @@ export namespace Prisma {
     sessionUserId?: boolean
     amount?: boolean
     method?: boolean
-    status?: boolean
+    paidAt?: boolean
     currency?: boolean
     notes?: boolean
     refundedAmount?: boolean
     refundedAt?: boolean
-    paidAt?: boolean
+    status?: boolean
   }
 
-  export type PaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sessionUserId" | "amount" | "method" | "status" | "currency" | "notes" | "refundedAmount" | "refundedAt" | "paidAt", ExtArgs["result"]["payment"]>
+  export type PaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "sessionUserId" | "amount" | "method" | "paidAt" | "currency" | "notes" | "refundedAmount" | "refundedAt" | "status", ExtArgs["result"]["payment"]>
   export type PaymentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessionUser?: boolean | SessionUsersDefaultArgs<ExtArgs>
   }
@@ -9081,12 +9081,12 @@ export namespace Prisma {
       sessionUserId: number
       amount: number
       method: string
-      status: string | null
+      paidAt: Date
       currency: string | null
       notes: string | null
       refundedAmount: number | null
       refundedAt: Date | null
-      paidAt: Date
+      status: string | null
     }, ExtArgs["result"]["payment"]>
     composites: {}
   }
@@ -9515,12 +9515,12 @@ export namespace Prisma {
     readonly sessionUserId: FieldRef<"Payment", 'Int'>
     readonly amount: FieldRef<"Payment", 'Float'>
     readonly method: FieldRef<"Payment", 'String'>
-    readonly status: FieldRef<"Payment", 'String'>
+    readonly paidAt: FieldRef<"Payment", 'DateTime'>
     readonly currency: FieldRef<"Payment", 'String'>
     readonly notes: FieldRef<"Payment", 'String'>
     readonly refundedAmount: FieldRef<"Payment", 'Float'>
     readonly refundedAt: FieldRef<"Payment", 'DateTime'>
-    readonly paidAt: FieldRef<"Payment", 'DateTime'>
+    readonly status: FieldRef<"Payment", 'String'>
   }
     
 
@@ -10064,12 +10064,12 @@ export namespace Prisma {
     sessionUserId: 'sessionUserId',
     amount: 'amount',
     method: 'method',
-    status: 'status',
+    paidAt: 'paidAt',
     currency: 'currency',
     notes: 'notes',
     refundedAmount: 'refundedAmount',
     refundedAt: 'refundedAt',
-    paidAt: 'paidAt'
+    status: 'status'
   };
 
   export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
@@ -10764,12 +10764,12 @@ export namespace Prisma {
     sessionUserId?: IntFilter<"Payment"> | number
     amount?: FloatFilter<"Payment"> | number
     method?: StringFilter<"Payment"> | string
-    status?: StringNullableFilter<"Payment"> | string | null
+    paidAt?: DateTimeFilter<"Payment"> | Date | string
     currency?: StringNullableFilter<"Payment"> | string | null
     notes?: StringNullableFilter<"Payment"> | string | null
     refundedAmount?: FloatNullableFilter<"Payment"> | number | null
     refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
-    paidAt?: DateTimeFilter<"Payment"> | Date | string
+    status?: StringNullableFilter<"Payment"> | string | null
     sessionUser?: XOR<SessionUsersScalarRelationFilter, SessionUsersWhereInput>
   }
 
@@ -10778,12 +10778,12 @@ export namespace Prisma {
     sessionUserId?: SortOrder
     amount?: SortOrder
     method?: SortOrder
-    status?: SortOrderInput | SortOrder
+    paidAt?: SortOrder
     currency?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     refundedAmount?: SortOrderInput | SortOrder
     refundedAt?: SortOrderInput | SortOrder
-    paidAt?: SortOrder
+    status?: SortOrderInput | SortOrder
     sessionUser?: SessionUsersOrderByWithRelationInput
   }
 
@@ -10795,12 +10795,12 @@ export namespace Prisma {
     sessionUserId?: IntFilter<"Payment"> | number
     amount?: FloatFilter<"Payment"> | number
     method?: StringFilter<"Payment"> | string
-    status?: StringNullableFilter<"Payment"> | string | null
+    paidAt?: DateTimeFilter<"Payment"> | Date | string
     currency?: StringNullableFilter<"Payment"> | string | null
     notes?: StringNullableFilter<"Payment"> | string | null
     refundedAmount?: FloatNullableFilter<"Payment"> | number | null
     refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
-    paidAt?: DateTimeFilter<"Payment"> | Date | string
+    status?: StringNullableFilter<"Payment"> | string | null
     sessionUser?: XOR<SessionUsersScalarRelationFilter, SessionUsersWhereInput>
   }, "id">
 
@@ -10809,12 +10809,12 @@ export namespace Prisma {
     sessionUserId?: SortOrder
     amount?: SortOrder
     method?: SortOrder
-    status?: SortOrderInput | SortOrder
+    paidAt?: SortOrder
     currency?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     refundedAmount?: SortOrderInput | SortOrder
     refundedAt?: SortOrderInput | SortOrder
-    paidAt?: SortOrder
+    status?: SortOrderInput | SortOrder
     _count?: PaymentCountOrderByAggregateInput
     _avg?: PaymentAvgOrderByAggregateInput
     _max?: PaymentMaxOrderByAggregateInput
@@ -10830,12 +10830,12 @@ export namespace Prisma {
     sessionUserId?: IntWithAggregatesFilter<"Payment"> | number
     amount?: FloatWithAggregatesFilter<"Payment"> | number
     method?: StringWithAggregatesFilter<"Payment"> | string
-    status?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    paidAt?: DateTimeWithAggregatesFilter<"Payment"> | Date | string
     currency?: StringNullableWithAggregatesFilter<"Payment"> | string | null
     notes?: StringNullableWithAggregatesFilter<"Payment"> | string | null
     refundedAmount?: FloatNullableWithAggregatesFilter<"Payment"> | number | null
     refundedAt?: DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null
-    paidAt?: DateTimeWithAggregatesFilter<"Payment"> | Date | string
+    status?: StringNullableWithAggregatesFilter<"Payment"> | string | null
   }
 
   export type AdminCreateInput = {
@@ -11483,12 +11483,12 @@ export namespace Prisma {
   export type PaymentCreateInput = {
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
     sessionUser: SessionUsersCreateNestedOneWithoutPaymentsInput
   }
 
@@ -11497,23 +11497,23 @@ export namespace Prisma {
     sessionUserId: number
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
   }
 
   export type PaymentUpdateInput = {
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
     sessionUser?: SessionUsersUpdateOneRequiredWithoutPaymentsNestedInput
   }
 
@@ -11522,12 +11522,12 @@ export namespace Prisma {
     sessionUserId?: IntFieldUpdateOperationsInput | number
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentCreateManyInput = {
@@ -11535,23 +11535,23 @@ export namespace Prisma {
     sessionUserId: number
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
   }
 
   export type PaymentUpdateManyMutationInput = {
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUncheckedUpdateManyInput = {
@@ -11559,12 +11559,12 @@ export namespace Prisma {
     sessionUserId?: IntFieldUpdateOperationsInput | number
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -12170,12 +12170,12 @@ export namespace Prisma {
     sessionUserId?: SortOrder
     amount?: SortOrder
     method?: SortOrder
-    status?: SortOrder
+    paidAt?: SortOrder
     currency?: SortOrder
     notes?: SortOrder
     refundedAmount?: SortOrder
     refundedAt?: SortOrder
-    paidAt?: SortOrder
+    status?: SortOrder
   }
 
   export type PaymentAvgOrderByAggregateInput = {
@@ -12190,12 +12190,12 @@ export namespace Prisma {
     sessionUserId?: SortOrder
     amount?: SortOrder
     method?: SortOrder
-    status?: SortOrder
+    paidAt?: SortOrder
     currency?: SortOrder
     notes?: SortOrder
     refundedAmount?: SortOrder
     refundedAt?: SortOrder
-    paidAt?: SortOrder
+    status?: SortOrder
   }
 
   export type PaymentMinOrderByAggregateInput = {
@@ -12203,12 +12203,12 @@ export namespace Prisma {
     sessionUserId?: SortOrder
     amount?: SortOrder
     method?: SortOrder
-    status?: SortOrder
+    paidAt?: SortOrder
     currency?: SortOrder
     notes?: SortOrder
     refundedAmount?: SortOrder
     refundedAt?: SortOrder
-    paidAt?: SortOrder
+    status?: SortOrder
   }
 
   export type PaymentSumOrderByAggregateInput = {
@@ -12874,24 +12874,24 @@ export namespace Prisma {
   export type PaymentCreateWithoutSessionUserInput = {
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
   }
 
   export type PaymentUncheckedCreateWithoutSessionUserInput = {
     id?: number
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
   }
 
   export type PaymentCreateOrConnectWithoutSessionUserInput = {
@@ -13032,12 +13032,12 @@ export namespace Prisma {
     sessionUserId?: IntFilter<"Payment"> | number
     amount?: FloatFilter<"Payment"> | number
     method?: StringFilter<"Payment"> | string
-    status?: StringNullableFilter<"Payment"> | string | null
+    paidAt?: DateTimeFilter<"Payment"> | Date | string
     currency?: StringNullableFilter<"Payment"> | string | null
     notes?: StringNullableFilter<"Payment"> | string | null
     refundedAmount?: FloatNullableFilter<"Payment"> | number | null
     refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
-    paidAt?: DateTimeFilter<"Payment"> | Date | string
+    status?: StringNullableFilter<"Payment"> | string | null
   }
 
   export type SessionUpsertWithoutUsersInput = {
@@ -13573,47 +13573,47 @@ export namespace Prisma {
     id?: number
     amount: number
     method: string
-    status?: string | null
+    paidAt?: Date | string
     currency?: string | null
     notes?: string | null
     refundedAmount?: number | null
     refundedAt?: Date | string | null
-    paidAt?: Date | string
+    status?: string | null
   }
 
   export type PaymentUpdateWithoutSessionUserInput = {
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUncheckedUpdateWithoutSessionUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUncheckedUpdateManyWithoutSessionUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     amount?: FloatFieldUpdateOperationsInput | number
     method?: StringFieldUpdateOperationsInput | string
-    status?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     refundedAmount?: NullableFloatFieldUpdateOperationsInput | number | null
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SessionUsersCreateManySessionInput = {

@@ -23,7 +23,7 @@ export default function Hero() {
           <div className="pt-8 md:pt-12 lg:pt-16">
             <div className="space-y-4 p-4  inline-block">
               <h1 className="font-bold  bg-black bg-opacity-5 text-2xl sm:text-3xl md:text-4xl text-white">
-                Récupérez Vos Points à Saint-Maur-des-Fossés (Site en demo)
+                Récupérez Vos Points à Saint-Maur-des-Fossés 
               </h1>
             </div>
           </div>
