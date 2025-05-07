@@ -8,7 +8,7 @@
  */
 export function formatDateWithDay(dateStr: string): string {
   const options: Intl.DateTimeFormatOptions = {
-    weekday: "short", // "jeu."
+    weekday: "long", // "jeu."
 
     month: "long",    // "janvier"
     day: "numeric",   // "16"

@@ -25,16 +25,11 @@ export async function GET(request: Request) {
         capacity: true,
         instructor: {
           select: {
-            firstName: true,
-            lastName: true,
             numeroAutorisationPrefectorale: true,
-
           },
         },
         psychologue: {
           select: {
-            firstName: true,
-            lastName: true,
             numeroAutorisationPrefectorale: true,
           },
         },

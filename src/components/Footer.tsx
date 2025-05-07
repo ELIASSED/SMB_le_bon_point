@@ -41,15 +41,15 @@ export default function Footer() {
                   Conditions Générales
                 </a>
               </li>
-              <li className="mb-2">
-                <a
-                  href="/confidentialite"
-                  className="text-beige hover:text-yellow-dark transition duration-200"
-                >
-                  Politique de Confidentialité
-                </a>
-              </li>
-              <li className="mb-2"> <ExternalLinkButton />
+            
+              <li className="mb-2">  <a
+        href="https://test-psychotechnique.paris/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block  text-white  rounded transition-colors duration-200"
+      >
+        Testez vos aptitudes sur test-psychotechnique.paris
+      </a>
 </li>
              
             </ul>
