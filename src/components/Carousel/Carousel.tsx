@@ -278,7 +278,6 @@ export default function Carousel() {
       title: "RECAPITULATIF",
       content: selectedStage && registrationInfo && paymentIntentId ? (
         <>
-          { console.log("Rendu de RecapStep avec :", { selectedStage, registrationInfo, paymentIntentId })}
           <RecapStep
             selectedStage={selectedStage}
             registrationInfo={registrationInfo}
@@ -287,11 +286,6 @@ export default function Carousel() {
         </>
       ) : (
         <>
-          { console.log("Étape Récapitulatif bloquée, données manquantes :", {
-            selectedStage,
-            registrationInfo,
-            paymentIntentId,
-          })}
           <p className="text-gray-500">Veuillez compléter les étapes précédentes.</p>
         </>
       ),

@@ -175,7 +175,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onPaymentSucc
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <img src="/images/secure-payment.svg" alt="Paiement sécurisé" className="h-8 w-auto mr-2" />
-          <span className="text-sm text-gray-500">Paiement sécurisé</span>
         </div>
         <button
           type="submit"

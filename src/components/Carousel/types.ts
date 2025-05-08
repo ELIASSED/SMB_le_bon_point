@@ -44,6 +44,11 @@ export interface RegistrationInfo {
   prefecture: string;
   etatPermis: string;
   casStage: string;
+  infractionDate: string | null;
+  infractionTime: string | null;
+  infractionPlace: string | null;
+  parquetNumber: string | null;
+  judgmentDate: string | null;
   id_recto: string | null;
   id_verso: string | null;
   permis_recto: string | null;
@@ -110,6 +115,11 @@ export interface UserFormData {
   prefecture: string;
   etatPermis: string;
   casStage: string;
+  infractionDate: string | null;
+  infractionTime: string | null;
+  infractionPlace: string | null;
+  parquetNumber: string | null;
+  judgmentDate: string | null;
   id_recto: string | null;
   id_verso: string | null;
   permis_recto: string | null;

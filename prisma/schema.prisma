@@ -45,6 +45,11 @@ model User {
   prefecture           String
   etatPermis           String
   casStage             String
+  infractionDate       DateTime? 
+  infractionTime       String?  
+  infractionPlace      String?  
+  parquetNumber        String?  
+  judgmentDate         DateTime? 
   attestationPdf       Bytes?
   sessionUsers         SessionUsers[]
 }

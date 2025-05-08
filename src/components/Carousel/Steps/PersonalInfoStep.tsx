@@ -36,7 +36,7 @@ export default function PersonalInfoStep({
     confirmationEmail: "",
     nationalite: "",
     dateNaissance: "",
-    lieuNaissance: "", // Note: This field is not in schema.prisma
+    lieuNaissance: "",
     codePostalNaissance: "",
     numeroPermis: "",
     dateDelivrancePermis: "",
@@ -49,6 +49,11 @@ export default function PersonalInfoStep({
     permis_verso: null,
     letter_48N: null,
     extraDocument: null,
+    infractionDate: "",
+    infractionTime: "",
+    infractionPlace: "",
+    parquetNumber: "",
+    judgmentDate: "",
     acceptConditions: false,
     commitToUpload: false,
   });
@@ -132,7 +137,6 @@ export default function PersonalInfoStep({
     setShowSuggestions(false);
   };
 
-  // New function to upload a single file without retries
   const uploadFile = async (file: File, filePath: string): Promise<string> => {
     if (!file || file.size === 0) {
       throw new Error(`Fichier invalide pour ${filePath}`);
@@ -144,12 +148,11 @@ export default function PersonalInfoStep({
       throw new Error("Client Supabase non initialisé correctement");
     }
 
-    // Upload raw file as-is, no compression or transformation
     const { data, error } = await supabase.storage
       .from("documents")
       .upload(filePath, file, {
         upsert: true,
-        cacheControl: '3600', // Optional: Cache control for performance
+        cacheControl: '3600',
       });
 
     if (error) {
@@ -259,7 +262,11 @@ export default function PersonalInfoStep({
         formDataObj.append(field, url);
       });
 
-      console.log("FormData final envoyé à onSubmit:", Object.fromEntries(formDataObj));
+      // Log détaillé du FormData final
+      console.log("FormData final envoyé à onSubmit:");
+      for (const [key, value] of formDataObj.entries()) {
+        console.log(`${key}: ${value}`);
+      }
 
       const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
       setRegistrationInfo(registrationData);
@@ -354,14 +361,24 @@ export default function PersonalInfoStep({
     return today.toISOString().split("T")[0];
   }
 
-  return (
-    <div className="min-h-screen md:p-6">
-      <section aria-labelledby="selected-stage-heading" className="mb-4 p-3 border rounded">
-        <h2 id="selected-stage-heading" className="text-lg font-bold text-gray-900">Stage Sélectionné</h2>
-        <SelectedStageInfo selectedStage={selectedStage} />
-      </section>
+  // Détermine les champs d'upload à afficher selon casStage
+  const showUploadFields = {
+    id_recto: ["1", "2", "3", "4"].includes(formData.casStage),
+    id_verso: ["1", "2", "3", "4"].includes(formData.casStage),
+    permis_recto: ["1", "2", "3", "4"].includes(formData.casStage),
+    permis_verso: ["1", "2", "3", "4"].includes(formData.casStage),
+    letter_48N: formData.casStage === "2",
+    extraDocument: ["3", "4"].includes(formData.casStage),
+  };
 
-      <form onSubmit={handleSubmit} className="p-4 md:p-6 rounded-lg shadow" encType="multipart/form-data" noValidate>
+  // Détermine les champs d'infraction et judiciaires à afficher
+  const showInfractionFields = formData.casStage === "2";
+  const showJudicialFields = ["3", "4"].includes(formData.casStage);
+
+  return (
+    <div className="min-h-screen ">
+     
+      <form onSubmit={handleSubmit} className="p-4  rounded-lg shadow" encType="multipart/form-data" noValidate> <SelectedStageInfo selectedStage={selectedStage} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <fieldset className="border p-3 rounded" aria-labelledby="personal-info-legend">
             <legend id="personal-info-legend" className="text-lg font-bold text-gray-800 mb-2">Infos Personnelles</legend>
@@ -517,69 +534,212 @@ export default function PersonalInfoStep({
                 </div>
               </div>
 
+              {showInfractionFields && (
+                <div className="mt-3 border-t pt-3">
+                  <h3 className="text-xs font-semibold text-indigo-600 mb-2">Détails de l'Infraction (Cas 2)</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label htmlFor="infractionDate" className="text-xs font-medium text-gray-700">Date de l'Infraction</label>
+                      <input
+                        id="infractionDate"
+                        type="date"
+                        name="infractionDate"
+                        value={formData.infractionDate}
+                        onChange={handleChange}
+                        className={`${inputClassName} ${errors.infractionDate ? "border-red-500" : ""}`}
+                        aria-label="Date de l'infraction (facultatif)"
+                      />
+                      {errors.infractionDate && <p className="text-red-500 text-xs">{errors.infractionDate}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="infractionTime" className="text-xs font-medium text-gray-700">Heure de l'Infraction</label>
+                      <input
+                        id="infractionTime"
+                        type="time"
+                        name="infractionTime"
+                        value={formData.infractionTime}
+                        onChange={handleChange}
+                        className={`${inputClassName} ${errors.infractionTime ? "border-red-500" : ""}`}
+                        aria-label="Heure de l'infraction (facultatif)"
+                      />
+                      {errors.infractionTime && <p className="text-red-500 text-xs">{errors.infractionTime}</p>}
+                    </div>
+                    <div className="col-span-2">
+                      <label htmlFor="infractionPlace" className="text-xs font-medium text-gray-700">Lieu de l'Infraction</label>
+                      <input
+                        id="infractionPlace"
+                        type="text"
+                        name="infractionPlace"
+                        value={formData.infractionPlace}
+                        onChange={handleChange}
+                        className={`${inputClassName} ${errors.infractionPlace ? "border-red-500" : ""}`}
+                        placeholder="Ex. : 123 Rue de Paris, 75001 Paris"
+                        aria-label="Lieu de l'infraction (facultatif)"
+                      />
+                      {errors.infractionPlace && <p className="text-red-500 text-xs">{errors.infractionPlace}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showJudicialFields && (
+                <div className="mt-3 border-t pt-3">
+                  <h3 className="text-xs font-semibold text-indigo-600 mb-2">Détails Judiciaires (Cas 3 ou 4)</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label htmlFor="parquetNumber" className="text-xs font-medium text-gray-700">Numéro de Parquet</label>
+                      <input
+                        id="parquetNumber"
+                        type="text"
+                        name="parquetNumber"
+                        value={formData.parquetNumber}
+                        onChange={handleChange}
+                        className={`${inputClassName} ${errors.parquetNumber ? "border-red-500" : ""}`}
+                        placeholder="Ex. : 123456789"
+                        aria-label="Numéro de parquet (facultatif)"
+                      />
+                      {errors.parquetNumber && <p className="text-red-500 text-xs">{errors.parquetNumber}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="judgmentDate" className="text-xs font-medium text-gray-700">Date de Jugement</label>
+                      <input
+                        id="judgmentDate"
+                        type="date"
+                        name="judgmentDate"
+                        value={formData.judgmentDate}
+                        onChange={handleChange}
+                        className={`${inputClassName} ${errors.judgmentDate ? "border-red-500" : ""}`}
+                        aria-label="Date de jugement (facultatif)"
+                      />
+                      {errors.judgmentDate && <p className="text-red-500 text-xs">{errors.judgmentDate}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-3 border-t pt-3">
                 <h3 className="text-xs font-semibold text-indigo-600 mb-2">Téléchargements</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label htmlFor="permis_recto" className="text-xs font-medium text-gray-700">Permis Recto</label>
-                    <input id="permis_recto" type="file" name="permis_recto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.permis_recto ? "border-red-500" : ""}`} />
-                    {uploadProgress.permis_recto > 0 && uploadProgress.permis_recto < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_recto}%` }}></div>
-                      </div>
-                    )}
-                    {errors.permis_recto && <p className="text-red-500 text-xs">{errors.permis_recto}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="permis_verso" className="text-xs font-medium text-gray-700">Permis Verso</label>
-                    <input id="permis_verso" type="file" name="permis_verso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.permis_verso ? "border-red-500" : ""}`} />
-                    {uploadProgress.permis_verso > 0 && uploadProgress.permis_verso < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_verso}%` }}></div>
-                      </div>
-                    )}
-                    {errors.permis_verso && <p className="text-red-500 text-xs">{errors.permis_verso}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="id_recto" className="text-xs font-medium text-gray-700">ID Recto</label>
-                    <input id="id_recto" type="file" name="id_recto" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.id_recto ? "border-red-500" : ""}`} />
-                    {uploadProgress.id_recto > 0 && uploadProgress.id_recto < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_recto}%` }}></div>
-                      </div>
-                    )}
-                    {errors.id_recto && <p className="text-red-500 text-xs">{errors.id_recto}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="id_verso" className="text-xs font-medium text-gray-700">ID Verso</label>
-                    <input id="id_verso" type="file" name="id_verso" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.id_verso ? "border-red-500" : ""}`} />
-                    {uploadProgress.id_verso > 0 && uploadProgress.id_verso < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_verso}%` }}></div>
-                      </div>
-                    )}
-                    {errors.id_verso && <p className="text-red-500 text-xs">{errors.id_verso}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="letter_48N" className="text-xs font-medium text-gray-700">Lettre 48N</label>
-                    <input id="letter_48N" type="file" name="letter_48N" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.letter_48N ? "border-red-500" : ""}`} />
-                    {uploadProgress.letter_48N > 0 && uploadProgress.letter_48N < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.letter_48N}%` }}></div>
-                      </div>
-                    )}
-                    {errors.letter_48N && <p className="text-red-500 text-xs">{errors.letter_48N}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="extraDocument" className="text-xs font-medium text-gray-700">Document Supplémentaire</label>
-                    <input id="extraDocument" type="file" name="extraDocument" onChange={handleFileChange} accept="image/*,application/pdf" className={`${inputClassName} ${errors.extraDocument ? "border-red-500" : ""}`} />
-                    {uploadProgress.extraDocument > 0 && uploadProgress.extraDocument < 100 && (
-                      <div className="mt-1 h-2 bg-gray-200 rounded">
-                        <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.extraDocument}%` }}></div>
-                      </div>
-                    )}
-                    {errors.extraDocument && <p className="text-red-500 text-xs">{errors.extraDocument}</p>}
-                  </div>
+                  {showUploadFields.permis_recto && (
+                    <div>
+                      <label htmlFor="permis_recto" className="text-xs font-medium text-gray-700">Permis Recto</label>
+                      <input
+                        id="permis_recto"
+                        type="file"
+                        name="permis_recto"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.permis_recto ? "border-red-500" : ""}`}
+                        aria-label="Permis recto (facultatif)"
+                      />
+                      {uploadProgress.permis_recto > 0 && uploadProgress.permis_recto < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_recto}%` }}></div>
+                        </div>
+                      )}
+                      {errors.permis_recto && <p className="text-red-500 text-xs">{errors.permis_recto}</p>}
+                    </div>
+                  )}
+                  {showUploadFields.permis_verso && (
+                    <div>
+                      <label htmlFor="permis_verso" className="text-xs font-medium text-gray-700">Permis Verso</label>
+                      <input
+                        id="permis_verso"
+                        type="file"
+                        name="permis_verso"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.permis_verso ? "border-red-500" : ""}`}
+                        aria-label="Permis verso (facultatif)"
+                      />
+                      {uploadProgress.permis_verso > 0 && uploadProgress.permis_verso < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_verso}%` }}></div>
+                        </div>
+                      )}
+                      {errors.permis_verso && <p className="text-red-500 text-xs">{errors.permis_verso}</p>}
+                    </div>
+                  )}
+                  {showUploadFields.id_recto && (
+                    <div>
+                      <label htmlFor="id_recto" className="text-xs font-medium text-gray-700">ID Recto</label>
+                      <input
+                        id="id_recto"
+                        type="file"
+                        name="id_recto"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.id_recto ? "border-red-500" : ""}`}
+                        aria-label="ID recto (facultatif)"
+                      />
+                      {uploadProgress.id_recto > 0 && uploadProgress.id_recto < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_recto}%` }}></div>
+                        </div>
+                      )}
+                      {errors.id_recto && <p className="text-red-500 text-xs">{errors.id_recto}</p>}
+                    </div>
+                  )}
+                  {showUploadFields.id_verso && (
+                    <div>
+                      <label htmlFor="id_verso" className="text-xs font-medium text-gray-700">ID Verso</label>
+                      <input
+                        id="id_verso"
+                        type="file"
+                        name="id_verso"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.id_verso ? "border-red-500" : ""}`}
+                        aria-label="ID verso (facultatif)"
+                      />
+                      {uploadProgress.id_verso > 0 && uploadProgress.id_verso < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_verso}%` }}></div>
+                        </div>
+                      )}
+                      {errors.id_verso && <p className="text-red-500 text-xs">{errors.id_verso}</p>}
+                    </div>
+                  )}
+                  {showUploadFields.letter_48N && (
+                    <div>
+                      <label htmlFor="letter_48N" className="text-xs font-medium text-gray-700">Lettre 48N</label>
+                      <input
+                        id="letter_48N"
+                        type="file"
+                        name="letter_48N"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.letter_48N ? "border-red-500" : ""}`}
+                        aria-label="Lettre 48N (facultatif)"
+                      />
+                      {uploadProgress.letter_48N > 0 && uploadProgress.letter_48N < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.letter_48N}%` }}></div>
+                        </div>
+                      )}
+                      {errors.letter_48N && <p className="text-red-500 text-xs">{errors.letter_48N}</p>}
+                    </div>
+                  )}
+                  {showUploadFields.extraDocument && (
+                    <div>
+                      <label htmlFor="extraDocument" className="text-xs font-medium text-gray-700">Document Supplémentaire</label>
+                      <input
+                        id="extraDocument"
+                        type="file"
+                        name="extraDocument"
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf"
+                        className={`${inputClassName} ${errors.extraDocument ? "border-red-500" : ""}`}
+                        aria-label="Document supplémentaire (facultatif)"
+                      />
+                      {uploadProgress.extraDocument > 0 && uploadProgress.extraDocument < 100 && (
+                        <div className="mt-1 h-2 bg-gray-200 rounded">
+                          <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.extraDocument}%` }}></div>
+                        </div>
+                      )}
+                      {errors.extraDocument && <p className="text-red-500 text-xs">{errors.extraDocument}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -597,13 +757,13 @@ export default function PersonalInfoStep({
               className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`}
               aria-required="true"
             />
-            J'accepte les{" "}
+          
             <a
               href="/conditions-générales-de-ventes.pdf"
               target="_blank"
               className="underline text-indigo-600"
             >
-              conditions générales
+              J'accepte les conditions générales
             </a>{" "}
             *
           </label>
