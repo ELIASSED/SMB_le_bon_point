@@ -142,8 +142,6 @@ export default function PersonalInfoStep({
       throw new Error(`Fichier invalide pour ${filePath}`);
     }
 
-    console.log(`Début de l'upload pour ${filePath}, taille: ${file.size} octets, type: ${file.type}`);
-
     if (!supabase || !supabase.storage) {
       throw new Error("Client Supabase non initialisé correctement");
     }
@@ -170,12 +168,10 @@ export default function PersonalInfoStep({
       throw new Error(`Impossible d'obtenir l'URL publique pour ${filePath}`);
     }
 
-    console.log(`Upload réussi pour ${filePath}:`, urlData.publicUrl);
     return urlData.publicUrl;
   };
 
   const uploadFilesToSupabase = async (id: string): Promise<{ [key: string]: string }> => {
-    console.log("Début de l'upload des fichiers pour ID:", id);
     const uploadedPaths: { [key: string]: string } = {};
 
     if (!id || typeof id !== 'string') {
@@ -195,7 +191,6 @@ export default function PersonalInfoStep({
       const file = formData[field as keyof RegistrationInfo] as File | null;
 
       if (!file) {
-        console.log(`Aucun fichier pour ${field}`);
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
         continue;
       }
@@ -211,14 +206,12 @@ export default function PersonalInfoStep({
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const filePath = `${id}/${dbField}/${timestamp}_${cleanFileName}`;
 
-      console.log(`Tentative d'upload pour ${field}: ${filePath}`);
       setUploadProgress((prev) => ({ ...prev, [field]: 10 }));
 
       try {
         const publicUrl = await uploadFile(file, filePath);
         uploadedPaths[field] = publicUrl;
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
-        console.log(`Upload réussi pour ${field}: ${publicUrl}`);
       } catch (error: any) {
         console.error(`Erreur pour ${field}:`, error.message);
         setErrors((prev) => ({ ...prev, [field]: `Échec de l'upload: ${error.message}` }));
@@ -226,15 +219,12 @@ export default function PersonalInfoStep({
       }
     }
 
-    console.log("Tous les chemins uploadés:", uploadedPaths);
     return uploadedPaths;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Soumission du formulaire déclenchée");
     if (!validate()) {
-      console.log("Validation échouée:", errors);
       return;
     }
 
@@ -242,37 +232,28 @@ export default function PersonalInfoStep({
     try {
       const formDataObj = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === "acceptConditions" || key === "commitToUpload" || key === "lieuNaissance") return;
-        
-        if (!(value instanceof File) && value !== null && value !== undefined) {
+        // Exclure lieuNaissance, mais inclure acceptConditions et commitToUpload
+        if (key === "lieuNaissance") return;
+        if (value instanceof File) return; // Les fichiers sont ajoutés après l'upload
+        if (value !== null && value !== undefined) {
           formDataObj.append(key, value.toString());
         }
       });
-
-      console.log("FormData initial sans fichiers:", Object.fromEntries(formDataObj));
 
       if (!formData.email) {
         throw new Error("Email requis pour l'upload des fichiers");
       }
 
       const uploadedPaths = await uploadFilesToSupabase(formData.email);
-      console.log("Chemins uploadés reçus:", uploadedPaths);
 
       Object.entries(uploadedPaths).forEach(([field, url]) => {
         formDataObj.append(field, url);
       });
 
-      // Log détaillé du FormData final
-      console.log("FormData final envoyé à onSubmit:");
-      for (const [key, value] of formDataObj.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-
       const registrationData = Object.fromEntries(formDataObj.entries()) as unknown as RegistrationInfo;
       setRegistrationInfo(registrationData);
 
       await onSubmit(formDataObj);
-      console.log("Soumission réussie, transition vers l'étape suivante");
     } catch (error: any) {
       console.error("Erreur lors de la soumission:", error.message, error.stack);
       setErrors((prev) => ({ ...prev, submit: error.message || "Erreur lors de l'envoi des données. Veuillez réessayer." }));
@@ -329,19 +310,30 @@ export default function PersonalInfoStep({
     }
 
     const allowedFileTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
-    [
-      "id_recto",
-      "id_verso",
-      "permis_recto",
-      "permis_verso",
-      "letter_48N",
-      "extraDocument",
-    ].forEach((field) => {
+    const fileFields = ["id_recto", "id_verso", "permis_recto", "permis_verso", "letter_48N", "extraDocument"];
+    fileFields.forEach((field) => {
       const file = formData[field as keyof RegistrationInfo] as File | null;
       if (file && !allowedFileTypes.includes(file.type)) {
         newErrors[field] = "Type de fichier invalide. Autorisé: JPEG, JPG, PNG, PDF.";
       }
     });
+
+    // Vérifier si aucun fichier n'est téléchargé pour les champs affichés
+    const showUploadFields = {
+      id_recto: ["1", "2", "3", "4"].includes(formData.casStage),
+      id_verso: ["1", "2", "3", "4"].includes(formData.casStage),
+      permis_recto: ["1", "2", "3", "4"].includes(formData.casStage),
+      permis_verso: ["1", "2", "3", "4"].includes(formData.casStage),
+      letter_48N: formData.casStage === "2",
+      extraDocument: ["3", "4"].includes(formData.casStage),
+    };
+
+    const uploadFields = Object.keys(showUploadFields).filter((field) => showUploadFields[field as keyof typeof showUploadFields]);
+    const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null);
+
+    if (!hasFiles && uploadFields.length > 0 && !formData.commitToUpload) {
+      newErrors.commitToUpload = "Vous devez vous engager à fournir les pièces jointes si aucun fichier n'est téléchargé.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -371,14 +363,19 @@ export default function PersonalInfoStep({
     extraDocument: ["3", "4"].includes(formData.casStage),
   };
 
+  // Vérifier si aucun fichier n'est téléchargé pour les champs affichés
+  const uploadFields = Object.keys(showUploadFields).filter((field) => showUploadFields[field as keyof typeof showUploadFields]);
+  const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null);
+  const showCommitToUpload = uploadFields.length > 0 && !hasFiles;
+
   // Détermine les champs d'infraction et judiciaires à afficher
   const showInfractionFields = formData.casStage === "2";
   const showJudicialFields = ["3", "4"].includes(formData.casStage);
 
   return (
-    <div className="min-h-screen ">
-     
-      <form onSubmit={handleSubmit} className="p-4  rounded-lg shadow" encType="multipart/form-data" noValidate> <SelectedStageInfo selectedStage={selectedStage} />
+    <div className="min-h-screen">
+      <form onSubmit={handleSubmit} className="p-4 rounded-lg shadow" encType="multipart/form-data" noValidate>
+        <SelectedStageInfo selectedStage={selectedStage} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <fieldset className="border p-3 rounded" aria-labelledby="personal-info-legend">
             <legend id="personal-info-legend" className="text-lg font-bold text-gray-800 mb-2">Infos Personnelles</legend>
@@ -757,17 +754,29 @@ export default function PersonalInfoStep({
               className={`mr-2 ${errors.acceptConditions ? "border-red-500" : ""}`}
               aria-required="true"
             />
-          
-            <a
-              href="/conditions-générales-de-ventes.pdf"
-              target="_blank"
-              className="underline text-indigo-600"
-            >
+            <a href="/conditions-générales-de-ventes.pdf" target="_blank" className="underline text-indigo-600">
               J'accepte les conditions générales
             </a>{" "}
             *
           </label>
           {errors.acceptConditions && <p className="text-red-500 text-xs">{errors.acceptConditions}</p>}
+
+          {showCommitToUpload && (
+            <label htmlFor="commitToUpload" className="flex items-center text-xs font-medium text-gray-700">
+              <input
+                id="commitToUpload"
+                type="checkbox"
+                name="commitToUpload"
+                checked={formData.commitToUpload}
+                onChange={handleChange}
+                className={`mr-2 ${errors.commitToUpload ? "border-red-500" : ""}`}
+                aria-required="true"
+              />
+              Je m'engage à fournir les pièces jointes au plus vite *
+            </label>
+          )}
+          {errors.commitToUpload && <p className="text-red-500 text-xs">{errors.commitToUpload}</p>}
+
           <button
             type="submit"
             disabled={isSubmitting}

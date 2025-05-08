@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const { sessionId, userId, paymentIntentId } = (await request.json()) as ConfirmPaymentRequest;
 
-    console.log('📥 Données reçues dans /api/confirm-payment:', { sessionId, userId, paymentIntentId });
+   // console.log('📥 Données reçues dans /api/confirm-payment:', { sessionId, userId, paymentIntentId });
 
     if (!sessionId || !userId || !paymentIntentId) {
       console.warn('⚠️ Données manquantes');
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     if (sessionUser.isPaid) {
-      console.log('ℹ️ Déjà payé:', sessionUser);
+     // console.log('ℹ️ Déjà payé:', sessionUser);
       return NextResponse.json({ error: 'Déjà payé.' }, { status: 400 });
     }
 
@@ -74,8 +74,6 @@ export async function POST(request: Request) {
 
       return updatedUser;
     });
-
-    console.log('✅ Paiement confirmé et PDF stocké dans la base de données:', updatedSessionUser);
 
     return NextResponse.json({
       message: 'Paiement confirmé. Attestation stockée dans la base de données.',

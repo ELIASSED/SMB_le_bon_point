@@ -50,14 +50,6 @@ const normalizeUserData = (userData: RegistrationInfo) => {
   const infractionPlace = userData.infractionPlace?.trim();
   const parquetNumber = userData.parquetNumber?.trim();
 
-  console.log("Valeurs brutes avant normalisation:", {
-    infractionDate,
-    judgmentDate,
-    infractionTime,
-    infractionPlace,
-    parquetNumber,
-  });
-
   const normalizedData = {
     civilite: userData.civilite!.trim(),
     nom: userData.nom!.trim(),
@@ -90,14 +82,6 @@ const normalizeUserData = (userData: RegistrationInfo) => {
     judgmentDate: judgmentDate && isValidDate(judgmentDate) ? new Date(judgmentDate) : null,
   };
 
-  console.log("Valeurs après normalisation:", {
-    infractionDate: normalizedData.infractionDate,
-    judgmentDate: normalizedData.judgmentDate,
-    infractionTime: normalizedData.infractionTime,
-    infractionPlace: normalizedData.infractionPlace,
-    parquetNumber: normalizedData.parquetNumber,
-  });
-
   return normalizedData;
 };
 
@@ -105,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     // Étape 1 : Parser la requête
     const body = await req.json();
-    console.log("Requête reçue à /api/register:", JSON.stringify(body, null, 2));
+   // console.log("Requête reçue à /api/register:", JSON.stringify(body, null, 2));
 
     const { stageId, userData }: { stageId: number; userData: RegistrationInfo } = body;
 
@@ -186,10 +170,6 @@ export async function POST(req: NextRequest) {
 
     // Étape 6 : Normalisation des données
     const normalizedUserData = normalizeUserData(userData);
-    console.log(
-      "Données utilisateur normalisées:",
-      JSON.stringify(normalizedUserData, null, 2)
-    );
 
     // Étape 7 : Vérifier l'unicité de l'email pour la session
     const existingSessionUser = await prisma.sessionUsers.findFirst({
@@ -229,7 +209,7 @@ export async function POST(req: NextRequest) {
           ...normalizedUserData,
         },
       });
-      console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
+     // console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
     } else {
       // Mettre à jour l'utilisateur existant
       user = await prisma.user.update({
@@ -238,7 +218,7 @@ export async function POST(req: NextRequest) {
           ...normalizedUserData,
         },
       });
-      console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
+    //  console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
     }
 
     // Étape 9 : Créer l'enregistrement SessionUsers
@@ -250,31 +230,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("Utilisateur associé à la session:", {
-      userId: user.id,
-      sessionId: stageId,
-      sessionUserId: sessionUser.id,
-    });
-
-    // Étape 10 : Retourner la réponse
-    console.log("Utilisateur créé ou mis à jour:", {
-      id: user.id,
-      email: user.email,
-      casStage: user.casStage,
-      infractionDate: user.infractionDate,
-      infractionTime: user.infractionTime,
-      infractionPlace: user.infractionPlace,
-      parquetNumber: user.parquetNumber,
-      judgmentDate: user.judgmentDate,
-      documentUrls: {
-        id_recto: user.id_recto,
-        id_verso: user.id_verso,
-        permis_recto: user.permis_recto,
-        permis_verso: user.permis_verso,
-        letter_48N: user.letter_48N,
-        extraDocument: user.extraDocument,
-      },
-    });
 
     return NextResponse.json({ user, sessionUser }, { status: 200 });
   } catch (error: any) {

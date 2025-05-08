@@ -3,15 +3,15 @@ import { sendConfirmationEmail } from "@/lib/mailer";
 
 export async function POST(req: Request) {
   try {
-    console.log("Requête reçue dans /api/send-confirmation");
+   // console.log("Requête reçue dans /api/send-confirmation");
     const body = await req.json();
-    console.log("Données reçues:", body);
+   // console.log("Données reçues:", body);
 
     const { to, prenom, nom, location, numeroStageAnts, startDate, endDate, supportEmail, supportPhone } = body;
 
     // Validation des champs
     if (!to || !prenom || !nom || !location || !numeroStageAnts || !startDate || !endDate || !supportEmail) {
-      console.log("Champs manquants:", { to, prenom, nom, location, numeroStageAnts, startDate, endDate, supportEmail });
+     // console.log("Champs manquants:", { to, prenom, nom, location, numeroStageAnts, startDate, endDate, supportEmail });
       return NextResponse.json({ success: false, error: "Tous les champs obligatoires doivent être fournis" }, { status: 400 });
     }
 
