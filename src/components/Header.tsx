@@ -8,7 +8,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="relative bg-white shadow-lg rounded-lg max-w-6xl mx-auto mt-9">
+    <header className="relative bg-white shadow-lg rounded-lg max-w-6xl mx-auto mt-2">
     {/* Bande supérieure avec menu burger et titre */}
     <div className="bg-yellow-dark py-6 px-6 flex items-center justify-between rounded-t-lg">
       <div className="text-left md:ml-6 flex items-center justify-between w-full md:w-auto">
@@ -17,7 +17,7 @@ export default function Header() {
           <span className="block text-base text-gray-600">
             Stages de Récupération de Points
           </span>
-          <span className="block text-sm text-gray-500 mt-1">
+          <span className="block text-sm text-[#004c97] mt-1">
             Agrément R2209400050
           </span>
         </Link>
