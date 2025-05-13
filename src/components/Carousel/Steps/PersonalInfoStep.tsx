@@ -10,52 +10,69 @@ import prefecturesData from "../prefectures.json";
 import { supabase } from "@/lib/supabaseClient";
 
 interface PersonalInfoStepProps {
-  selectedStage?: Stage;
+  selectedStage: Stage;
   onSubmit: (data: FormData) => Promise<void>;
   setRegistrationInfo: React.Dispatch<React.SetStateAction<RegistrationInfo | null>>;
+  registrationInfo: RegistrationInfo | null;
   nextStep: () => void;
+  prevStep: () => void;
 }
 
 export default function PersonalInfoStep({
   selectedStage,
   onSubmit,
   setRegistrationInfo,
+  registrationInfo,
   nextStep,
+  prevStep,
 }: PersonalInfoStepProps) {
-  const [formData, setFormData] = useState<RegistrationInfo>({
-    civilite: "",
-    nom: "",
-    prenom: "",
-    prenom1: "",
-    prenom2: "",
-    adresse: "",
-    codePostal: "",
-    ville: "",
-    telephone: "",
-    email: "",
-    confirmationEmail: "",
-    nationalite: "",
-    dateNaissance: "",
-    lieuNaissance: "",
-    codePostalNaissance: "",
-    numeroPermis: "",
-    dateDelivrancePermis: "",
-    prefecture: "",
-    etatPermis: "",
-    casStage: "",
-    id_recto: null,
-    id_verso: null,
-    permis_recto: null,
-    permis_verso: null,
-    letter_48N: null,
-    extraDocument: null,
-    infractionDate: "",
-    infractionTime: "",
-    infractionPlace: "",
-    parquetNumber: "",
-    judgmentDate: "",
-    acceptConditions: false,
-    commitToUpload: false,
+  const [formData, setFormData] = useState<RegistrationInfo>(() => {
+    if (registrationInfo) {
+      return {
+        ...registrationInfo,
+        id_recto: null,
+        id_verso: null,
+        permis_recto: null,
+        permis_verso: null,
+        letter_48N: null,
+        extraDocument: null,
+      };
+    }
+    return {
+      civilite: "",
+      nom: "",
+      prenom: "",
+      prenom1: "",
+      prenom2: "",
+      adresse: "",
+      codePostal: "",
+      ville: "",
+      telephone: "",
+      email: "",
+      confirmationEmail: "",
+      nationalite: "",
+      dateNaissance: "",
+      lieuNaissance: "",
+      codePostalNaissance: "",
+      numeroPermis: "",
+      dateDelivrancePermis: "",
+      prefecture: "",
+      etatPermis: "",
+      casStage: "",
+      id_recto: null,
+      id_verso: null,
+      permis_recto: null,
+      permis_verso: null,
+      letter_48N: null,
+      extraDocument: null,
+      infractionDate: "",
+      infractionTime: "",
+      infractionPlace: "",
+      parquetNumber: "",
+      judgmentDate: "",
+      acceptConditions: false,
+      commitToUpload: false,
+    };
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -192,6 +209,10 @@ export default function PersonalInfoStep({
       const file = formData[field as keyof RegistrationInfo] as File | null;
 
       if (!file) {
+        // Conserver l'URL existante si aucun nouveau fichier n'est uploadé
+        if (registrationInfo && registrationInfo[field as keyof RegistrationInfo]) {
+          uploadedPaths[field] = registrationInfo[field as keyof RegistrationInfo] as string;
+        }
         setUploadProgress((prev) => ({ ...prev, [field]: 100 }));
         continue;
       }
@@ -344,7 +365,7 @@ export default function PersonalInfoStep({
     };
 
     const uploadFields = Object.keys(showUploadFields).filter((field) => showUploadFields[field as keyof typeof showUploadFields]);
-    const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null);
+    const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null || (registrationInfo && registrationInfo[field as keyof RegistrationInfo]));
 
     if (!hasFiles && uploadFields.length > 0 && !formData.commitToUpload) {
       newErrors.commitToUpload = "Vous devez vous engager à fournir les pièces jointes si aucun fichier n'est téléchargé.";
@@ -353,14 +374,6 @@ export default function PersonalInfoStep({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  if (!selectedStage) {
-    return (
-      <div className="text-center text-red-500 p-4" role="alert">
-        Veuillez sélectionner une session avant de continuer.
-      </div>
-    );
-  }
 
   function getDateSeizeYearsAgo(): string {
     const today = new Date();
@@ -378,7 +391,7 @@ export default function PersonalInfoStep({
   };
 
   const uploadFields = Object.keys(showUploadFields).filter((field) => showUploadFields[field as keyof typeof showUploadFields]);
-  const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null);
+  const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null || (registrationInfo && registrationInfo[field as keyof RegistrationInfo]));
   const showCommitToUpload = uploadFields.length > 0 && !hasFiles;
 
   const showInfractionFields = formData.casStage === "2";
@@ -641,6 +654,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.permis_recto ? "border-red-500" : ""}`}
                         aria-label="Permis recto (facultatif)"
                       />
+                      {registrationInfo?.permis_recto && !formData.permis_recto && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.permis_recto} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.permis_recto > 0 && uploadProgress.permis_recto < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_recto}%` }}></div>
@@ -661,6 +677,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.permis_verso ? "border-red-500" : ""}`}
                         aria-label="Permis verso (facultatif)"
                       />
+                      {registrationInfo?.permis_verso && !formData.permis_verso && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.permis_verso} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.permis_verso > 0 && uploadProgress.permis_verso < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.permis_verso}%` }}></div>
@@ -681,6 +700,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.id_recto ? "border-red-500" : ""}`}
                         aria-label="ID recto (facultatif)"
                       />
+                      {registrationInfo?.id_recto && !formData.id_recto && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.id_recto} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.id_recto > 0 && uploadProgress.id_recto < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_recto}%` }}></div>
@@ -701,6 +723,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.id_verso ? "border-red-500" : ""}`}
                         aria-label="ID verso (facultatif)"
                       />
+                      {registrationInfo?.id_verso && !formData.id_verso && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.id_verso} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.id_verso > 0 && uploadProgress.id_verso < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.id_verso}%` }}></div>
@@ -721,6 +746,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.letter_48N ? "border-red-500" : ""}`}
                         aria-label="Lettre 48N (facultatif)"
                       />
+                      {registrationInfo?.letter_48N && !formData.letter_48N && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.letter_48N} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.letter_48N > 0 && uploadProgress.letter_48N < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.letter_48N}%` }}></div>
@@ -741,6 +769,9 @@ export default function PersonalInfoStep({
                         className={`${inputClassName} ${errors.extraDocument ? "border-red-500" : ""}`}
                         aria-label="Document supplémentaire (facultatif)"
                       />
+                      {registrationInfo?.extraDocument && !formData.extraDocument && (
+                        <p className="text-xs text-gray-500">Fichier actuel : <a href={registrationInfo.extraDocument} target="_blank" className="text-indigo-600">Voir</a></p>
+                      )}
                       {uploadProgress.extraDocument > 0 && uploadProgress.extraDocument < 100 && (
                         <div className="mt-1 h-2 bg-gray-200 rounded">
                           <div className="h-full bg-indigo-500 rounded" style={{ width: `${uploadProgress.extraDocument}%` }}></div>
@@ -789,13 +820,22 @@ export default function PersonalInfoStep({
           )}
           {errors.commitToUpload && <p className="text-red-500 text-xs">{errors.commitToUpload}</p>}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full md:w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            {isSubmitting ? "Envoi..." : "Enregistrer"}
-          </button>
+          <div className="flex space-x-4 w-full md:w-1/2">
+            <button
+              type="button"
+              onClick={prevStep}
+              className="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg"
+            >
+              Précédent
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-1/2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-2 px-4 rounded-lg shadow hover:from-indigo-600 hover:to-blue-600 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              {isSubmitting ? "Envoi..." : "Enregistrer"}
+            </button>
+          </div>
           {errors.submit && <p className="text-red-500 text-xs">{errors.submit}</p>}
         </div>
       </form>

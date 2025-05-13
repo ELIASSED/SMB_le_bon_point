@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     // Étape 1 : Parser la requête
     const body = await req.json();
-    const { stageId, userData }: { stageId: number; userData: RegistrationInfo } = body;
+    const { stageId, userData, userId, sessionUserId }: { stageId: number; userData: RegistrationInfo; userId?: string; sessionUserId?: string } = body;
 
     // Étape 2 : Validation initiale
     if (!stageId || !userData) {
@@ -178,22 +178,46 @@ export async function POST(req: NextRequest) {
     // Étape 6 : Normalisation des données
     const normalizedUserData = normalizeUserData(userData);
 
-    // Étape 7 : Créer un nouvel utilisateur
-    const user = await prisma.user.create({
-      data: {
-        ...normalizedUserData,
-      },
-    });
-    console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
+    // Étape 7 : Gérer l'utilisateur
+    let user;
+    if (userId) {
+      // Mettre à jour l'utilisateur existant
+      user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...normalizedUserData,
+        },
+      });
+      console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
+    } else {
+      // Créer un nouvel utilisateur
+      user = await prisma.user.create({
+        data: {
+          ...normalizedUserData,
+        },
+      });
+      console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
+    }
 
-    // Étape 8 : Créer l'enregistrement SessionUsers
-    const sessionUser = await prisma.sessionUsers.create({
+    // Étape 8 : Gérer l'enregistrement SessionUsers
+    let sessionUser;
+    if (sessionUserId) {
+      // Supprimer l'ancien enregistrement sessionUsers
+      await prisma.sessionUsers.delete({
+        where: { id: sessionUserId },
+      });
+      console.log("Ancien sessionUsers supprimé:", { sessionUserId });
+    }
+
+    // Créer un nouvel enregistrement sessionUsers
+    sessionUser = await prisma.sessionUsers.create({
       data: {
         userId: user.id,
         sessionId: stageId,
         isPaid: false,
       },
     });
+    console.log("Nouveau sessionUsers créé:", { id: sessionUser.id, userId: user.id, sessionId: stageId });
 
     return NextResponse.json({ user, sessionUser }, { status: 200 });
   } catch (error: any) {
