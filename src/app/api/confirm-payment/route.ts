@@ -2,11 +2,10 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient, SessionUsers, User, Session } from '@prisma/client';
 import Stripe from 'stripe';
-import generateAttestation from '@/lib/generateAttestation';
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
+  apiVersion: '2025-04-30.basil',
 });
 
 type ConfirmPaymentRequest = {
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const { sessionId, userId, paymentIntentId } = (await request.json()) as ConfirmPaymentRequest;
 
-   // console.log('📥 Données reçues dans /api/confirm-payment:', { sessionId, userId, paymentIntentId });
+    console.log('📥 Données reçues dans /api/confirm-payment:', { sessionId, userId, paymentIntentId });
 
     if (!sessionId || !userId || !paymentIntentId) {
       console.warn('⚠️ Données manquantes');
@@ -43,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     if (sessionUser.isPaid) {
-     // console.log('ℹ️ Déjà payé:', sessionUser);
+      console.log('ℹ️ Déjà payé:', sessionUser);
       return NextResponse.json({ error: 'Déjà payé.' }, { status: 400 });
     }
 
@@ -74,6 +73,8 @@ export async function POST(request: Request) {
 
       return updatedUser;
     });
+
+    console.log('✅ Paiement confirmé:', updatedSessionUser);
 
     return NextResponse.json({
       message: 'Paiement confirmé. Attestation stockée dans la base de données.',

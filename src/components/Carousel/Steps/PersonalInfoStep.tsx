@@ -93,6 +93,7 @@ export default function PersonalInfoStep({
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
     const file = e.target.files?.[0] || null;
+    
     if (file && file.size > 20 * 1024 * 1024) {
       setErrors((prev) => ({ ...prev, [name]: "Le fichier dépasse la taille maximale de 20 Mo." }));
       return;
@@ -232,9 +233,8 @@ export default function PersonalInfoStep({
     try {
       const formDataObj = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        // Exclure lieuNaissance, mais inclure acceptConditions et commitToUpload
         if (key === "lieuNaissance") return;
-        if (value instanceof File) return; // Les fichiers sont ajoutés après l'upload
+        if (value instanceof File) return;
         if (value !== null && value !== undefined) {
           formDataObj.append(key, value.toString());
         }
@@ -309,16 +309,31 @@ export default function PersonalInfoStep({
       newErrors.telephone = "Format de téléphone invalide (10 chiffres).";
     }
 
-    const allowedFileTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+    const allowedFileTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/bmp",
+      "image/tiff",
+      "image/heic",
+      "image/heif",
+      "image/svg+xml",
+      "image/x-icon",
+      "image/avif",
+      "image/jp2",
+      "image/x-raw",
+      "application/pdf",
+    ];
     const fileFields = ["id_recto", "id_verso", "permis_recto", "permis_verso", "letter_48N", "extraDocument"];
     fileFields.forEach((field) => {
       const file = formData[field as keyof RegistrationInfo] as File | null;
       if (file && !allowedFileTypes.includes(file.type)) {
-        newErrors[field] = "Type de fichier invalide. Autorisé: JPEG, JPG, PNG, PDF.";
+        newErrors[field] = `Type de fichier invalide (${file.type}). Formats autorisés : JPEG, PNG, WebP, GIF, BMP, TIFF, HEIC, HEIF, SVG, ICO, AVIF, JP2, RAW, PDF.`;
       }
     });
 
-    // Vérifier si aucun fichier n'est téléchargé pour les champs affichés
     const showUploadFields = {
       id_recto: ["1", "2", "3", "4"].includes(formData.casStage),
       id_verso: ["1", "2", "3", "4"].includes(formData.casStage),
@@ -353,7 +368,6 @@ export default function PersonalInfoStep({
     return today.toISOString().split("T")[0];
   }
 
-  // Détermine les champs d'upload à afficher selon casStage
   const showUploadFields = {
     id_recto: ["1", "2", "3", "4"].includes(formData.casStage),
     id_verso: ["1", "2", "3", "4"].includes(formData.casStage),
@@ -363,12 +377,10 @@ export default function PersonalInfoStep({
     extraDocument: ["3", "4"].includes(formData.casStage),
   };
 
-  // Vérifier si aucun fichier n'est téléchargé pour les champs affichés
   const uploadFields = Object.keys(showUploadFields).filter((field) => showUploadFields[field as keyof typeof showUploadFields]);
   const hasFiles = uploadFields.some((field) => formData[field as keyof RegistrationInfo] !== null);
   const showCommitToUpload = uploadFields.length > 0 && !hasFiles;
 
-  // Détermine les champs d'infraction et judiciaires à afficher
   const showInfractionFields = formData.casStage === "2";
   const showJudicialFields = ["3", "4"].includes(formData.casStage);
 
@@ -541,7 +553,7 @@ export default function PersonalInfoStep({
                         id="infractionDate"
                         type="date"
                         name="infractionDate"
-                        value={formData.infractionDate}
+                        value={formData.infractionDate || ""}
                         onChange={handleChange}
                         className={`${inputClassName} ${errors.infractionDate ? "border-red-500" : ""}`}
                         aria-label="Date de l'infraction (facultatif)"
@@ -554,7 +566,7 @@ export default function PersonalInfoStep({
                         id="infractionTime"
                         type="time"
                         name="infractionTime"
-                        value={formData.infractionTime}
+                        value={formData.infractionTime || ""}
                         onChange={handleChange}
                         className={`${inputClassName} ${errors.infractionTime ? "border-red-500" : ""}`}
                         aria-label="Heure de l'infraction (facultatif)"
@@ -567,7 +579,7 @@ export default function PersonalInfoStep({
                         id="infractionPlace"
                         type="text"
                         name="infractionPlace"
-                        value={formData.infractionPlace}
+                        value={formData.infractionPlace || ""}
                         onChange={handleChange}
                         className={`${inputClassName} ${errors.infractionPlace ? "border-red-500" : ""}`}
                         placeholder="Ex. : 123 Rue de Paris, 75001 Paris"
@@ -589,7 +601,7 @@ export default function PersonalInfoStep({
                         id="parquetNumber"
                         type="text"
                         name="parquetNumber"
-                        value={formData.parquetNumber}
+                        value={formData.parquetNumber || ""}
                         onChange={handleChange}
                         className={`${inputClassName} ${errors.parquetNumber ? "border-red-500" : ""}`}
                         placeholder="Ex. : 123456789"
@@ -603,7 +615,7 @@ export default function PersonalInfoStep({
                         id="judgmentDate"
                         type="date"
                         name="judgmentDate"
-                        value={formData.judgmentDate}
+                        value={formData.judgmentDate || ""}
                         onChange={handleChange}
                         className={`${inputClassName} ${errors.judgmentDate ? "border-red-500" : ""}`}
                         aria-label="Date de jugement (facultatif)"

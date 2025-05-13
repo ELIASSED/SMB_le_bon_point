@@ -89,8 +89,6 @@ export async function POST(req: NextRequest) {
   try {
     // Étape 1 : Parser la requête
     const body = await req.json();
-   // console.log("Requête reçue à /api/register:", JSON.stringify(body, null, 2));
-
     const { stageId, userData }: { stageId: number; userData: RegistrationInfo } = body;
 
     // Étape 2 : Validation initiale
@@ -109,7 +107,10 @@ export async function POST(req: NextRequest) {
     if (missingFields.length > 0) {
       console.error("Champs obligatoires manquants:", missingFields);
       return NextResponse.json(
-        { error: `Champs obligatoires manquants : ${missingFields.join(", ")}`, code: "MISSING_FIELDS" },
+        {
+          error: `Champs obligatoires manquants : ${missingFields.join(", ")}`,
+          code: "MISSING_FIELDS",
+        },
         { status: 400 }
       );
     }
@@ -122,7 +123,10 @@ export async function POST(req: NextRequest) {
       if (missingCase3Fields.length > 0) {
         console.error("Champs obligatoires pour Cas 3 manquants:", missingCase3Fields);
         return NextResponse.json(
-          { error: `Champs obligatoires pour Cas 3 manquants : ${missingCase3Fields.join(", ")}`, code: "MISSING_CASE_3_FIELDS" },
+          {
+            error: `Champs obligatoires pour Cas 3 manquants : ${missingCase3Fields.join(", ")}`,
+            code: "MISSING_CASE_3_FIELDS",
+          },
           { status: 400 }
         );
       }
@@ -140,7 +144,10 @@ export async function POST(req: NextRequest) {
     if (!isValidDate(userData.dateDelivrancePermis)) {
       console.error("Format de dateDelivrancePermis invalide:", userData.dateDelivrancePermis);
       return NextResponse.json(
-        { error: "Format de date de délivrance du permis invalide (YYYY-MM-DD requis)", code: "INVALID_DATE" },
+        {
+          error: "Format de date de délivrance du permis invalide (YYYY-MM-DD requis)",
+          code: "INVALID_DATE",
+        },
         { status: 400 }
       );
     }
@@ -171,57 +178,15 @@ export async function POST(req: NextRequest) {
     // Étape 6 : Normalisation des données
     const normalizedUserData = normalizeUserData(userData);
 
-    // Étape 7 : Vérifier l'unicité de l'email pour la session
-    const existingSessionUser = await prisma.sessionUsers.findFirst({
-      where: {
-        sessionId: stageId,
-        user: {
-          email: normalizedUserData.email,
-        },
-      },
-      include: {
-        user: true,
+    // Étape 7 : Créer un nouvel utilisateur
+    const user = await prisma.user.create({
+      data: {
+        ...normalizedUserData,
       },
     });
+    console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
 
-    if (existingSessionUser) {
-      console.error("L'email est déjà associé à cette session:", {
-        email: normalizedUserData.email,
-        sessionId: stageId,
-      });
-      return NextResponse.json(
-        { error: "Cet email est déjà inscrit pour cette session", code: "EMAIL_ALREADY_IN_SESSION" },
-        { status: 400 }
-      );
-    }
-
-    // Étape 8 : Trouver ou créer l'utilisateur
-    let user = await prisma.user.findFirst({
-      where: {
-        email: normalizedUserData.email,
-      },
-    });
-
-    if (!user) {
-      // Créer un nouvel utilisateur
-      user = await prisma.user.create({
-        data: {
-          ...normalizedUserData,
-        },
-      });
-     // console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
-    } else {
-      // Mettre à jour l'utilisateur existant
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          ...normalizedUserData,
-        },
-      });
-    //  console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
-    }
-
-    // Étape 9 : Créer l'enregistrement SessionUsers
+    // Étape 8 : Créer l'enregistrement SessionUsers
     const sessionUser = await prisma.sessionUsers.create({
       data: {
         userId: user.id,
@@ -229,7 +194,6 @@ export async function POST(req: NextRequest) {
         isPaid: false,
       },
     });
-
 
     return NextResponse.json({ user, sessionUser }, { status: 200 });
   } catch (error: any) {
