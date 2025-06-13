@@ -45,10 +45,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ selectedStage, clientSecret, 
               {formatDateWithDay(selectedStage.endDate)}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Localisation :</span>
-            <span className="font-medium">{selectedStage.location}</span>
-          </div>
+      
           <div className="flex justify-between">
             <span className="text-gray-600">N° préfectoral :</span>
             <span className="font-medium">{selectedStage.numeroStageAnts}</span>

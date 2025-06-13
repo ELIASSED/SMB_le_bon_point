@@ -1,4 +1,3 @@
-// Modification de layout.tsx
 import './globals.css';
 import { ReactNode } from 'react';
 import Header from '../components/Header';
@@ -6,39 +5,46 @@ import Footer from '../components/Footer';
 
 export const metadata = {
   // Métadonnées principales
-  title: 'Stages de Récupération de Points à Saint-Maur-des-Fossés (94) | Premier centre du 94',
-  description: 'Centre de stages de récupération de points à Saint-Maur-des-Fossés. Meilleurs tarifs du 94 et de l\'Île-de-France. Récupérez 4 points en 2 jours, calendrier flexible et places garanties.',
-  
-  // Balises Open Graph pour le partage sur les réseaux sociaux
+  title: 'Stage Récupération Points Saint-Maur | 4 Points dès 180€',
+  description: 'Récupérez 4 points sur votre permis en 2 jours à Saint-Maur-des-Fossés (94). Stages agréés, sessions hebdomadaires, réservation en ligne. À 5 min du RER A !',
+
+  // Balises Open Graph pour les réseaux sociaux
   openGraph: {
-    title: 'Stages Récupération Points Saint-Maur-des-Fossés | N°1 dans le 94',
-    description: 'Centre de stages homologué à Saint-Maur-des-Fossés. Récupérez jusqu\'à 4 points en 48h. Sessions hebdomadaires, réservation en ligne, paiement sécurisé.',
+    title: 'Récupérez 4 Points à Saint-Maur-des-Fossés | Stage Agréé',
+    description: 'Centre agréé à Saint-Maur-des-Fossés (94) pour récupérer 4 points en 48h. Réservez votre stage de sensibilisation à la sécurité routière dès maintenant !',
     type: 'website',
     locale: 'fr_FR',
-    siteName: 'SMB Le Bon Point',
+    siteName: 'Centre de Récupération Points Saint-Maur',
     url: 'https://smb-lebonpoint.fr',
-    images: [ 
+    images: [
       {
-        url: '/images/stage-recuperation-points-saint-maur.jpg',
+        url: 'https://www.smb-lebonpoint.fr/images/logo-smb-lebonpoint.png',
         width: 1200,
         height: 630,
-        alt: 'Centre de stages de récupération de points à Saint-Maur-des-Fossés',
+        alt: 'Stage de récupération de points permis à Saint-Maur-des-Fossés, Val-de-Marne',
       },
     ],
   },
-  
+
   // Balises Twitter Card
   twitter: {
     card: 'summary_large_image',
-    title: 'Stages Points Saint-Maur-des-Fossés | Centre principal du Val-de-Marne',
-    description: 'Réservez votre stage permis à points à Saint-Maur-des-Fossés. Dates disponibles chaque semaine. Prix imbattables sur le 94 et toute l\'IDF !',
-    images: ['/images/stage-saint-maur-twitter.jpg'],
+    title: 'Stage Points Permis Saint-Maur | 4 Points en 48h',
+    description: 'Réservez votre stage à Saint-Maur-des-Fossés (94) pour récupérer 4 points sur votre permis. Dates flexibles, prix dès 180€ !',
+    images: ['https://smb-lebonpoint.fr/images/stage-saint-maur-twitter.jpg'],
     site: '@SMBLeBonPoint',
   },
-  
+
   // Métadonnées additionnelles
-  keywords: 'stage récupération points Saint-Maur-des-Fossés, stage permis à points 94, récupération points Saint-Maur, stage 4 points Val-de-Marne, stage sensibilisation sécurité routière Saint-Maur, prix stage récupération points 94, stage points pas cher IDF',
-  
+  keywords: [
+    'stage récupération points Saint-Maur-des-Fossés',
+    'récupérer points permis 94',
+    'stage permis à points Val-de-Marne',
+    'stage 4 points Saint-Maur',
+    'stage sensibilisation sécurité routière 94',
+    'prix stage récupération points Saint-Maur',
+  ],
+
   // Données structurées pour Google
   alternates: {
     canonical: 'https://smb-lebonpoint.fr',
@@ -50,7 +56,7 @@ export const metadata = {
     placename: 'Saint-Maur-des-Fossés, Val-de-Marne, Île-de-France, France',
     position: '48.8006;2.4831',
   },
-  
+
   // Robots
   robots: {
     index: true,
@@ -62,12 +68,12 @@ export const metadata = {
       'max-snippet': -1,
     },
   },
-  
+
   // Informations de l'entreprise
-  publisher: 'SMB Le Bon Point',
-  organization: 'Centre de stages SMB Le Bon Point',
+  publisher: 'Centre de Récupération Points Saint-Maur',
+  organization: 'Centre de Récupération Points Saint-Maur',
   address: {
-    streetAddress: 'Saint-Maur-des-Fossés',
+    streetAddress: '35 Av. Foch',
     addressLocality: 'Saint-Maur-des-Fossés',
     addressRegion: 'Val-de-Marne',
     postalCode: '94100',
@@ -77,15 +83,44 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className="h-full">
+    <html lang="fr">
       <head>
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <link rel="icon" href="/favicon.ico" />        
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              'name': 'Centre de Récupération Points Saint-Maur',
+              'address': {
+                '@type': 'PostalAddress',
+                'streetAddress': '35 Av. Foch',
+                'addressLocality': 'Saint-Maur-des-Fossés',
+                'addressRegion': 'Val-de-Marne',
+                'postalCode': '94100',
+                'addressCountry': 'FR',
+              },
+              'geo': {
+                '@type': 'GeoCoordinates',
+                'latitude': 48.8006,
+                'longitude': 2.4831,
+              },
+              'telephone': '+33619774782',
+              'url': 'https://smb-lebonpoint.fr',
+              'description': 'Centre agréé de stages de récupération de points à Saint-Maur-des-Fossés. Récupérez jusqu’à 4 points en 2 jours dans le Val-de-Marne.',
+              'openingHours': 'Mo-Fr 09:00-17:00',
+              'logo': 'https://smb-lebonpoint.fr/images/logo-smb-lebonpoint.png',
+            }),
+          }}
+        />
       </head>
-      <body className="flex flex-col min-h-screen">
+      <body>
         <Header />
-        <main className=" ">{children}</main>
+        {children}
         <Footer />
       </body>
     </html>

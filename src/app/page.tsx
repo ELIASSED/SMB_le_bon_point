@@ -3,7 +3,6 @@ import Image from 'next/image';
 import BookingButton from '../components/BookingButton';
 import Hero from '../components/Homepage/Hero';
 import FAQ from '../components/Homepage/FAQ';
-import ExternalLinkButton from '../components/ExternalLinkButton';
 import FeaturesGrid from '../components/Homepage/FeatureGrid';
 
 export default function HomePage() {

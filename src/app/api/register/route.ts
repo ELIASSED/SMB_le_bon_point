@@ -85,6 +85,7 @@ const normalizeUserData = (userData: RegistrationInfo) => {
   return normalizedData;
 };
 
+
 export async function POST(req: NextRequest) {
   try {
     // Étape 1 : Parser la requête
@@ -100,7 +101,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Étape 3 : Validation des champs obligatoires
+    // Valider que stageId est un nombre valide
+    if (isNaN(stageId) || stageId <= 0) {
+      console.error("Stage ID invalide:", stageId);
+      return NextResponse.json(
+        { error: "Stage ID invalide", code: "INVALID_STAGE_ID" },
+        { status: 400 }
+      );
+    }
+
+    // Étape 3 : Vérifier l'existence du stage
+    const stageExists = await prisma.session.findUnique({
+      where: { id: stageId },
+    });
+    if (!stageExists) {
+      console.error("Stage introuvable:", stageId);
+      return NextResponse.json(
+        { error: "Stage introuvable", code: "STAGE_NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    // Étape 4 : Validation des champs obligatoires
     const missingFields = REQUIRED_FIELDS.filter(
       (field) => !userData[field] || userData[field]?.trim() === ""
     );
@@ -115,7 +137,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Étape 4 : Validation spécifique pour Cas 3
+    // Étape 5 : Validation spécifique pour Cas 3
     if (userData.casStage === "3") {
       const missingCase3Fields = CASE_3_REQUIRED_FIELDS.filter(
         (field) => !userData[field] || userData[field]?.trim() === ""
@@ -132,7 +154,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Étape 5 : Validation des formats
+    // Étape 6 : Validation des formats
     // Dates obligatoires
     if (!isValidDate(userData.dateNaissance)) {
       console.error("Format de dateNaissance invalide:", userData.dateNaissance);
@@ -175,38 +197,73 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Étape 6 : Normalisation des données
+    // Étape 7 : Normalisation des données
     const normalizedUserData = normalizeUserData(userData);
 
-    // Étape 7 : Gérer l'utilisateur
+    // Étape 8 : Gérer l'utilisateur
     let user;
     if (userId) {
+      // Valider et convertir userId
+      const parsedUserId = parseInt(userId, 10);
+      if (isNaN(parsedUserId)) {
+        console.error("User ID invalide:", userId);
+        return NextResponse.json(
+          { error: "User ID invalide", code: "INVALID_USER_ID" },
+          { status: 400 }
+        );
+      }
+
       // Mettre à jour l'utilisateur existant
-      user = await prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...normalizedUserData,
-        },
-      });
-      console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
+      try {
+        user = await prisma.user.update({
+          where: { id: parsedUserId },
+          data: normalizedUserData,
+        });
+        console.log("Utilisateur mis à jour:", { id: user.id, email: user.email });
+      } catch (error: any) {
+        if (error.code === "P2025") {
+          console.error("Utilisateur introuvable:", parsedUserId);
+          return NextResponse.json(
+            { error: "Utilisateur introuvable", code: "USER_NOT_FOUND" },
+            { status: 404 }
+          );
+        }
+        throw error; // Rethrow other errors
+      }
     } else {
       // Créer un nouvel utilisateur
       user = await prisma.user.create({
-        data: {
-          ...normalizedUserData,
-        },
+        data: normalizedUserData,
       });
       console.log("Nouvel utilisateur créé:", { id: user.id, email: user.email });
     }
 
-    // Étape 8 : Gérer l'enregistrement SessionUsers
+    // Étape 9 : Gérer l'enregistrement SessionUsers
     let sessionUser;
     if (sessionUserId) {
+      // Valider et convertir sessionUserId
+      const parsedSessionUserId = parseInt(sessionUserId, 10);
+      if (isNaN(parsedSessionUserId)) {
+        console.error("SessionUser ID invalide:", sessionUserId);
+        return NextResponse.json(
+          { error: "SessionUser ID invalide", code: "INVALID_SESSION_USER_ID" },
+          { status: 400 }
+        );
+      }
+
       // Supprimer l'ancien enregistrement sessionUsers
-      await prisma.sessionUsers.delete({
-        where: { id: sessionUserId },
-      });
-      console.log("Ancien sessionUsers supprimé:", { sessionUserId });
+      try {
+        await prisma.sessionUsers.delete({
+          where: { id: parsedSessionUserId },
+        });
+        console.log("Ancien sessionUsers supprimé:", { sessionUserId: parsedSessionUserId });
+      } catch (error: any) {
+        if (error.code === "P2025") {
+          console.warn("SessionUsers introuvable, ignoré:", parsedSessionUserId);
+        } else {
+          throw error; // Rethrow other errors
+        }
+      }
     }
 
     // Créer un nouvel enregistrement sessionUsers
@@ -224,11 +281,13 @@ export async function POST(req: NextRequest) {
     console.error("Erreur dans /api/register:", {
       message: error.message,
       stack: error.stack,
-      body: JSON.stringify(await req.json().catch(() => ({})), null, 2),
+      body: await req.json().catch(() => ({})),
     });
     return NextResponse.json(
       { error: error.message || "Erreur serveur lors de l'inscription", code: "SERVER_ERROR" },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect(); // Ensure Prisma client is disconnected
   }
 }

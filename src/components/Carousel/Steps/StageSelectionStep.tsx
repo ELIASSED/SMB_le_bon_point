@@ -16,11 +16,13 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Star,
 } from "lucide-react";
 import StageInfoModal from "../StageInfoModal";
 
 interface StageSelectionStepProps {
-  onStageSelected: (stage: Stage) => void;
+  onStageSelected: (stage: Stage) => Promise<void>;
+  selectedStage: Stage | null;
 }
 
 // Types pour les filtres
@@ -29,12 +31,12 @@ type SortDirection = "asc" | "desc";
 type DayPair = "lun-mar" | "mar-mer" | "mer-jeu" | "jeu-ven" | "ven-sam" | "all";
 type MonthOption = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 0; // 0 = tous les mois
 
-const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
+const StageSelectionStep = ({ onStageSelected, selectedStage }: StageSelectionStepProps) => {
   const [stages, setStages] = useState<Stage[]>([]);
   const [filteredStages, setFilteredStages] = useState<Stage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Chargement progressif
   const [visibleStages, setVisibleStages] = useState<Stage[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -42,7 +44,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
   const itemsPerLoad = 5;
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
-  
+
   // Filtres
   const [isFilterExpanded, setIsFilterExpanded] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Pour mobile
@@ -50,6 +52,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedDayPair, setSelectedDayPair] = useState<DayPair>("all");
   const [selectedMonths, setSelectedMonths] = useState<MonthOption[]>([]);
+  const [showBestDeals, setShowBestDeals] = useState(false);
 
   // Modal state
   const [modalStage, setModalStage] = useState<Stage | null>(null);
@@ -85,16 +88,16 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
 
   const loadMoreItems = useCallback(() => {
     if (loadingMore) return;
-    
+
     setLoadingMore(true);
     setTimeout(() => {
       const currentLength = visibleStages.length;
       const nextItems = filteredStages.slice(currentLength, currentLength + itemsPerLoad);
-      
+
       if (nextItems.length > 0) {
         setVisibleStages((prev) => [...prev, ...nextItems]);
       }
-      
+
       setHasMore(currentLength + nextItems.length < filteredStages.length);
       setLoadingMore(false);
     }, 200);
@@ -102,7 +105,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
 
   useEffect(() => {
     if (loading) return;
-    
+
     if (observer.current) {
       observer.current.disconnect();
     }
@@ -119,24 +122,13 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
     if (loadingRef.current) {
       observer.current.observe(loadingRef.current);
     }
-    
+
     return () => {
       if (observer.current) {
         observer.current.disconnect();
       }
     };
   }, [loadMoreItems, hasMore, loading]);
-
-  useEffect(() => {
-    if (stages.length > 0) {
-      applyFilters();
-    }
-  }, [stages, sortOption, sortDirection, selectedDayPair, selectedMonths]);
-
-  useEffect(() => {
-    setVisibleStages(filteredStages.slice(0, itemsPerLoad));
-    setHasMore(filteredStages.length > itemsPerLoad);
-  }, [filteredStages]);
 
   const getDayOfWeek = (dateString: string): number => {
     const date = new Date(dateString);
@@ -148,7 +140,7 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
     return days[day];
   };
 
-  const matchesDayPair = (stage: Stage): boolean => {
+  const matchesDayPair = useCallback((stage: Stage): boolean => {
     if (selectedDayPair === "all") return true;
     const startDay = getDayOfWeek(stage.startDate);
     const endDay = getDayOfWeek(stage.endDate);
@@ -167,23 +159,51 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
       default:
         return true;
     }
-  };
+  }, [selectedDayPair]);
 
-  const matchesMonth = (stage: Stage): boolean => {
+  const matchesMonth = useCallback((stage: Stage): boolean => {
     if (selectedMonths.length === 0) return true;
     const startMonth = new Date(stage.startDate).getMonth() + 1;
     return selectedMonths.includes(startMonth as MonthOption);
-  };
+  }, [selectedMonths]);
 
+  const isBestDeal = useCallback((stage: Stage): boolean => {
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+    const startDate = new Date(stage.startDate);
+    return (
+      stage.price <= 200 &&
+      startDate <= thirtyDaysFromNow
+    );
+  }, []);
+ const isTodayAfter8AM = (stage: Stage): boolean => {
+   const now = new Date();
+   const startDate = new Date(stage.startDate);
+   
+    // Vérifier si la date de début est aujourd'hui
+   const isToday =
+     startDate.getDate() === now.getDate() &&
+     startDate.getMonth() === now.getMonth() &&
+     startDate.getFullYear() === now.getFullYear();
+    
+    // Si c'est aujourd'hui, vérifier si l'heure actuelle est après 8h
+   if (isToday) {      return now.getHours() >= 8;
+   }    return false; 
+  };
   const applyFilters = useCallback(() => {
     let result = [...stages];
-
+// Exclure les stages qui commencent aujourd'hui après 8h
+result = result.filter((stage) => !isTodayAfter8AM(stage));
     if (selectedDayPair !== "all") {
-      result = result.filter(matchesDayPair);
+      result = result.filter((stage) => matchesDayPair(stage));
     }
 
     if (selectedMonths.length > 0) {
-      result = result.filter(matchesMonth);
+      result = result.filter((stage) => matchesMonth(stage));
+    }
+
+    if (showBestDeals) {
+      result = result.filter((stage) => isBestDeal(stage));
     }
 
     if (sortOption !== "none") {
@@ -199,13 +219,25 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
     }
 
     setFilteredStages(result);
-  }, [stages, sortOption, sortDirection, selectedDayPair, selectedMonths]);
+  }, [stages, sortOption, sortDirection, selectedDayPair, selectedMonths, showBestDeals, matchesDayPair, matchesMonth]);
+
+  useEffect(() => {
+    if (stages.length > 0) {
+      applyFilters();
+    }
+  }, [stages, sortOption, sortDirection, selectedDayPair, selectedMonths, showBestDeals, applyFilters]);
+
+  useEffect(() => {
+    setVisibleStages(filteredStages.slice(0, itemsPerLoad));
+    setHasMore(filteredStages.length > itemsPerLoad);
+  }, [filteredStages]);
 
   const resetFilters = () => {
     setSortOption("date");
     setSortDirection("asc");
     setSelectedDayPair("all");
     setSelectedMonths([]);
+    setShowBestDeals(false);
     setFilteredStages(stages);
     setIsFilterOpen(false);
   };
@@ -274,6 +306,12 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
     return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
+  const activeFiltersCount =
+    (selectedDayPair !== "all" ? 1 : 0) +
+    selectedMonths.length +
+    (sortOption !== "date" || sortDirection !== "asc" ? 1 : 0) +
+    (showBestDeals ? 1 : 0);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -312,11 +350,6 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
     { value: "jeu-ven", label: "Jeudi - Vendredi" },
     { value: "ven-sam", label: "Vendredi - Samedi" },
   ];
-
-  const activeFiltersCount = 
-    (selectedDayPair !== "all" ? 1 : 0) + 
-    selectedMonths.length + 
-    (sortOption !== "date" || sortDirection !== "asc" ? 1 : 0);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
@@ -400,6 +433,25 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                     {getSortIcon("price")}
                   </button>
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <h4 className="font-medium text-gray-700 text-sm mb-1">Meilleurs plans</h4>
+                <button
+                  onClick={() => setShowBestDeals(!showBestDeals)}
+                  className={`flex items-center w-full px-2 py-1.5 text-left rounded-md text-sm ${
+                    showBestDeals ? "bg-blue-50 text-blue-700" : "bg-white text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <div
+                    className={`h-3 w-3 rounded-full mr-1.5 flex items-center justify-center border ${
+                      showBestDeals ? "border-blue-500 bg-blue-500" : "border-gray-300"
+                    }`}
+                  >
+                    {showBestDeals && <div className="h-1.5 w-1.5 rounded-full bg-white"></div>}
+                  </div>
+                  <span>Afficher les meilleurs plans</span>
+                </button>
               </div>
 
               <div className="mb-4">
@@ -489,11 +541,14 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
 
               <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
                 {visibleStages.map((stage) => (
-                  <div key={stage.id} className="border border-gray-200 rounded-lg shadow-sm bg-white">
+                  <div
+                    key={stage.id}
+                    className={`border rounded-lg shadow-sm bg-white ${
+                      isBestDeal(stage) ? "border-yellow-400 border-2" : "border-gray-200"
+                    } ${selectedStage?.id === stage.id ? "ring-2 ring-blue-500" : ""}`}
+                  >
                     <div className="p-4">
-                      {/* Disposition principale : 3 parties horizontales */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        {/* Colonne gauche : Prix */}
                         <div className="sm:w-1/3 text-left">
                           <div className="text-green-600 font-bold text-lg">
                             {stage.price.toLocaleString("fr-FR", {
@@ -501,10 +556,15 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                               currency: "EUR",
                             })}
                           </div>
+                          {isBestDeal(stage) && (
+                            <span className="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full mt-1">
+                              <Star className="h-3 w-3 mr-1" />
+                              Meilleur plan
+                            </span>
+                          )}
                         </div>
 
-                        {/* Colonne centre : Dates */}
-                        <div className="sm:w-1/3 text-center flex flex-col items-center justify-center">           
+                        <div className="sm:w-1/3 text-center flex flex-col items-center justify-center">
                           <div className="flex items-center justify-center space-x-2 text-gray-700">
                             <p className="text-md">{formatDateRange(stage.startDate, stage.endDate)}</p>
                           </div>
@@ -526,21 +586,23 @@ const StageSelectionStep = ({ onStageSelected }: StageSelectionStepProps) => {
                           </div>
                         </div>
 
-                        {/* Colonne droite : Bouton réserver */}
                         <div className="sm:w-1/3 text-right flex sm:justify-end">
                           <button
                             onClick={() => onStageSelected(stage)}
-                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm shadow transition-colors duration-200"
+                            className={`font-medium py-2 px-4 rounded-md text-sm shadow transition-colors duration-200 ${
+                              selectedStage?.id === stage.id
+                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                : "bg-green-600 text-white hover:bg-green-700"
+                            }`}
                           >
-                            Réserver
+                            {selectedStage?.id === stage.id ? "Sélectionné" : "Réserver"}
                           </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-                
-                {/* Chargement infini */}
+
                 {hasMore && (
                   <div ref={loadingRef} className="flex justify-center py-3">
                     {loadingMore ? (

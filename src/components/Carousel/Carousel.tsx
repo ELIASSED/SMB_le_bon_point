@@ -128,43 +128,197 @@ export default function Carousel() {
 
       setPaymentIntentId(paymentIntentId);
 
-      const emailData = {
+      // Client confirmation email
+      const clientEmailData = {
         to: registrationInfo.email,
         subject: "Confirmation de votre inscription au stage",
-        text: `Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},\n\nNous vous confirmons votre inscription au stage ${selectedStage.numeroStageAnts} à ${selectedStage.location}.\n\nDétails du stage :\n- Début : ${formatDateWithDay(selectedStage.startDate)}\n- Fin : ${formatDateWithDay(selectedStage.endDate)}\n\nVotre paiement a été reçu. Pour toute question, contactez-nous au 01 23 45 67 89.`,
+        text: `Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},\n\nNous vous confirmons votre inscription au stage ${selectedStage.numeroStageAnts} à ${selectedStage.location}.\n\nDétails du stage :\n- Début : ${formatDateWithDay(selectedStage.startDate)}\n- Fin : ${formatDateWithDay(selectedStage.endDate)}\n\nVotre paiement a été reçu. Pour toute question, contactez-nous au 07 86 00 34 31.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #1a3c6c;">Confirmation d'inscription</h2>
-            <p>Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},</p>
-            <p>Nous vous confirmons votre inscription au stage suivant :</p>
-            <ul style="list-style: none; padding: 0;">
-              <li><strong>Numéro du stage :</strong> ${selectedStage.numeroStageAnts}</li>
-              <li><strong>Dates :</strong> ${formatDateWithDay(selectedStage.startDate)} et ${formatDateWithDay(selectedStage.endDate)}</li>
-              <li><strong>Lieu :</strong> ${selectedStage.location}</li>
-              <li><strong>Horaires :</strong> 8h00 - 16h30</li>
-            </ul>
-            <p>Votre paiement a été reçu avec succès. Vous recevrez prochainement toute information complémentaire concernant votre stage.</p>
-            <h3 style="color: #1a3c6c;">Accès au lieu du stage</h3>
-            <p>Le stage se déroule au 2 Avenue Curti, 94100 Saint-Maur-des-Fossés.</p>
-            <ul style="list-style: none; padding: 0;">
-              <li>- <strong>En transports en commun :</strong> Prendre le RER A, arrêt "Saint-Maur-Créteil" (10 min à pied).</li>
-              <li>- <strong>En voiture :</strong> Parking disponible à proximité. Accès via l'A4, sortie Saint-Maur.</li>
-              <li>- <strong>Conseil :</strong> Prévoyez d'arriver 10 minutes en avance pour l'accueil.</li>
-            </ul>
-            <p>Pour toute question, contactez-nous par téléphone au : <strong>07 86 00 34 31</strong></p>
-            <p style="color: #666; font-size: 12px;">© ${new Date().getFullYear()} SMB le bon point. Tous droits réservés.</p>
-          </div>
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Confirmation d'inscription</title>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #e8ecef;">
+            <table role="presentation" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
+              <tr>
+                <td style="padding: 20px; text-align: center; background-color: rgb(246 183 50 / var(--tw-bg-opacity, 1)); border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                  <img src="https://cdn.prod.website-files.com/6519a8973ae7212cf5a9eb05/652b513bb8dc5f55fe4449b2_SMB%20Le%20Bon%20Point%20(2).png" alt="Logo de l'entreprise" style="max-width: 100px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 30px;">
+                  <p style="font-size: 16px; color: #202124; margin: 0 0 20px;">
+                    Bonjour ${registrationInfo.prenom} ${registrationInfo.nom},<br><br>
+                    Nous vous confirmons votre inscription au stage suivant :
+                  </p>
+                  <table role="presentation" width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
+                    <tr>
+                      <td style="padding: 12px; font-size: 16px; color: #202124; border-bottom: 1px solid #dadce0;">
+                        <strong>Numéro du stage :</strong> ${selectedStage.numeroStageAnts}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px; font-size: 16px; color: #202124; border-bottom: 1px solid #dadce0;">
+                        <strong>Dates :</strong> ${formatDateWithDay(selectedStage.startDate)} et ${formatDateWithDay(selectedStage.endDate)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px; font-size: 16px; color: #202124; border-bottom: 1px solid #dadce0;">
+                        <strong>Horaires :</strong> 8h00 - 16h30
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="font-size: 16px; color: #202124; margin: 0 0 20px;">
+                    Votre paiement a été reçu avec succès. Vous recevrez prochainement toute information complémentaire concernant votre stage.
+                  </p>
+                  <p style="font-size: 16px; color: #202124; margin: 0 0 20px;">
+                    <strong>Accès au lieu du stage :</strong><br>
+                    Le stage se déroule au <strong>2 Avenue Curti, 94100 Saint-Maur-des-Fossés</strong>.<br>
+                    - <strong>En transports en commun :</strong> Prendre le RER A, arrêt "Saint-Maur-Créteil" (10 min à pied).<br>
+                    - <strong>En voiture :</strong> Parking disponible à proximité. Accès via l'A4, sortie Saint-Maur.<br>
+                    - <strong>Conseil :</strong> Prévoyez d'arriver 10 minutes en avance pour l'accueil.
+                  </p>
+                  <p style="font-size: 16px; color: #202124; margin: 0 0 20px;">
+                    Pour toute question, contactez-nous par téléphone au : <strong>07 86 00 34 31</strong>
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 20px; text-align: center; background-color: #f8f9fa; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                  <p style="font-size: 14px; color: #5f6368; margin: 0;">
+                    © ${new Date().getFullYear()} SMB le bon point. Tous droits réservés.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `,
       };
 
-      fetch("/api/send-mail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(emailData),
-      })
-        .then((response) => response.json())
-        .then((result) => console.log("Réponse de /api/send-mail:", result))
-        .catch((err) => console.error("Erreur dans /api/send-mail:", err.message));
+      // Director notification email
+      const directorEmailData = {
+        to: "smblebonpoint@gmail.com",
+        subject: "Nouvelle inscription enregistrée",
+        text: `
+Nouvelle inscription enregistrée
+
+Bonjour,
+
+Une nouvelle inscription a été enregistrée dans le système. Veuillez vérifier les détails dans le backoffice.
+
+Détails du stagiaire :
+- Nom : ${registrationInfo.nom || "Non spécifié"}
+- Prénom : ${registrationInfo.prenom || "Non spécifié"}
+- Email : ${registrationInfo.email || "Non spécifié"}
+- Téléphone : ${registrationInfo.telephone || "Non spécifié"}
+- Numéro de permis : ${registrationInfo.numeroPermis || "Non spécifié"}
+- Cas de stage : ${registrationInfo.casStage || "Non spécifié"}
+
+Détails de la session :
+- Numéro du stage : ${selectedStage.numeroStageAnts || "Non spécifié"}
+- Dates : ${formatDateWithDay(selectedStage.startDate)} et ${formatDateWithDay(selectedStage.endDate)}
+
+Date d'inscription : ${updateResult.sessionUser.createdAt ? new Date(updateResult.sessionUser.createdAt).toLocaleString("fr-FR") : new Date().toLocaleString("fr-FR")}
+Paiement : ${updateResult.sessionUser.isPaid ? "Payé" : "Non payé"}
+
+Ceci est une notification automatique. Veuillez vérifier les détails dans le backoffice pour toute action nécessaire.
+
+© ${new Date().getFullYear()} SMB le bon point. Tous droits réservés.
+        `,
+        html: `
+          <!DOCTYPE html>
+         <html lang="fr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Nouvelle inscription enregistrée</title>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #e8ecef;">
+            <table role="presentation" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
+           <tr>
+                <td style="padding: 20px; text-align: center; background-color: rgb(246 183 50 / var(--tw-bg-opacity, 1)); border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                  <img src="https://cdn.prod.website-files.com/6519a8973ae7212cf5a9eb05/652b513bb8dc5f55fe4449b2_SMB%20Le%20Bon%20Point%20(2).png" alt="Logo de l'entreprise" style="max-width: 100px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">  <p style="font-size: 14px; color: #5f6368; margin: 0;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 30px;">
+                  <p style="font-size: 12px; color: #202124; margin: 0 0 20px;">
+                    Cher Partenaire,<br><br>
+                    Un nouveau stagiaire vient de s'inscrire sur le stage de récupération de points du <strong> ${selectedStage.startDate || "Non spécifié"} et ${selectedStage.endDate || "Non spécifié"} </strong>  numéro <strong>${selectedStage.numeroStageAnts || "Non spécifié"}</strong> 
+                  </p>
+                  <h3 style="font-size: 18px; color:  rgb(246 183 50 / var(--tw-bg-opacity, 1)); margin: 0 0 15px;">Stagiaire</h3>
+                  <table role="presentation" width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
+                    <tr>
+                      <td style="padding: 12px; font-size: 12px; color: #202124; ">
+                        <strong>${registrationInfo.nom || "Non spécifié"}  ${registrationInfo.prenom || "Non spécifié"}</strong> 
+                      </td>
+                    </tr>
+                    <tr>
+                   
+                    <tr>
+                      <td style="padding: 12px; font-size: 12px; color: #202124; ">
+                       Né(e) le ${registrationInfo.dateNaissance || "Non spécifié"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 12px; font-size: 12px; color: #202124; ">
+                       Adresse : ${registrationInfo.adresse || "Non spécifié"}  ${registrationInfo.codePostal || "Non spécifié"}  ${registrationInfo.ville || "Non spécifié"}
+                      </td>
+                    </tr>
+                  <tr>
+                      <td style="padding: 12px; font-size: 12px; color: #202124; ">
+Paiement :${selectedStage.price} €
+                      </td>
+                    </tr>
+                   
+                  </table>
+                 
+                  <p style="font-size: 12px; color: #202124; margin: 0 0 20px;">
+                    Ceci est une notification automatique. Retrouvez les documents du stagiaire directement sur votre espace <a href="https://smb-lbp-backoffice.vercel.app/" style="color: #1a73e8; text-decoration: underline;">privé </a>  une fois que le stagiaire les aura téléchargés depuis son interface.  pour toute action nécessaire.
+                  </p> 
+              
+                </td>
+              </tr>
+              
+               
+            </table>
+          </body>
+          </html>
+        `,
+      };
+
+      // Send both emails concurrently
+      const [clientEmailResponse, directorEmailResponse] = await Promise.all([
+        fetch("/api/send-mail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(clientEmailData),
+        }).then((res) => res.json()),
+        fetch("/api/send-mail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(directorEmailData),
+        }).then((res) => res.json()),
+      ]);
+
+      // Log responses
+      console.log("Réponse de /api/send-mail (client):", clientEmailResponse);
+      console.log("Réponse de /api/send-mail (directeur):", directorEmailResponse);
+
+      // Check for errors in client email (critical)
+      if (!clientEmailResponse.success) {
+        console.error("Erreur dans l'envoi de l'email client:", clientEmailResponse.error);
+        setError("Inscription réussie, mais l'email de confirmation n'a pas pu être envoyé. Veuillez contacter le support.");
+      }
+
+      // Log error for director email (non-critical)
+      if (!directorEmailResponse.success) {
+        console.error("Erreur dans l'envoi de l'email directeur:", directorEmailResponse.error);
+      }
 
       setCurrentStep(3); // Go to RecapStep
     } catch (err: any) {
@@ -198,6 +352,7 @@ export default function Carousel() {
           setRegistrationInfo={setRegistrationInfo}
           registrationInfo={registrationInfo}
           nextStep={nextStep}
+          prevStep={prevStep}
         />
       ) : (
         <div className="text-center text-red-500 p-4">
@@ -225,6 +380,7 @@ export default function Carousel() {
         <RecapStep
           selectedStage={selectedStage}
           registrationInfo={registrationInfo}
+          paymentIntentId={paymentIntentId}
         />
       ) : (
         <div className="text-center text-red-500 p-4">

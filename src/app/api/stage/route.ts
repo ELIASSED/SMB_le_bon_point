@@ -8,11 +8,17 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Pour s'assurer de comparer à partir de minuit aujourd'hui
+
     const sessions = await prisma.session.findMany({
       where: {
         isArchived: false,
+        startDate: {
+          gte: today,
+        },
         capacity: {
-          gt: 0, // Filtre pour les sessions avec places disponibles
+          gt: 0,
         },
       },
       select: {

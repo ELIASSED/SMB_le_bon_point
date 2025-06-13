@@ -815,7 +815,7 @@ export default function PersonalInfoStep({
                 className={`mr-2 ${errors.commitToUpload ? "border-red-500" : ""}`}
                 aria-required="true"
               />
-              Je m'engage à fournir les pièces jointes au plus vite *
+              Je m'engage à fournir mes pièces jointes manquantes au plus vite *
             </label>
           )}
           {errors.commitToUpload && <p className="text-red-500 text-xs">{errors.commitToUpload}</p>}
